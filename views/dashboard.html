@@ -51,8 +51,7 @@
           <div class="profile-name" id="profileName">Loading...</div>
           <div class="profile-score" id="profileScore">0 PTS</div>
           <div style="margin-top: 2rem; border-top: 1px solid #23282f; padding-top: 1.5rem;">
-            <a href="/profile" class="btn btn-secondary btn-block" style="font-size: 12px;">Edit Profile</a>
-            <button onclick="logout()" class="btn btn-primary btn-block" style="margin-top: 1rem; font-size: 12px; background: transparent; border: 1px solid var(--neon-pink); color: var(--neon-pink);">Terminate Session</button>
+            <p style="color: #626e84; font-size: 11px; text-transform: uppercase; letter-spacing: 1px;">Session: Active</p>
           </div>
         </div>
       </aside>
@@ -67,7 +66,7 @@
     </div>
   </main>
   <script>
-    async function initDashboard() {
+    async function initStatus() {
       try {
         const res = await fetch('/api/auth/status');
         const data = await res.json();
@@ -77,11 +76,20 @@
         document.getElementById('profileScore').textContent = `${u.score || 0} PTS`;
         document.getElementById('avatarChar').textContent = u.username[0].toUpperCase();
         document.getElementById('statRole').textContent = (u.role || 'USER').toUpperCase();
-        document.getElementById('navUser').innerHTML = `<span class="nav-user-badge">${u.username} (Score: ${u.score || 0})</span>`;
+        
+        if (data.success && !u.username.startsWith('guest_')) {
+          document.getElementById('navUser').innerHTML = `<span class="nav-user-badge" style="border-color:var(--neon-cyan); color:var(--neon-cyan);">Operator: ${u.username} (Score: ${u.score})</span>`;
+        } else {
+          document.getElementById('navUser').innerHTML = `
+            <span class="nav-user-badge" style="margin-right:10px;">Guest (Score: ${u.score})</span>
+            <a href="/login" class="nav-user-badge" style="text-decoration:none; border-color:var(--neon-green); color:var(--neon-green);">Sign In</a>
+          `;
+        }
         
         loadMissions();
-      } catch (err) {}
+      } catch (err) { loadMissions(); }
     }
+    initStatus();
     async function loadMissions() {
       try {
         const res = await fetch('/api/challenges');

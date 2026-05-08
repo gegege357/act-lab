@@ -108,14 +108,23 @@
     function updatePreview() { const url = document.getElementById('targetUrl').value; document.getElementById('urlPreview').textContent = url; try { const domain = url.startsWith('http') ? new URL(url).hostname : url; document.getElementById('destDisplay').textContent = domain.toUpperCase() || 'INVALID'; } catch (e) { document.getElementById('destDisplay').textContent = 'INVALID'; } }
     function testRedirect(e) { if (e) e.preventDefault(); const url = document.getElementById('targetUrl').value; setTimeout(() => { window.location.href = `/api/redirect?url=${encodeURIComponent(url)}`; }, 800); }
     function showToast(msg, type) { const container = document.getElementById('toastContainer'); const toast = document.createElement('div'); toast.className = `toast toast-${type}`; toast.textContent = msg; container.appendChild(toast); setTimeout(() => toast.remove(), 3000); }
-    async function initAuth() {
+    async function initStatus() {
       try {
         const res = await fetch('/api/auth/status');
         const data = await res.json();
-        if (data.success) { document.getElementById('navUser').innerHTML = `<span class="nav-user-badge">${data.user.username} (Score: ${data.user.score || 0})</span>`; updatePreview(); }
+        if (data.success && !data.user.username.startsWith('guest_')) {
+          document.getElementById('navUser').innerHTML = `<span class="nav-user-badge" style="border-color:var(--neon-cyan); color:var(--neon-cyan);">Operator: ${data.user.username} (Score: ${data.user.score})</span>`;
+        } else {
+          const u = data.user || { username: 'Guest', score: 0 };
+          document.getElementById('navUser').innerHTML = `
+            <span class="nav-user-badge" style="margin-right:10px;">Guest (Score: ${u.score})</span>
+            <a href="/login" class="nav-user-badge" style="text-decoration:none; border-color:var(--neon-green); color:var(--neon-green);">Sign In</a>
+          `;
+        }
+        if (typeof updatePreview === 'function') updatePreview();
       } catch (err) {}
     }
-    initAuth();
+    initStatus();
   </script>
 </body>
 </html>

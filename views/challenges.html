@@ -72,15 +72,25 @@
         }
       } catch (err) {}
     }
-    async function initAuth() {
+    async function initStatus() {
       try {
         const res = await fetch('/api/auth/status');
         const data = await res.json();
-        if (data.success) { document.getElementById('navUser').innerHTML = `<span class="nav-user-badge">${data.user.username} (Score: ${data.user.score || 0})</span>`; }
+        const u = data.user || { username: 'Guest', score: 0 };
+        
+        if (data.success && !u.username.startsWith('guest_')) {
+          document.getElementById('navUser').innerHTML = `<span class="nav-user-badge" style="border-color:var(--neon-cyan); color:var(--neon-cyan);">Operator: ${u.username} (Score: ${u.score})</span>`;
+        } else {
+          document.getElementById('navUser').innerHTML = `
+            <span class="nav-user-badge" style="margin-right:10px;">Guest (Score: ${u.score})</span>
+            <a href="/login" class="nav-user-badge" style="text-decoration:none; border-color:var(--neon-green); color:var(--neon-green);">Sign In</a>
+          `;
+        }
+        
         loadMissions();
-      } catch (err) {}
+      } catch (err) { loadMissions(); }
     }
-    initAuth();
+    initStatus();
   </script>
 </body>
 </html>

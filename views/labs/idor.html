@@ -114,6 +114,23 @@
       const id = document.getElementById('userIdInput').value;
       const display = document.getElementById('profileDisplay');
       display.innerHTML = '<div class="spinner"></div>';
+      async function initStatus() {
+        try {
+          const res = await fetch('/api/auth/status');
+          const data = await res.json();
+          if (data.success && !data.user.username.startsWith('guest_')) {
+            document.getElementById('navUser').innerHTML = `<span class="nav-user-badge" style="border-color:var(--neon-cyan); color:var(--neon-cyan);">Operator: ${data.user.username} (Score: ${data.user.score})</span>`;
+          } else {
+            const u = data.user || { username: 'Guest', score: 0 };
+            document.getElementById('navUser').innerHTML = `
+              <span class="nav-user-badge" style="margin-right:10px;">Guest (Score: ${u.score})</span>
+              <a href="/login" class="nav-user-badge" style="text-decoration:none; border-color:var(--neon-green); color:var(--neon-green);">Sign In</a>
+            `;
+          }
+          if (typeof updatePreview === 'function') updatePreview();
+        } catch (err) {}
+      }
+      initStatus();
       try {
         const res = await fetch(`/api/profile?id=${id}`);
         const data = await res.json();
@@ -124,14 +141,7 @@
       } catch (err) {}
     }
     function showToast(msg, type) { const container = document.getElementById('toastContainer'); const toast = document.createElement('div'); toast.className = `toast toast-${type}`; toast.textContent = msg; container.appendChild(toast); setTimeout(() => toast.remove(), 3000); }
-    async function initAuth() {
-      try {
-        const res = await fetch('/api/auth/status');
-        const data = await res.json();
-        if (data.success) { document.getElementById('navUser').innerHTML = `<span class="nav-user-badge">${data.user.username} (Score: ${data.user.score || 0})</span>`; }
-      } catch (err) {}
-    }
-    initAuth();
+    
     updatePreview();
   </script>
 </body>

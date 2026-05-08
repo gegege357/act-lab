@@ -130,14 +130,22 @@
       document.getElementById('searchResults').innerHTML = `<div style="border: 1px solid var(--neon-green); background: rgba(159,239,0,0.05); padding: 2rem; border-radius: 4px; text-align: center; width: 100%;"><div style="color: var(--neon-green); font-weight: bold; margin-bottom: 1rem; font-size: 12px; letter-spacing: 2px;">[ XSS TRIGGERED ]</div><div style="font-family: 'Share Tech Mono'; color: var(--neon-yellow); font-size: 1.5rem; font-weight: bold;">ACT{r3fl3ct3d_xss_f0und}</div></div>`;
     };
     function showToast(msg, type) { const container = document.getElementById('toastContainer'); const toast = document.createElement('div'); toast.className = `toast toast-${type}`; toast.textContent = msg; container.appendChild(toast); setTimeout(() => toast.remove(), 3000); }
-    async function initAuth() {
+    async function initStatus() {
       try {
         const res = await fetch('/api/auth/status');
         const data = await res.json();
-        if (data.success) { document.getElementById('navUser').innerHTML = `<span class="nav-user-badge">${data.user.username} (Score: ${data.user.score || 0})</span>`; }
+        if (data.success && !data.user.username.startsWith('guest_')) {
+          document.getElementById('navUser').innerHTML = `<span class="nav-user-badge" style="border-color:var(--neon-cyan); color:var(--neon-cyan);">Operator: ${data.user.username} (Score: ${data.user.score})</span>`;
+        } else {
+          const u = data.user || { username: 'Guest', score: 0 };
+          document.getElementById('navUser').innerHTML = `
+            <span class="nav-user-badge" style="margin-right:10px;">Guest (Score: ${u.score})</span>
+            <a href="/login" class="nav-user-badge" style="text-decoration:none; border-color:var(--neon-green); color:var(--neon-green);">Sign In</a>
+          `;
+        }
       } catch (err) {}
     }
-    initAuth();
+    initStatus();
   </script>
 </body>
 </html>

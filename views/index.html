@@ -27,8 +27,10 @@
       <span class="nav-logo-text">ACT LAB</span>
     </a>
     <ul class="nav-links">
-      <li><a href="/dashboard" class="nav-user-badge" style="background: var(--neon-green); color: #000; border:none; font-weight:bold;">ENTER LAB</a></li>
+      <li><a href="/dashboard">Dashboard</a></li>
+      <li><a href="/challenges">Missions</a></li>
     </ul>
+    <div class="nav-user" id="navUser"><span class="nav-user-badge">Connecting...</span></div>
   </nav>
 
   <main class="hero-section">
@@ -38,8 +40,8 @@
       <h1 class="hero-title">ACT LAB</h1>
       <p class="hero-subtitle">Professional Cybersecurity Training & Exploitation Environment</p>
       <div class="hero-btn-group">
-        <a href="/dashboard" class="btn-hero btn-hero-primary">Launch Dashboard</a>
-        <a href="/challenges" class="btn-hero btn-hero-secondary">View Missions</a>
+        <a href="/dashboard" class="btn-hero btn-hero-primary">Launch Lab</a>
+        <a href="/challenges" class="btn-hero btn-hero-secondary">Missions</a>
       </div>
     </div>
   </main>
@@ -47,5 +49,23 @@
   <footer style="padding: 2rem; text-align: center; color: #626e84; font-size: 12px; font-family: 'Share Tech Mono';">
     &copy; 2026 ACT LAB :: SECURE_ENVIRONMENT :: ACCESS_GRANTED
   </footer>
+  <script>
+    async function initStatus() {
+      try {
+        const res = await fetch('/api/auth/status');
+        const data = await res.json();
+        const u = data.user || { username: 'Guest', score: 0 };
+        if (data.success && !u.username.startsWith('guest_')) {
+          document.getElementById('navUser').innerHTML = `<span class="nav-user-badge" style="border-color:var(--neon-cyan); color:var(--neon-cyan);">Operator: ${u.username} (Score: ${u.score})</span>`;
+        } else {
+          document.getElementById('navUser').innerHTML = `
+            <span class="nav-user-badge" style="margin-right:10px;">Guest (Score: ${u.score})</span>
+            <a href="/login" class="nav-user-badge" style="text-decoration:none; border-color:var(--neon-green); color:var(--neon-green);">Sign In</a>
+          `;
+        }
+      } catch (err) {}
+    }
+    initStatus();
+  </script>
 </body>
 </html>

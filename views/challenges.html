@@ -79,19 +79,19 @@
       try {
         const res = await fetch('/api/auth/status');
         const data = await res.json();
-        const u = data.user || { username: 'Guest', score: 0 };
+        const u = data.user || { username: 'Guest', score: 0, role: 'user' };
         
-        if (data.success && !u.username.startsWith('guest_')) {
-          document.getElementById('navUser').innerHTML = `<span class="nav-user-badge" style="border-color:var(--neon-cyan); color:var(--neon-cyan);">Operator: ${u.username} (Score: ${u.score})</span>`;
-        } else {
-          document.getElementById('navUser').innerHTML = `
-            <span class="nav-user-badge" style="margin-right:10px;">Guest (Score: ${u.score})</span>
-            <a href="/login" class="nav-user-badge" style="text-decoration:none; border-color:var(--neon-green); color:var(--neon-green);">Sign In</a>
-          `;
+        // Dynamic Navbar based on Role (Priv-Esc Demo)
+        const isAdmin = u.role === 'admin' || document.cookie.includes('role=admin');
+        
+        let navHtml = `<span class="nav-user-badge">Status: ${u.username} (${u.score} PTS)</span>`;
+        if (isAdmin) {
+          navHtml = `<a href="/admin" class="nav-user-badge" style="border-color:var(--neon-pink); color:var(--neon-pink); text-decoration:none; animation: pulse 1s infinite;">⚠️ ADMIN_ACCESS_GRANTED</a> ` + navHtml;
         }
         
-        loadMissions();
-      } catch (err) { loadMissions(); }
+        document.getElementById('navUser').innerHTML = navHtml;
+        if (typeof loadMissions === 'function') loadMissions();
+      } catch (err) {}
     }
     initStatus();
   </script>

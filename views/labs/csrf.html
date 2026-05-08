@@ -208,10 +208,13 @@
       try {
         const res = await fetch('/api/auth/status');
         const data = await res.json();
-        const u = data.user || { username: 'Guest', score: 0 };
-        document.getElementById('navUser').innerHTML = `<span class="nav-user-badge">Lab Access: ${u.username} (Score: ${u.score})</span>`;
-        loadProfile();
-        pollTraffic();
+        const u = data.user || { username: 'Guest', score: 0, role: 'user' };
+        const isAdmin = u.role === 'admin' || document.cookie.includes('role=admin');
+        let navHtml = `<span class="nav-user-badge">Status: ${u.username} (${u.score} PTS)</span>`;
+        if (isAdmin) { navHtml = `<a href="/admin" class="nav-user-badge" style="border-color:var(--neon-pink); color:var(--neon-pink); text-decoration:none; animation: pulse 1s infinite;">⚠️ ADMIN_ACCESS_GRANTED</a> ` + navHtml; }
+        document.getElementById('navUser').innerHTML = navHtml;
+        if (typeof loadProfile === 'function') loadProfile();
+        if (typeof pollTraffic === 'function') pollTraffic();
       } catch (err) {}
     }
     initStatus();

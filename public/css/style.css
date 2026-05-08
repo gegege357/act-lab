@@ -5,12 +5,13 @@
 @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Share+Tech+Mono&family=Rajdhani:wght@300;400;500;600;700&display=swap');
 
 :root {
-  --neon-cyan: #00f0ff;
-  --neon-green: #9fef00; /* HTB Green */
+  --neon-cyan: #00d4ff;
+  --neon-blue: #0080ff;
   --neon-pink: #ff0066;
   --neon-purple: #b300ff;
   --neon-yellow: #ffee00;
   --neon-orange: #ff6600;
+  --accent-blue: #00d4ff; /* Main Theme Color */
   --bg-dark: #0b0e11; /* HTB Dark Background */
   --bg-card: #15191d; /* HTB Card Background */
   --bg-card-hover: #1c2126;
@@ -19,7 +20,8 @@
   --text-primary: #f0f0f0;
   --text-secondary: #a4b1cd;
   --text-dim: #626e84;
-  --glow-green: 0 0 10px rgba(159,239,0,0.2);
+  --glow-blue: 0 0 10px rgba(0,212,255,0.3);
+  --neon-green: #00d4ff; /* Redirecting green references to blue */
 }
 
 * {

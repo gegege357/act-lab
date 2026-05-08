@@ -11,15 +11,6 @@ process.on('uncaughtException', (err) => {
   console.error('UNCAUGHT EXCEPTION:', err);
 });
 
-app.get('/api/debug-raw', (req, res) => {
-  res.json({
-    status: 'ok',
-    env: process.env.NODE_ENV,
-    vercel: !!process.env.VERCEL,
-    time: new Date().toISOString()
-  });
-});
-
 app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: false, limit: '1mb' }));
 app.use(cookieParser(process.env.SESSION_SECRET || 'act-lab-secret'));
@@ -39,7 +30,6 @@ app.use((req, res, next) => {
 
 // Auto-auth middleware: If no session, create a guest session automatically
 app.use(async (req, res, next) => {
-  // Skip for static files and specific system paths
   if (req.path.includes('.') || req.path.startsWith('/api/auth/login') || req.path.startsWith('/api/auth/logout')) {
     return next();
   }
@@ -49,8 +39,6 @@ app.use(async (req, res, next) => {
       const crypto = require('crypto');
       const guestSuffix = crypto.randomBytes(3).toString('hex').toUpperCase();
       const username = 'guest_' + guestSuffix;
-      
-      // Use a consistent ID format for auto-generated guests (starts with 999)
       const guestId = parseInt('999' + parseInt(guestSuffix, 16).toString().substring(0, 4));
       
       const db = require('./config/database');
@@ -58,7 +46,7 @@ app.use(async (req, res, next) => {
         await db.query(`INSERT INTO users (id, username, password, role, bio) VALUES ($1, $2, $3, 'user', 'Auto-generated Guest')`, 
           [guestId, username, 'guest-pass-' + guestSuffix]);
       } catch (e) {
-        // Ignore "table not found" or "read-only" errors
+        // Ignore errors in auto-auth (e.g. user already exists)
       }
       
       const options = { path: '/', maxAge: 86400000, sameSite: 'none', secure: true };
@@ -66,7 +54,6 @@ app.use(async (req, res, next) => {
       res.cookie('username', username, options);
       res.cookie('role', 'user', options);
       
-      // Manually populate req.cookies for the current request
       req.cookies.userId = String(guestId);
       req.cookies.username = username;
       req.cookies.role = 'user';
@@ -131,8 +118,4 @@ app.use((err, req, res, next) => {
   res.status(500).json({ success: false, error: 'Internal server error', detail: err.message });
 });
 
-if (process.env.VERCEL) {
-  module.exports = app;
-} else {
-  app.listen(PORT, () => console.log(`Server running on: http://localhost:${PORT}`));
-}
+app.listen(PORT, () => console.log(`Server running on: http://localhost:${PORT}`));

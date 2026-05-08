@@ -97,6 +97,17 @@
             <button type="submit" class="htb-btn">Push to DB</button>
           </form>
         </div>
+        <!-- TARGET ANALYSIS -->
+        <div class="htb-terminal" style="border-color: var(--neon-cyan); margin-bottom: 1.5rem;">
+          <div class="htb-terminal-header" style="background: rgba(0,212,255,0.1);">
+            <span style="color: var(--neon-cyan);">[!] VULNERABILITY_TARGET_ANALYSIS</span>
+          </div>
+          <div class="htb-terminal-body" style="padding: 1rem; height: auto;">
+            <div style="color: #626e84; margin-bottom: 5px;">ENDPOINT: <code style="color: #fff;">POST /api/guestbook</code></div>
+            <div style="color: #626e84;">VULN: Persistent script storage in database</div>
+          </div>
+        </div>
+
         <div class="htb-terminal">
           <div class="htb-terminal-header"><span>STORAGE MONITOR</span></div>
           <div class="htb-terminal-body" id="trafficLog"><div>Engine ready...</div></div>

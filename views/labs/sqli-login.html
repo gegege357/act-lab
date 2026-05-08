@@ -126,8 +126,8 @@
         });
         const data = await res.json();
         if (data.correct) {
-          showToast('Correct flag! Points awarded.', 'success');
-          setTimeout(() => window.location.href = '/dashboard', 1500);
+          showToast('Correct flag!', 'success');
+          // REMOVED AUTO-REDIRECT
         } else { showToast(data.message || 'Incorrect flag', 'error'); }
       } catch (err) { showToast('Submission failed', 'error'); }
     }

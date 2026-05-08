@@ -113,7 +113,7 @@
         const data = await res.json();
         if (data.correct) {
           showToast('Correct flag!', 'success');
-          setTimeout(() => window.location.href = '/dashboard', 1500);
+          // REMOVED AUTO-REDIRECT
         } else { showToast(data.message || 'Incorrect flag', 'error'); }
       } catch (err) {}
     }

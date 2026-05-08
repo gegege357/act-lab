@@ -106,7 +106,10 @@
       try {
         const res = await fetch('/api/challenges/submit', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ challengeId: id, flag: flag }) });
         const data = await res.json();
-        if (data.correct) { showToast('Correct!', 'success'); setTimeout(() => window.location.href = '/dashboard', 1500); } else { showToast(data.message || 'Incorrect', 'error'); }
+        if (data.correct) {
+          showToast('Correct flag!', 'success');
+          // REMOVED AUTO-REDIRECT
+        } else { showToast(data.message || 'Incorrect flag', 'error'); }
       } catch (err) {}
     }
     function updatePreview() { document.getElementById('urlParamPreview').textContent = document.getElementById('userIdInput').value; }

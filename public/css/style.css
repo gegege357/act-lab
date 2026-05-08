@@ -833,6 +833,58 @@ textarea.form-input {
 /* ============================================
    SEARCH RESULTS
    ============================================ */
+/* CARDS & CONTAINERS */
+.card, .htb-card {
+  background: #15191d !important;
+  border: 1px solid #23282f !important;
+  border-radius: 4px;
+  padding: 2rem;
+  color: #fff;
+}
+
+/* TABLES (PRO LEVEL) */
+table, .leaderboard-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #0b0e11;
+  color: #fff;
+}
+
+th {
+  background: #1c2126 !important;
+  color: var(--neon-cyan) !important;
+  text-transform: uppercase;
+  font-size: 11px;
+  padding: 12px;
+  text-align: left;
+  border-bottom: 2px solid #23282f;
+}
+
+td {
+  padding: 12px;
+  border-bottom: 1px solid #1c2126;
+  font-family: 'Share Tech Mono', monospace;
+}
+
+tr:hover {
+  background: rgba(0,212,255,0.02);
+}
+
+/* BUTTONS (FORCE DARK) */
+.btn, .btn-primary, .htb-btn {
+  background: var(--neon-cyan) !important;
+  color: #000 !important;
+  border: none !important;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.btn-secondary {
+  background: transparent !important;
+  border: 1px solid var(--neon-cyan) !important;
+  color: var(--neon-cyan) !important;
+}
+
 .search-result-item {
   background: var(--bg-card);
   border: 1px solid var(--border-color);

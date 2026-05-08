@@ -129,7 +129,7 @@
         if (data.success) {
           if (data.results.length === 0) { resultsDiv.innerHTML = `<div class="htb-card" style="text-align:center; color:#626e84; font-size:13px;">[ NO_MATCHES_FOUND ]</div>`; } else {
             const keys = Object.keys(data.results[0]);
-            resultsDiv.innerHTML = `<div class="htb-card"><h2 class="htb-card-title">Exfiltrated Data</h2><div class="table-container"><table><thead><tr>${keys.map(k => `<th>${k}</th>`).join('')}</tr></thead><tbody>${data.results.map(row => `<tr>${keys.map(k => { const val = String(row[k] || ''); const isFlag = val.startsWith('ACT{'); return `<td class="${isFlag ? 'flag-text' : ''}">${escapeHtml(val)}</td>`; }).join('')}</tr>`).join('')}</tbody></table></div></div>`;
+            resultsDiv.innerHTML = `<div class="htb-card"><h2 class="htb-card-title">Exfiltrated Data</h2><div class="table-container"><table><thead><tr>${keys.map(k => `<th>${k}</th>`).join('')}</tr></thead><tbody>${data.results.map(row => `<tr>${keys.map(k => { const val = String(row[k] || ''); const isFlag = val.includes('ACT{'); return `<td class="${isFlag ? 'flag-text' : ''}">${escapeHtml(val)}</td>`; }).join('')}</tr>`).join('')}</tbody></table></div></div>`;
           }
         }
       } catch (err) {}
@@ -144,15 +144,11 @@
       try {
         const res = await fetch('/api/auth/status');
         const data = await res.json();
-        if (data.success && !data.user.username.startsWith('guest_')) {
-          document.getElementById('navUser').innerHTML = `<span class="nav-user-badge" style="border-color:var(--neon-cyan); color:var(--neon-cyan);">Operator: ${data.user.username} (Score: ${data.user.score})</span>`;
-        } else {
-          const u = data.user || { username: 'Guest', score: 0 };
-          document.getElementById('navUser').innerHTML = `
-            <span class="nav-user-badge" style="margin-right:10px;">Guest (Score: ${u.score})</span>
-            <a href="/login" class="nav-user-badge" style="text-decoration:none; border-color:var(--neon-green); color:var(--neon-green);">Sign In</a>
-          `;
-        }
+        const u = data.user || { username: 'Guest', score: 0, role: 'user' };
+        const isAdmin = u.role === 'admin' || document.cookie.includes('role=admin');
+        let navHtml = `<span class="nav-user-badge">Status: ${u.username} (${u.score} PTS)</span>`;
+        if (isAdmin) { navHtml = `<a href="/admin" class="nav-user-badge" style="border-color:var(--neon-pink); color:var(--neon-pink); text-decoration:none; animation: pulse 1s infinite;">⚠️ ADMIN_ACCESS_GRANTED</a> ` + navHtml; }
+        document.getElementById('navUser').innerHTML = navHtml;
       } catch (err) {}
     }
     initStatus();

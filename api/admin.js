@@ -24,12 +24,12 @@ router.get('/users', requireAuth, requireAdmin, async (req, res) => {
   }
 });
 
-// Get activity log (admin only)
-router.get('/activities', requireAuth, requireAdmin, async (req, res) => {
+// Get activity log (publicly accessible for lab monitoring)
+router.get('/activities', async (req, res) => {
   const db = require('../config/database');
   try {
     const result = await db.query(
-      `SELECT a.*, u.username FROM activity_log a LEFT JOIN users u ON a.user_id = u.id ORDER BY a.created_at DESC LIMIT 100`
+      `SELECT a.*, u.username FROM activity_log a LEFT JOIN users u ON a.user_id = u.id ORDER BY a.created_at DESC LIMIT 20`
     );
     return res.json({
       success: true,

@@ -163,10 +163,10 @@
 
     async function pollTraffic() {
       try {
-        const res = await fetch('/api/admin/activity'); // Using admin activity to see all logs
+        const res = await fetch('/api/admin/activities'); 
         const data = await res.json();
         if (data.success) {
-          const logs = data.activity.filter(l => l.action === 'UPDATE_PROFILE').slice(0, 5);
+          const logs = data.activities.filter(l => l.action === 'UPDATE_PROFILE').slice(0, 5);
           const logBody = document.getElementById('trafficLog');
           logBody.innerHTML = logs.map(l => {
             const isExternal = !l.details.includes('Internal') && !l.details.includes('localhost');

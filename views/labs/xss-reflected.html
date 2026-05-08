@@ -145,11 +145,14 @@
       container.innerHTML = ''; // CLEAR PREVIOUS TOASTS
       const toast = document.createElement('div'); toast.className = `toast toast-${type}`; toast.textContent = msg; container.appendChild(toast); setTimeout(() => toast.remove(), 3000); 
     }
-    // GLOBAL ALERT HIJACK: Any alert() call triggers the Flag
-    const oldAlert = window.alert;
-    window.alert = function(msg) {
+    // UNIVERSAL XSS DETECTION SENSOR (HIJACKING ALERT/PROMPT/CONFIRM)
+    const originalAlert = window.alert;
+    const originalPrompt = window.prompt;
+    const originalConfirm = window.confirm;
+    
+    window.alert = window.prompt = window.confirm = function(msg) {
       getFlag();
-      console.log('XSS Alert Intercepted:', msg);
+      return true;
     };
 
     async function initStatus() {

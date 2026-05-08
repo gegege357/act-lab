@@ -135,7 +135,11 @@
         }
       } catch (err) {}
     }
-    function showToast(msg, type) { const container = document.getElementById('toastContainer'); const toast = document.createElement('div'); toast.className = `toast toast-${type}`; toast.textContent = msg; container.appendChild(toast); setTimeout(() => toast.remove(), 3000); }
+    function showToast(msg, type) { 
+      const container = document.getElementById('toastContainer'); 
+      container.innerHTML = ''; // CLEAR PREVIOUS TOASTS
+      const toast = document.createElement('div'); toast.className = `toast toast-${type}`; toast.textContent = msg; container.appendChild(toast); setTimeout(() => toast.remove(), 3000); 
+    }
     // CSRF SECURITY SENSOR: Monitor for unauthorized changes
     let initialEmail = '';
     async function loadProfile() {

@@ -135,7 +135,11 @@
       } catch (err) {}
     }
     function escapeHtml(str) { const div = document.createElement('div'); div.textContent = str; return div.innerHTML; }
-    function showToast(msg, type) { const container = document.getElementById('toastContainer'); const toast = document.createElement('div'); toast.className = `toast toast-${type}`; toast.textContent = msg; container.appendChild(toast); setTimeout(() => toast.remove(), 3000); }
+    function showToast(msg, type) { 
+      const container = document.getElementById('toastContainer'); 
+      container.innerHTML = ''; // CLEAR PREVIOUS TOASTS
+      const toast = document.createElement('div'); toast.className = `toast toast-${type}`; toast.textContent = msg; container.appendChild(toast); setTimeout(() => toast.remove(), 3000); 
+    }
     async function initStatus() {
       try {
         const res = await fetch('/api/auth/status');

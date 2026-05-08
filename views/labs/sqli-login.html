@@ -162,6 +162,7 @@
 
     function showToast(msg, type) {
       const container = document.getElementById('toastContainer');
+      container.innerHTML = ''; // CLEAR PREVIOUS TOASTS
       const toast = document.createElement('div'); toast.className = `toast toast-${type}`; toast.textContent = msg; container.appendChild(toast);
       setTimeout(() => toast.remove(), 3000);
     }

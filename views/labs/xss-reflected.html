@@ -133,10 +133,15 @@
       }
     }
     window.getFlag = function() {
+      if (document.getElementById('xssFlagContent')) return; // DON'T DUPE
       showToast('XSS Triggered!', 'success');
-      document.getElementById('searchResults').innerHTML = `<div style="border: 1px solid var(--neon-cyan); background: rgba(0,212,255,0.05); padding: 2rem; border-radius: 4px; text-align: center; width: 100%;"><div style="color: var(--neon-cyan); font-weight: bold; margin-bottom: 1rem; font-size: 12px; letter-spacing: 2px;">[ XSS_VULNERABILITY_CONFIRMED ]</div><div style="font-family: 'Share Tech Mono'; color: var(--neon-yellow); font-size: 1.5rem; font-weight: bold;">ACT{r3fl3ct3d_xss_f0und}</div></div>`;
+      document.getElementById('searchResults').innerHTML = `<div id="xssFlagContent" style="border: 1px solid var(--neon-cyan); background: rgba(0,212,255,0.05); padding: 2rem; border-radius: 4px; text-align: center; width: 100%;"><div style="color: var(--neon-cyan); font-weight: bold; margin-bottom: 1rem; font-size: 12px; letter-spacing: 2px;">[ XSS_VULNERABILITY_CONFIRMED ]</div><div style="font-family: 'Share Tech Mono'; color: var(--neon-yellow); font-size: 1.5rem; font-weight: bold;">ACT{r3fl3ct3d_xss_f0und}</div></div>`;
     };
-    function showToast(msg, type) { const container = document.getElementById('toastContainer'); const toast = document.createElement('div'); toast.className = `toast toast-${type}`; toast.textContent = msg; container.appendChild(toast); setTimeout(() => toast.remove(), 3000); }
+    function showToast(msg, type) { 
+      const container = document.getElementById('toastContainer'); 
+      container.innerHTML = ''; // CLEAR PREVIOUS TOASTS
+      const toast = document.createElement('div'); toast.className = `toast toast-${type}`; toast.textContent = msg; container.appendChild(toast); setTimeout(() => toast.remove(), 3000); 
+    }
     // GLOBAL ALERT HIJACK: Any alert() call triggers the Flag
     const oldAlert = window.alert;
     window.alert = function(msg) {

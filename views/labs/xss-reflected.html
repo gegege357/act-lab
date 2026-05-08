@@ -5,24 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Reflected XSS - ACT LAB</title>
   <link rel="stylesheet" href="/css/style.css">
-  <style>
-    .exploit-container { max-width: 900px; margin: 0 auto; padding: 2rem 0; }
-    .giant-input { 
-      width: 100%; 
-      background: rgba(0,0,0,0.4); 
-      border: 2px solid var(--neon-cyan); 
-      color: var(--neon-cyan); 
-      font-size: 1.5rem; 
-      padding: 1.2rem; 
-      border-radius: 12px; 
-      font-family: 'Share Tech Mono', monospace;
-      outline: none;
-    }
-    .flow-box { background: #05050d; padding: 1.5rem; border-radius: 8px; border-left: 4px solid var(--neon-cyan); margin-bottom: 2rem; font-family: 'Share Tech Mono'; font-size: 1rem; color: #555; }
-    .btn-giant { width: 100%; padding: 1.2rem; font-size: 1.2rem; font-weight: 900; letter-spacing: 4px; background: var(--neon-cyan); color: black; border: none; border-radius: 12px; cursor: pointer; transition: 0.3s; margin-top: 1rem; }
-    .result-stage { min-height: 250px; background: rgba(255,255,255,0.02); border: 2px dashed rgba(255,255,255,0.1); border-radius: 12px; margin-top: 3rem; padding: 3rem; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; }
-    .stage-label { position: absolute; top: 15px; left: 15px; font-size: 10px; color: #444; letter-spacing: 2px; text-transform: uppercase; }
-  </style>
 </head>
 <body>
   <div class="cyber-bg"></div>
@@ -43,32 +25,45 @@
   </nav>
 
   <main class="main-content">
-    <div class="exploit-container">
-      <div class="page-header" style="text-align:center; margin-bottom: 4rem;">
-        <h1 style="color: var(--neon-cyan); font-size: 3rem; text-shadow: 0 0 20px rgba(0, 255, 255, 0.5);">REFLECTED XSS</h1>
-        <p class="text-mono" style="font-size: 1.2rem; color: #888;">INJECT SCRIPTS INTO THE DOM THROUGH URL PARAMETERS</p>
-      </div>
+    <div class="container" style="max-width: 800px;">
+      <!-- HEADER -->
+      <header style="text-align: center; margin-bottom: 3rem;">
+        <div class="badge badge-xss">MISSION: REFLECTED INJECTION</div>
+        <h1 class="hero-title" style="font-size: 3rem; margin-top: 1rem;">REFLECTED XSS</h1>
+        <p class="text-secondary">Execute client-side scripts via unvalidated URL parameters.</p>
+      </header>
 
-      <!-- FLOW VISUALIZER -->
-      <div class="flow-box">
-        <span style="color: #444;">DATA FLOW RECON:</span><br>
-        <code>Source: <span id="sourcePreview" style="color:var(--neon-yellow);"></span> &rarr; Sink: <span class="text-pink">.innerHTML</span></code>
-      </div>
+      <!-- FLOW BOX -->
+      <section class="terminal" style="margin-bottom: 2rem;">
+        <div class="terminal-header">
+          <div class="terminal-dot cyan"></div>
+          <div class="terminal-title">DATA FLOW ANALYSIS</div>
+        </div>
+        <div class="terminal-body" style="color: var(--text-secondary); font-size: 13px;">
+          Source: <span id="sourcePreview" style="color:var(--neon-yellow);"></span> &rarr; Sink: <span style="color:var(--neon-pink);">target.innerHTML</span>
+        </div>
+      </section>
 
-      <!-- MAIN INPUT -->
-      <div class="card" style="padding: 3rem; border-color: rgba(0, 255, 255, 0.2); border-width: 2px;">
-        <div class="text-xs uppercase text-dim mb-4 tracking-widest">Craft Your XSS Payload</div>
-        <form onsubmit="handleSearch(event)" class="flex flex-column gap-4">
-          <input type="text" id="searchInput" class="giant-input" placeholder="&lt;script&gt;getFlag()&lt;/script&gt;" oninput="updatePreview()" autocomplete="off" required>
-          <button type="submit" class="btn-giant">TRIGGER EXECUTION</button>
+      <!-- SEARCH CARD -->
+      <section class="card">
+        <form onsubmit="handleSearch(event)">
+          <div class="form-group">
+            <label class="form-label">Search Query / XSS Payload</label>
+            <input type="text" id="searchInput" class="form-input" placeholder="<script>getFlag()</script>" oninput="updatePreview()" autocomplete="off" required>
+          </div>
+          <button type="submit" class="btn btn-primary btn-block">TRIGGER EXECUTION</button>
         </form>
-      </div>
+      </section>
 
       <!-- RESULT STAGE -->
-      <div class="result-stage" id="searchResults">
-        <div class="stage-label">Insecure Execution Sink</div>
-        <div class="text-xs text-dim uppercase">Awaiting Script Reflection...</div>
-      </div>
+      <section class="card" style="margin-top: 2rem; min-height: 200px; border-style: dashed;">
+        <div class="card-header">
+          <h2 class="card-title">Execution Stage (Sink)</h2>
+        </div>
+        <div id="searchResults" style="padding: 1rem;">
+          <div style="text-align: center; color: var(--text-dim); margin-top: 2rem;">[ AWAITING INJECTION ]</div>
+        </div>
+      </section>
     </div>
   </main>
 
@@ -85,18 +80,14 @@
       const resDiv = document.getElementById('searchResults');
       
       resDiv.innerHTML = `
-        <div class="stage-label">Insecure Execution Sink</div>
-        <div class="w-full h-full">
-          <div class="text-xs text-dim mb-4 uppercase tracking-tighter">Rendered Response Output:</div>
-          <div id="target" class="white" style="font-size: 1.2rem;"></div>
-        </div>
+        <div style="margin-bottom: 1rem; color: var(--text-dim); font-size: 11px; text-transform: uppercase;">Rendered Output:</div>
+        <div id="target" class="white" style="font-size: 1.1rem;"></div>
       `;
       
       const target = document.getElementById('target');
       // THE VULNERABILITY
       target.innerHTML = q;
 
-      // Force script execution for simulation
       const scripts = target.getElementsByTagName('script');
       for (let s of scripts) {
         try {
@@ -108,15 +99,11 @@
     }
 
     window.getFlag = function() {
-      showToast('XSS VULNERABILITY TRIGGERED!', 'success');
+      showToast('XSS Triggered!', 'success');
       document.getElementById('searchResults').innerHTML = `
-        <div class="stage-label">Insecure Execution Sink</div>
-        <div style="background:rgba(0,255,136,0.1); border:2px solid var(--neon-green); padding:3rem; border-radius:12px; text-align:center; width: 100%; animation: pulse 1.5s infinite;">
-          <h2 style="color: var(--neon-green); margin-bottom: 1.5rem; letter-spacing: 5px;">XSS EXPLOITED</h2>
-          <div style="background: black; padding: 1rem; border-radius: 8px; display: inline-block; min-width: 300px;">
-            <span style="color: #666; font-size: 0.8rem;">FLAG CAPTURED:</span><br>
-            <span style="color: var(--neon-yellow); font-size: 1.8rem; font-weight: bold; font-family: 'Share Tech Mono';">ACT{r3fl3ct3d_xss_f0und}</span>
-          </div>
+        <div style="background:rgba(0,255,136,0.1); border:1px solid var(--neon-green); padding:2rem; border-radius:8px; text-align:center; animation: pulse 1.5s infinite;">
+          <div style="color: var(--neon-green); font-weight: bold; margin-bottom: 0.5rem; letter-spacing: 2px;">XSS EXPLOIT SUCCESSFUL</div>
+          <div style="font-family: 'Share Tech Mono'; color: var(--neon-yellow); font-size: 1.3rem;">ACT{r3fl3ct3d_xss_f0und}</div>
         </div>
       `;
       alert('SUCCESS! FLAG: ACT{r3fl3ct3d_xss_f0und}');
@@ -141,7 +128,6 @@
       } catch (err) {}
     }
     initAuth();
-    updatePreview();
   </script>
 </body>
 </html>

@@ -5,28 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SQLi Login - ACT LAB</title>
   <link rel="stylesheet" href="/css/style.css">
-  <style>
-    .exploit-container { max-width: 900px; margin: 0 auto; padding: 2rem 0; }
-    .giant-input { 
-      width: 100%; 
-      background: rgba(0,0,0,0.4); 
-      border: 2px solid var(--neon-pink); 
-      color: var(--neon-pink); 
-      font-size: 1.5rem; 
-      padding: 1.2rem; 
-      border-radius: 12px; 
-      font-family: 'Share Tech Mono', monospace;
-      outline: none;
-      transition: all 0.3s ease;
-      box-shadow: 0 0 15px rgba(255, 0, 85, 0.1);
-    }
-    .giant-input:focus { box-shadow: 0 0 25px rgba(255, 0, 85, 0.3); background: rgba(255, 0, 85, 0.05); }
-    .label-text { color: var(--neon-pink); font-size: 0.9rem; margin-bottom: 0.8rem; display: block; letter-spacing: 2px; font-weight: bold; }
-    .query-preview { background: #05050d; padding: 1.5rem; border-radius: 8px; border-left: 4px solid var(--neon-pink); margin-bottom: 2rem; font-family: 'Share Tech Mono'; font-size: 1.1rem; color: #666; }
-    .btn-giant { width: 100%; padding: 1.5rem; font-size: 1.2rem; font-weight: 900; letter-spacing: 4px; background: var(--neon-pink); color: black; border: none; border-radius: 12px; cursor: pointer; transition: 0.3s; margin-top: 1rem; }
-    .btn-giant:hover { transform: translateY(-3px); box-shadow: 0 10px 30px rgba(255, 0, 85, 0.4); }
-    .terminal-output { background: #000; border: 1px solid #222; border-radius: 12px; padding: 1.5rem; margin-top: 3rem; min-height: 150px; font-family: 'Share Tech Mono'; color: #ff0055; font-size: 0.9rem; }
-  </style>
 </head>
 <body>
   <div class="cyber-bg"></div>
@@ -47,44 +25,52 @@
   </nav>
 
   <main class="main-content">
-    <div class="exploit-container">
-      <div class="page-header" style="text-align:center; margin-bottom: 4rem;">
-        <h1 style="color: var(--neon-pink); font-size: 3rem; text-shadow: 0 0 20px rgba(255, 0, 85, 0.5);">SQLi AUTH BYPASS</h1>
-        <p class="text-mono" style="font-size: 1.2rem; color: #888;">BREAK THE AUTHENTICATED BARRIER</p>
-      </div>
+    <div class="container" style="max-width: 800px;">
+      <!-- HEADER -->
+      <header style="text-align: center; margin-bottom: 3rem;">
+        <div class="badge badge-sqli">MISSION: AUTHENTICATION BYPASS</div>
+        <h1 class="hero-title" style="font-size: 3rem; margin-top: 1rem;">SQLi LOGIN</h1>
+        <p class="text-secondary">Subvert login logic using malicious SQL fragments.</p>
+      </header>
 
-      <!-- SQL VISUALIZER -->
-      <div class="query-preview">
-        <span style="color: #444;">DATABASE QUERY:</span><br>
-        <code style="word-break: break-all;">SELECT * FROM users WHERE username = '<span id="userPreview" style="color:var(--neon-pink);">admin</span>' AND password = '<span id="passPreview" style="color:var(--neon-pink);"></span>'</code>
-      </div>
+      <!-- QUERY PREVIEW -->
+      <section class="terminal" style="margin-bottom: 2rem;">
+        <div class="terminal-header">
+          <div class="terminal-dot green"></div>
+          <div class="terminal-title">LIVE BACKEND QUERY PREVIEW</div>
+        </div>
+        <div class="terminal-body" style="color: var(--text-secondary);">
+          SELECT * FROM users WHERE username = '<span id="userPreview" style="color:var(--neon-pink);">admin</span>' AND password = '<span id="passPreview" style="color:var(--neon-pink);"></span>'
+        </div>
+      </section>
 
-      <!-- MAIN EXPLOIT AREA -->
-      <div class="card" style="padding: 3rem; border-width: 2px; border-color: rgba(255, 0, 85, 0.2);">
-        <form onsubmit="handleLogin(event)" class="flex flex-column gap-5">
+      <!-- LOGIN CARD -->
+      <section class="card">
+        <form onsubmit="handleLogin(event)">
           <div class="form-group">
-            <label class="label-text">TARGET USERNAME</label>
-            <input type="text" id="usernameInput" class="giant-input" placeholder="admin" oninput="updatePreview()" autocomplete="off">
+            <label class="form-label">Username</label>
+            <input type="text" id="usernameInput" class="form-input" placeholder="admin" oninput="updatePreview()" autocomplete="off">
           </div>
           
           <div class="form-group">
-            <label class="label-text">INJECT PASSWORD PAYLOAD</label>
-            <input type="text" id="passwordInput" class="giant-input" placeholder="' OR '1'='1" oninput="updatePreview()" autocomplete="off">
+            <label class="form-label">Password Payload</label>
+            <input type="text" id="passwordInput" class="form-input" placeholder="' OR '1'='1" oninput="updatePreview()" autocomplete="off">
           </div>
-
-          <button type="submit" id="loginBtn" class="btn-giant">
-            EXECUTE INJECTION
-          </button>
+          
+          <button type="submit" class="btn btn-primary btn-block" style="margin-top: 1rem;">AUTHENTICATE</button>
         </form>
 
-        <div id="loginResult" class="mt-5"></div>
-      </div>
+        <div id="loginResult" style="margin-top: 2rem;"></div>
+      </section>
 
-      <!-- SYSTEM LOGS -->
-      <div class="terminal-output" id="trafficLog">
-        <div style="color: #444; margin-bottom: 10px;">[ SYSTEM LOG MONITOR ]</div>
-        <div id="logContent">Waiting for payload execution...</div>
-      </div>
+      <!-- LOGS -->
+      <section class="terminal" style="margin-top: 2rem;">
+        <div class="terminal-header">
+          <div class="terminal-dot red"></div>
+          <div class="terminal-title">SYSTEM TRAFFIC MONITOR</div>
+        </div>
+        <div class="terminal-body" id="logContent" style="font-size: 13px;">Waiting for auth request...</div>
+      </section>
     </div>
   </main>
 
@@ -98,46 +84,40 @@
 
     async function handleLogin(e) {
       if (e) e.preventDefault();
-      const user = document.getElementById('usernameInput').value || 'admin';
-      const pass = document.getElementById('passwordInput').value;
-      addLog('ATTEMPT', `Payload sent: ${pass}`);
+      const username = document.getElementById('usernameInput').value || 'admin';
+      const password = document.getElementById('passwordInput').value;
+      addLog('POST', `/api/auth/login | Payload: ${password}`);
 
       try {
         const res = await fetch('/api/auth/login', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ username: user, password: pass })
+          body: JSON.stringify({ username, password })
         });
         const data = await res.json();
-
         const resDiv = document.getElementById('loginResult');
+
         if (data.success) {
-          addLog('SUCCESS', `Login Bypass Successful for ${user}!`);
+          addLog('SUCCESS', `Authenticated as ${username}`);
           resDiv.innerHTML = `
-            <div style="background:rgba(0,255,136,0.1); border:2px solid var(--neon-green); padding: 2rem; border-radius: 12px; text-align: center; animation: slideUp 0.5s ease;">
-              <h2 style="color: var(--neon-green); margin-bottom: 1rem; letter-spacing: 5px;">ACCESS GRANTED</h2>
-              <div style="background: black; padding: 1rem; border-radius: 8px;">
-                <span style="color: #666; font-size: 0.8rem;">SYSTEM FLAG:</span><br>
-                <span style="color: var(--neon-yellow); font-size: 1.5rem; font-weight: bold; font-family: 'Share Tech Mono';">${data.flag || 'ACT{sqli_bypass_master}'}</span>
-              </div>
+            <div style="background:rgba(0,255,136,0.1); border:1px solid var(--neon-green); padding: 1.5rem; border-radius: 8px; text-align: center;">
+              <div style="color: var(--neon-green); font-weight: bold; margin-bottom: 0.5rem; letter-spacing: 2px;">ACCESS GRANTED</div>
+              <div style="font-family: 'Share Tech Mono'; color: var(--neon-yellow); font-size: 1.2rem;">${data.flag}</div>
             </div>
           `;
-          showToast('SQL Injection Successful!', 'success');
+          showToast('SQLi Success!', 'success');
         } else {
-          addLog('FAILURE', `Invalid payload: ${data.error}`);
-          resDiv.innerHTML = `<div style="text-align: center; color: var(--neon-pink); font-weight: bold; letter-spacing: 2px;">[!] AUTHENTICATION FAILED</div>`;
+          addLog('DENIED', `Invalid credentials: ${data.error}`);
+          resDiv.innerHTML = `<div style="text-align: center; color: var(--neon-pink); font-size: 13px; font-weight: bold;">[!] AUTHENTICATION FAILED</div>`;
         }
-      } catch (err) {
-        addLog('ERROR', 'Backend server unreachable');
-      }
+      } catch (err) { addLog('ERROR', 'System error'); }
     }
 
     function addLog(type, msg) {
       const log = document.getElementById('logContent');
       const time = new Date().toLocaleTimeString();
       const div = document.createElement('div');
-      div.style.marginBottom = '5px';
-      div.innerHTML = `<span style="color: #444;">[${time}]</span> <span style="font-weight: bold;">[${type}]</span> ${msg}`;
+      div.innerHTML = `<span style="color: var(--text-dim);">[${time}]</span> <span style="color: var(--neon-pink); font-weight: bold;">[${type}]</span> ${msg}`;
       log.prepend(div);
     }
 
@@ -160,7 +140,6 @@
       } catch (err) {}
     }
     initAuth();
-    updatePreview();
   </script>
 </body>
 </html>

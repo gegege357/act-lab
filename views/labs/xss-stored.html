@@ -5,28 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Stored XSS - ACT LAB</title>
   <link rel="stylesheet" href="/css/style.css">
-  <style>
-    .vertical-container { max-width: 900px; margin: 0 auto; display: flex; flex-direction: column; gap: 3rem; padding: 2rem 0; }
-    .giant-input { 
-      width: 100%; 
-      background: rgba(0,0,0,0.4); 
-      border: 2px solid var(--neon-cyan); 
-      color: var(--neon-cyan); 
-      font-size: 1.4rem; 
-      padding: 1.5rem; 
-      border-radius: 12px; 
-      font-family: 'Share Tech Mono', monospace;
-      outline: none;
-      margin-bottom: 1.5rem;
-    }
-    .btn-giant { width: 100%; padding: 1.5rem; font-size: 1.3rem; font-weight: 900; letter-spacing: 5px; background: var(--neon-cyan); color: black; border: none; border-radius: 12px; cursor: pointer; transition: 0.3s; }
-    .btn-giant:hover { box-shadow: 0 0 30px rgba(0, 255, 255, 0.4); transform: translateY(-3px); }
-    .terminal-window { background: #000; border: 1px solid #333; border-radius: 12px; overflow: hidden; width: 100%; }
-    .terminal-header { background: #111; color: var(--neon-cyan); padding: 10px 20px; font-size: 12px; font-weight: bold; border-bottom: 1px solid #222; }
-    .terminal-body { padding: 20px; height: 150px; overflow-y: auto; font-family: 'Share Tech Mono'; font-size: 14px; color: var(--neon-cyan); }
-    .feed-section { background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.05); border-radius: 15px; padding: 2.5rem; }
-    .entry-card { background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 10px; padding: 25px; margin-bottom: 2rem; }
-  </style>
 </head>
 <body>
   <div class="cyber-bg"></div>
@@ -47,44 +25,57 @@
   </nav>
 
   <main class="main-content">
-    <div class="vertical-container">
-      <div class="page-header" style="text-align:center;">
-        <h1 style="color: var(--neon-cyan); font-size: 3.5rem; text-shadow: 0 0 20px rgba(0, 255, 255, 0.4);">STORED XSS</h1>
-        <p class="text-mono" style="font-size: 1.2rem; color: #888; letter-spacing: 3px;">PERMANENT DATABASE PAYLOAD INJECTION</p>
-      </div>
+    <div class="container">
+      <!-- HEADER -->
+      <header style="text-align: center; margin-bottom: 3rem;">
+        <div class="badge badge-xss">MISSION: PERSISTENT INJECTION</div>
+        <h1 class="hero-title" style="font-size: 3rem; margin-top: 1rem;">STORED XSS LAB</h1>
+        <p class="text-secondary">Inject permanent malicious scripts into the application database.</p>
+      </header>
 
-      <!-- MAIN EXPLOIT STAGE -->
-      <div class="card" style="padding: 3rem; border-color: rgba(0, 255, 255, 0.2); border-width: 2px;">
-        <div class="text-xs uppercase text-dim mb-6 tracking-widest font-bold">Insecure Guestbook Submission</div>
-        <form onsubmit="postEntry(event)" class="flex flex-column">
-          <label class="text-xs text-cyan uppercase mb-3 block font-bold">Author Identity</label>
-          <input type="text" id="author" class="giant-input" placeholder="Anonymous Hacker" required>
-          
-          <label class="text-xs text-cyan uppercase mb-3 block font-bold">Malicious Payload Content</label>
-          <textarea id="message" class="giant-input" rows="4" placeholder="<script>alert(document.cookie)</script>" required></textarea>
-          
-          <button type="submit" class="btn-giant">STORE EXPLOIT IN DATABASE</button>
-        </form>
-      </div>
-
-      <!-- MONITOR -->
-      <div class="terminal-window">
-        <div class="terminal-header">DATABASE TRANSACTION MONITOR</div>
-        <div class="terminal-body" id="trafficLog">
-          <div>System ready. Waiting for persistent write...</div>
+      <!-- EXPLOIT FORM -->
+      <section class="card">
+        <div class="card-header">
+          <h2 class="card-title">New Guestbook Submission</h2>
+          <span class="badge badge-hard">UNSAFE SINK</span>
         </div>
-      </div>
+        
+        <form onsubmit="postEntry(event)">
+          <div class="form-group">
+            <label class="form-label">Author Identity</label>
+            <input type="text" id="author" class="form-input" placeholder="Anonymous Hacker" required>
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label">Malicious Payload</label>
+            <textarea id="message" class="form-input" rows="4" placeholder="<script>alert('XSS')</script>" required></textarea>
+          </div>
+          
+          <button type="submit" class="btn btn-primary btn-block">SAVE TO PERSISTENT STORAGE</button>
+        </form>
+      </section>
+
+      <!-- SYSTEM LOGS -->
+      <section class="terminal">
+        <div class="terminal-header">
+          <div class="terminal-dot red"></div>
+          <div class="terminal-dot yellow"></div>
+          <div class="terminal-dot green"></div>
+          <div class="terminal-title">DATABASE TRANSACTION MONITOR</div>
+        </div>
+        <div class="terminal-body" id="trafficLog">Engine ready. Awaiting inbound commits...</div>
+      </section>
 
       <!-- LIVE FEED -->
-      <div class="feed-section">
-        <div class="flex justify-between items-center mb-8">
-          <div class="text-xs uppercase text-dim tracking-widest font-bold">Live Global Database Feed</div>
-          <div class="text-xs text-cyan">SINK: .innerHTML (UNSAFE)</div>
+      <section class="card" style="margin-top: 2rem;">
+        <div class="card-header">
+          <h2 class="card-title">Global Guestbook Feed</h2>
+          <span class="text-dim text-xs">LOGGED IN AS: ADMIN</span>
         </div>
         <div id="entriesList">
           <div class="spinner"></div>
         </div>
-      </div>
+      </section>
     </div>
   </main>
 
@@ -98,16 +89,16 @@
         const list = document.getElementById('entriesList');
         if (data.success) {
           if (data.entries.length === 0) {
-            list.innerHTML = `<div class="text-center text-dim mt-10">NO RECORDS IN DATABASE</div>`;
+            list.innerHTML = `<div style="text-align:center; padding: 3rem; color: var(--text-dim);">[ DATABASE EMPTY ]</div>`;
             return;
           }
           list.innerHTML = data.entries.map(e => `
-            <div class="entry-card">
-              <div class="flex justify-between mb-4 border-bottom pb-2" style="border-color: rgba(255,255,255,0.05)">
-                <span class="text-cyan font-bold uppercase letter-spacing-1">${escapeHtml(e.author)}</span>
-                <span class="text-dim text-xs">${new Date(e.created_at).toLocaleTimeString()}</span>
+            <div class="guestbook-entry" style="border: 1px solid var(--border-color); padding: 1.5rem; border-radius: 8px; margin-bottom: 1rem;">
+              <div style="display: flex; justify-content: space-between; margin-bottom: 0.75rem; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 0.5rem;">
+                <span style="color: var(--neon-cyan); font-weight: bold; text-transform: uppercase; font-size: 13px;">${escapeHtml(e.author)}</span>
+                <span style="color: var(--text-dim); font-size: 11px;">${new Date(e.created_at).toLocaleTimeString()}</span>
               </div>
-              <div id="msg-${e.id}" class="white" style="font-size: 1.3rem; line-height: 1.6; word-break: break-all;"></div>
+              <div id="msg-${e.id}" class="white" style="word-break: break-all;"></div>
             </div>
           `).reverse().join('');
           
@@ -124,16 +115,14 @@
             }
           });
         }
-      } catch (err) {
-        addLog('ERROR', 'DB Sync Failed');
-      }
+      } catch (err) { addLog('ERROR', 'Sync failure'); }
     }
 
     async function postEntry(e) {
       if (e) e.preventDefault();
       const author = document.getElementById('author').value;
       const message = document.getElementById('message').value;
-      addLog('WRITE', `Saving entry from ${author}...`);
+      addLog('WRITE', `Saving entry from ${author}`);
       try {
         const res = await fetch('/api/guestbook', {
           method: 'POST',
@@ -142,21 +131,20 @@
         });
         const data = await res.json();
         if (data.success) {
-          showToast('Stored Successfully!', 'success');
-          addLog('COMMIT', `Row #${data.id} updated with new payload.`);
+          showToast('Data Stored!', 'success');
+          addLog('COMMIT', `Row ID ${data.id} stored successfully.`);
           document.getElementById('message').value = '';
           loadEntries();
         }
-      } catch (err) { addLog('ERROR', 'Connection failure'); }
+      } catch (err) { addLog('ERROR', 'Backend unreachable'); }
     }
 
     function addLog(type, msg) {
       const log = document.getElementById('trafficLog');
       const time = new Date().toLocaleTimeString();
-      const div = document.createElement('div');
-      div.style.marginBottom = '8px';
-      div.innerHTML = `<span style="color: #444;">[${time}]</span> <span style="font-weight: bold;">[${type}]</span> ${msg}`;
-      log.prepend(div);
+      const entry = document.createElement('div');
+      entry.innerHTML = `<span style="color: var(--text-dim);">[${time}]</span> <span style="color: var(--neon-cyan); font-weight: bold;">[${type}]</span> ${msg}`;
+      log.prepend(entry);
     }
 
     function escapeHtml(str) {

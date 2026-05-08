@@ -5,180 +5,63 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Login - ACT LAB</title>
   <link rel="stylesheet" href="/css/style.css">
+  <style>
+    body { background: #0b0e11; display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 2rem; }
+    .login-container { width: 100%; max-width: 400px; z-index: 2; }
+    .login-card { background: #15191d; border: 1px solid #23282f; border-radius: 4px; padding: 3rem; box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
+    .login-logo-section { text-align: center; margin-bottom: 2.5rem; }
+    .login-logo-img { height: 60px; margin-bottom: 1rem; }
+    .login-brand { font-family: 'Orbitron', sans-serif; color: var(--neon-cyan); font-size: 1.5rem; letter-spacing: 3px; font-weight: 800; text-shadow: 0 0 15px rgba(0,240,255,0.5); }
+    .form-group { margin-bottom: 1.5rem; }
+    .form-label { color: #626e84; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; display: block; }
+    .form-input { background: #0b0e11; border: 1px solid #23282f; color: #fff; padding: 1rem; width: 100%; border-radius: 4px; font-family: 'Share Tech Mono', monospace; }
+    .form-input:focus { border-color: var(--neon-cyan); outline: none; }
+    .btn-login { background: var(--neon-cyan); color: #000; font-weight: bold; padding: 1rem; border: none; border-radius: 4px; cursor: pointer; text-transform: uppercase; letter-spacing: 2px; width: 100%; margin-top: 1rem; }
+    .login-footer { text-align: center; margin-top: 2rem; color: #626e84; font-size: 12px; font-family: 'Share Tech Mono'; }
+  </style>
 </head>
 <body>
-  <div class="cyber-bg"></div>
-
-  <nav class="navbar">
-    <a href="/" class="nav-logo">
-      <div class="nav-logo-icon">ACT</div>
-      <span class="nav-logo-text">ACT LAB</span>
-    </a>
-    <ul class="nav-links">
-      <li><a href="/">Home</a></li>
-      <li><a href="/challenges">Challenges</a></li>
-    </ul>
-    <div class="nav-user">
-      <a href="/" class="btn btn-secondary btn-sm">&larr; Back</a>
-    </div>
-  </nav>
-
-  <main class="main-content">
-    <div class="container" style="max-width: 440px; margin-top: 6rem;">
-      <div class="card" style="border-color: rgba(0,240,255,0.2);">
-        <div style="text-align:center; margin-bottom: 2rem;">
-          <div class="nav-logo-icon" style="margin: 0 auto 1rem; width: 50px; height: 50px; font-size: 18px;">AC</div>
-          <h1 style="font-family: 'Orbitron', sans-serif; font-size: 1.3rem; font-weight: 700; color: var(--neon-cyan);">AUTHENTICATION</h1>
-          <p class="text-dim text-sm mt-1">Access the training laboratory</p>
-        </div>
-
-        <div class="warning-banner" style="margin-bottom: 1.5rem;">
-          <div class="warning-banner-icon">&#9888;</div>
-          <div class="warning-banner-text text-xs">
-            This login form is intentionally vulnerable to SQL Injection for training purposes.
-          </div>
-        </div>
-
-        <form id="loginForm" onsubmit="handleLogin(event)">
-          <div class="form-group">
-            <label class="form-label">Username</label>
-            <input type="text" name="username" class="form-input" placeholder="Enter username" required autocomplete="off">
-          </div>
-          <div class="form-group">
-            <label class="form-label">Password</label>
-            <input type="password" name="password" class="form-input" placeholder="Enter password" required autocomplete="off">
-          </div>
-          <button type="submit" class="btn btn-primary btn-block" id="loginBtn">
-            AUTHENTICATE &rarr;
-          </button>
-        </form>
-
-        <div id="loginError" class="mt-2" style="display:none;">
-          <div style="background:rgba(255,0,102,0.1); border:1px solid rgba(255,0,102,0.3); border-radius:8px; padding:10px 14px; font-size:13px; color:var(--neon-pink);" id="loginErrorText"></div>
-        </div>
-
-        <div class="mt-3 text-center">
-          <p class="text-dim text-xs">Default: admin/admin123 | guest/guest123</p>
-        </div>
-
-        <div style="border-top: 1px solid var(--border-color); margin-top: 1.5rem; padding-top: 1.5rem;">
-          <p class="text-dim text-sm text-center mb-2">Don't have an account?</p>
-          <button class="btn btn-secondary btn-block btn-sm" onclick="toggleRegister()">REGISTER</button>
-          <form id="registerForm" style="display:none; margin-top:1rem;" onsubmit="handleRegister(event)">
-            <div class="form-group">
-              <label class="form-label">Username</label>
-              <input type="text" name="username" class="form-input" placeholder="Choose username" required>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Password</label>
-              <input type="password" name="password" class="form-input" placeholder="Choose password" required>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Email (optional)</label>
-              <input type="text" name="email" class="form-input" placeholder="your@email.com">
-            </div>
-            <button type="submit" class="btn btn-success btn-block btn-sm">CREATE ACCOUNT</button>
-          </form>
-        </div>
+  <div class="cyber-bg" style="opacity: 0.1;"></div>
+  
+  <div class="login-container">
+    <div class="login-card">
+      <div class="login-logo-section">
+        <img src="/img/act.png" alt="ACT LAB" class="login-logo-img" onerror="this.style.display='none'">
+        <div class="login-brand">ACT LAB</div>
+        <p style="color: #626e84; font-size: 11px; margin-top: 5px; text-transform: uppercase; letter-spacing: 2px;">Authentication Required</p>
       </div>
+
+      <form onsubmit="handleLogin(event)">
+        <div class="form-group">
+          <label class="form-label">User Identifier</label>
+          <input type="text" id="username" class="form-input" placeholder="Enter username" required autocomplete="off">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Access Token</label>
+          <input type="password" id="password" class="form-input" placeholder="Enter password" required>
+        </div>
+        <button type="submit" class="btn-login">Initialize Session</button>
+      </form>
     </div>
-  </main>
+    <div class="login-footer">
+      UNAUTHORIZED ACCESS IS PROHIBITED :: ACT_ENVIRONMENT_V4.2
+    </div>
+  </div>
 
   <div class="toast-container" id="toastContainer"></div>
 
   <script>
-    function toggleRegister() {
-      const form = document.getElementById('registerForm');
-      form.style.display = form.style.display === 'none' ? 'block' : 'none';
-    }
-
     async function handleLogin(e) {
       e.preventDefault();
-      const form = e.target;
-      const btn = document.getElementById('loginBtn');
-      const errorDiv = document.getElementById('loginError');
-      const errorText = document.getElementById('loginErrorText');
-
-      btn.textContent = 'AUTHENTICATING...';
-      btn.disabled = true;
-      errorDiv.style.display = 'none';
-
+      const username = document.getElementById('username').value;
+      const password = document.getElementById('password').value;
       try {
-        const formData = new URLSearchParams();
-        formData.append('username', form.username.value);
-        formData.append('password', form.password.value);
-
-        const res = await fetch('/api/auth/login', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-          body: formData.toString()
-        });
-
+        const res = await fetch('/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username, password }) });
         const data = await res.json();
-
-        if (data.success) {
-          if (data.flag) {
-            // Jika ada flag (berhasil SQLi), tampilkan dengan gaya "Hacked"
-            errorText.style.color = 'var(--neon-green)';
-            errorText.style.borderColor = 'var(--neon-green)';
-            errorText.innerHTML = `<strong>SUCCESS!</strong><br>Flag: <span style="user-select:all">${data.flag}</span><br><br><button class="btn btn-primary btn-sm" onclick="window.location.href='/dashboard'">PROCEED TO DASHBOARD &rarr;</button>`;
-            errorDiv.style.display = 'block';
-            btn.textContent = 'AUTHENTICATED';
-          } else {
-            showToast('Login successful! Redirecting...', 'success');
-            setTimeout(() => window.location.href = '/dashboard', 1000);
-          }
-        } else {
-          errorText.textContent = data.error;
-          errorDiv.style.display = 'block';
-          btn.textContent = 'AUTHENTICATE &rarr;';
-          btn.disabled = false;
-        }
-      } catch (err) {
-        errorText.textContent = 'Connection error: ' + err.message;
-        errorDiv.style.display = 'block';
-        btn.textContent = 'AUTHENTICATE &rarr;';
-        btn.disabled = false;
-      }
+        if (data.success) { window.location.href = '/dashboard'; } else { showToast(data.message || 'Access Denied', 'error'); }
+      } catch (err) {}
     }
-
-    async function handleRegister(e) {
-      e.preventDefault();
-      const form = e.target;
-
-      try {
-        const formData = new URLSearchParams();
-        formData.append('username', form.username.value);
-        formData.append('password', form.password.value);
-        formData.append('email', form.email.value);
-
-        const res = await fetch('/api/auth/register', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-          body: formData.toString()
-        });
-
-        const data = await res.json();
-
-        if (data.success) {
-          showToast('Registration successful!', 'success');
-          setTimeout(() => window.location.href = '/dashboard', 1000);
-        } else {
-          showToast(data.error, 'error');
-        }
-      } catch (err) {
-        showToast('Connection error', 'error');
-      }
-    }
-
-    function showToast(msg, type) {
-      const container = document.getElementById('toastContainer');
-      const toast = document.createElement('div');
-      toast.className = `toast toast-${type}`;
-      toast.textContent = msg;
-      container.appendChild(toast);
-      setTimeout(() => toast.remove(), 4000);
-    }
+    function showToast(msg, type) { const container = document.getElementById('toastContainer'); const toast = document.createElement('div'); toast.className = `toast toast-${type}`; toast.textContent = msg; container.appendChild(toast); setTimeout(() => toast.remove(), 3000); }
   </script>
 </body>
 </html>

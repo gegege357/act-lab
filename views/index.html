@@ -3,149 +3,49 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ACT LAB - Ethical Hacking Training</title>
+  <title>ACT LAB - National Seminar Edition</title>
   <link rel="stylesheet" href="/css/style.css">
+  <style>
+    body { background: #0b0e11; display: flex; flex-direction: column; min-height: 100vh; }
+    .hero-section { flex: 1; display: flex; align-items: center; justify-content: center; text-align: center; padding: 2rem; position: relative; overflow: hidden; }
+    .hero-content { max-width: 800px; z-index: 2; }
+    .hero-title { font-family: 'Orbitron', sans-serif; font-size: 4rem; color: #fff; margin-bottom: 1rem; letter-spacing: 4px; }
+    .hero-subtitle { color: var(--neon-green); font-family: 'Share Tech Mono', monospace; font-size: 1.2rem; letter-spacing: 2px; margin-bottom: 3rem; text-transform: uppercase; }
+    .hero-btn-group { display: flex; gap: 1.5rem; justify-content: center; }
+    .btn-hero { padding: 1rem 2.5rem; font-size: 1rem; font-weight: bold; text-transform: uppercase; letter-spacing: 2px; border-radius: 4px; transition: 0.3s; text-decoration: none; }
+    .btn-hero-primary { background: var(--neon-green); color: #000; }
+    .btn-hero-primary:hover { background: #8cd600; box-shadow: 0 0 20px rgba(159,239,0,0.4); }
+    .btn-hero-secondary { background: transparent; border: 1px solid #23282f; color: #fff; }
+    .btn-hero-secondary:hover { border-color: var(--neon-green); color: var(--neon-green); }
+    .cyber-grid { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-image: linear-gradient(rgba(159,239,0,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(159,239,0,0.05) 1px, transparent 1px); background-size: 50px 50px; transform: perspective(500px) rotateX(60deg) translateY(-100px); transform-origin: top; z-index: 1; opacity: 0.3; }
+  </style>
 </head>
 <body>
-  <div class="cyber-bg"></div>
-
   <nav class="navbar">
     <a href="/" class="nav-logo">
-      <div class="nav-logo-icon">ACT</div>
+      <img src="/img/act.png" alt="Logo" style="height: 32px; border-radius: 4px; margin-right: 10px;" onerror="this.style.display='none'">
       <span class="nav-logo-text">ACT LAB</span>
     </a>
-    <ul class="nav-links" id="navLinks">
-      <li><a href="/" class="active">Home</a></li>
-      <li><a href="/challenges">Missions</a></li>
-      <li><a href="/dashboard">Dashboard</a></li>
-      <li><a href="/profile">Profile</a></li>
+    <ul class="nav-links">
+      <li><a href="/login" class="nav-user-badge" style="background: var(--neon-green); color: #000;">Join Mission</a></li>
     </ul>
-    <div class="nav-user" id="navUser">
-      <button class="btn btn-primary btn-sm" onclick="quickStart()" id="quickStartBtn">Quick Start</button>
-    </div>
   </nav>
 
-  <main class="main-content">
-    <!-- HERO -->
-    <section class="hero" style="padding: 6rem 1.5rem 4rem;">
-      <div class="hero-badge">VULNERABLE WEB APPLICATION TRAINING</div>
-      <h1 class="hero-title" style="font-size: 3.5rem; margin-bottom: 1.5rem;">
-        Master Ethical Hacking
-      </h1>
-      <p class="hero-subtitle" style="max-width: 700px; margin: 0 auto 2.5rem; opacity: 0.8;">
-        Hands-on platform to learn real-world web attack vectors in a safe environment. Explore SQLi, XSS, CSRF, and more.
-      </p>
-      <div class="hero-actions">
-        <button class="btn btn-primary" onclick="quickStart()" id="mainStartBtn">Enter Lab &rarr;</button>
-      </div>
-      
-      <div class="hero-stats" style="margin-top: 4rem; gap: 2rem;">
-        <div class="hero-stat">
-          <div class="hero-stat-value">09</div>
-          <div class="hero-stat-label">CHALLENGES</div>
-        </div>
-        <div class="hero-stat">
-          <div class="hero-stat-value">06</div>
-          <div class="hero-stat-label">VULN_TYPES</div>
-        </div>
-        <div class="hero-stat">
-          <div class="hero-stat-value">LOCAL</div>
-          <div class="hero-stat-label">DATABASE</div>
-        </div>
-      </div>
-    </section>
-
-    <!-- WARNING -->
-    <div class="container" style="max-width: 900px; margin-bottom: 4rem;">
-      <div class="warning-banner" style="padding: 1.2rem; border-radius: 8px;">
-        <div class="warning-banner-icon">⚠️</div>
-        <div class="warning-banner-text" style="font-size: 0.85rem;">
-          <strong>LEGAL NOTICE:</strong> Intentional security vulnerabilities for educational use only. Session data is isolated per visitor.
-        </div>
+  <main class="hero-section">
+    <div class="cyber-grid"></div>
+    <div class="hero-content">
+      <div style="color: var(--neon-green); font-size: 12px; font-weight: bold; letter-spacing: 5px; margin-bottom: 1rem;">SYSTEM_ONLINE :: v4.2.0</div>
+      <h1 class="hero-title">ACT LAB</h1>
+      <p class="hero-subtitle">The Ultimate Cybersecurity Training Ground for Professionals</p>
+      <div class="hero-btn-group">
+        <a href="/login" class="btn-hero btn-hero-primary">Access Dashboard</a>
+        <a href="#about" class="btn-hero btn-hero-secondary">Learn More</a>
       </div>
     </div>
-
-    <!-- FEATURES -->
-    <div class="container" style="max-width: 1000px; margin-bottom: 6rem;">
-      <div class="dashboard-grid" style="grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem;">
-        <div class="card" style="padding: 1.5rem;">
-          <h3 class="card-title mb-2">SQL Injection</h3>
-          <p class="text-secondary text-sm">Auth bypass, Union-based, and Blind SQLi missions.</p>
-        </div>
-        <div class="card" style="padding: 1.5rem;">
-          <h3 class="card-title mb-2">Cross-Site Scripting</h3>
-          <p class="text-secondary text-sm">Reflected and Stored XSS injection points.</p>
-        </div>
-        <div class="card" style="padding: 1.5rem;">
-          <h3 class="card-title mb-2">CSRF Bypass</h3>
-          <p class="text-secondary text-sm">Challenge advanced origin verification systems.</p>
-        </div>
-      </div>
-    </div>
-
-    <!-- GUIDE -->
-    <div class="container" style="max-width: 1000px; margin-bottom: 6rem;">
-      <div class="two-col" style="gap: 1.5rem;">
-        <div class="card" style="padding: 1.5rem;">
-          <div class="card-title mb-3">Target Nodes</div>
-          <div class="terminal" style="min-height: 120px;">
-            <div class="terminal-body" style="padding: 1rem; font-size: 12px;">
-              <span class="text-cyan">admin</span> : admin123<br>
-              <span class="text-cyan">guest</span> : guest123<br>
-              <span class="text-cyan">secret_agent</span> : [Find via SQLi]
-            </div>
-          </div>
-        </div>
-        <div class="card" style="padding: 1.5rem;">
-          <div class="card-title mb-3">Recon Tooling</div>
-          <div class="terminal" style="min-height: 120px;">
-            <div class="terminal-body" style="padding: 1rem; font-size: 12px;">
-              <span class="text-yellow">sqlmap -u "[URL]" --data="..." --dbs</span><br>
-              <span class="text-dim mt-2 block">// Works with Burp Suite and manual testing.</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <footer class="footer">
-      <p class="footer-text">ACT LAB &copy; 2024 | For Educational Purposes Only</p>
-    </footer>
   </main>
 
-  <div class="toast-container" id="toastContainer"></div>
-
-  <script>
-    fetch('/api/auth/status')
-      .then(r => r.json())
-      .then(data => { if (data.authenticated) updateNavbar(data.user); })
-      .catch(() => {});
-
-    async function quickStart() {
-      const btn = document.getElementById('quickStartBtn');
-      if(btn) btn.textContent = '...';
-      try {
-        const res = await fetch('/api/auth/auto-login', { method: 'POST' });
-        const data = await res.json();
-        if (data.success) {
-          updateNavbar(data.user);
-          window.location.href = '/dashboard';
-        }
-      } catch (err) {}
-    }
-
-    function updateNavbar(user) {
-      const navUser = document.getElementById('navUser');
-      if (navUser) {
-        navUser.innerHTML = `
-          <span class="nav-user-badge">${user.username}</span>
-          <a href="/dashboard" class="btn btn-primary btn-sm">Dashboard</a>
-          <button class="nav-logout" onclick="logout()">Logout</button>
-        `;
-      }
-    }
-
-    function logout() { fetch('/api/auth/logout', { method: 'POST' }).then(() => window.location.href = '/'); }
-  </script>
+  <footer style="padding: 2rem; text-align: center; color: #626e84; font-size: 12px; font-family: 'Share Tech Mono';">
+    &copy; 2026 ACT LAB :: SECURE_ENVIRONMENT :: ALL RIGHTS RESERVED
+  </footer>
 </body>
 </html>

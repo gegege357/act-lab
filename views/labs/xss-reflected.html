@@ -3,11 +3,51 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Reflected XSS - ACT LAB</title>
+  <title>Reflected XSS - ACT LAB (HTB Edition)</title>
   <link rel="stylesheet" href="/css/style.css">
+  <style>
+    body { background: #0b0e11; }
+    .htb-container { max-width: 800px; margin: 4rem auto; }
+    .machine-header { border-left: 4px solid var(--neon-green); padding-left: 1.5rem; margin-bottom: 3rem; }
+    .machine-title { font-family: 'Orbitron', sans-serif; font-size: 2rem; color: #fff; }
+    
+    .htb-card { background: #15191d; border: 1px solid #23282f; border-radius: 4px; padding: 2.5rem; margin-bottom: 2rem; }
+    .htb-card-title { font-size: 1rem; color: var(--neon-green); font-weight: bold; margin-bottom: 1.5rem; text-transform: uppercase; letter-spacing: 2px; border-bottom: 1px solid #23282f; padding-bottom: 0.75rem; }
+    
+    .htb-input { 
+      background: #0b0e11; 
+      border: 1px solid #23282f; 
+      color: #fff; 
+      font-size: 1rem; 
+      padding: 1rem; 
+      width: 100%; 
+      border-radius: 4px; 
+      font-family: 'Share Tech Mono', monospace; 
+    }
+    .htb-input:focus { border-color: var(--neon-green); outline: none; }
+    .htb-btn { 
+      background: var(--neon-green); 
+      color: #000; 
+      font-weight: bold; 
+      padding: 1rem; 
+      border: none; 
+      border-radius: 4px; 
+      cursor: pointer; 
+      text-transform: uppercase; 
+      letter-spacing: 2px; 
+      width: 100%;
+      margin-top: 1.5rem;
+    }
+
+    .htb-terminal { background: #050505; border: 1px solid #1c2126; border-radius: 4px; font-family: 'Share Tech Mono', monospace; margin-bottom: 2rem; overflow: hidden; }
+    .htb-terminal-header { background: #15191d; padding: 6px 12px; color: #626e84; font-size: 10px; display: flex; justify-content: space-between; }
+    .htb-terminal-body { padding: 1rem; color: var(--neon-green); font-size: 12px; line-height: 1.5; }
+
+    .execution-stage { min-height: 200px; background: #0b0e11; border: 1px dashed #23282f; border-radius: 4px; padding: 2rem; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  </style>
 </head>
 <body>
-  <div class="cyber-bg"></div>
+  <div class="cyber-bg" style="opacity: 0.05;"></div>
 
   <nav class="navbar">
     <a href="/" class="nav-logo">
@@ -25,45 +65,42 @@
   </nav>
 
   <main class="main-content">
-    <div class="container" style="max-width: 800px;">
+    <div class="htb-container">
       <!-- HEADER -->
-      <header style="text-align: center; margin-bottom: 3rem;">
-        <div class="badge badge-xss">MISSION: REFLECTED INJECTION</div>
-        <h1 class="hero-title" style="font-size: 3rem; margin-top: 1rem;">REFLECTED XSS</h1>
-        <p class="text-secondary">Execute client-side scripts via unvalidated URL parameters.</p>
+      <header class="machine-header">
+        <h1 class="machine-title">REFLECTED XSS :: SINK ANALYSIS</h1>
+        <p style="color: var(--text-secondary); margin-top: 0.5rem; font-size: 0.9rem;">PHASE: CLIENT-SIDE INJECTION & SCRIPT EXECUTION</p>
       </header>
 
-      <!-- FLOW BOX -->
-      <section class="terminal" style="margin-bottom: 2rem;">
-        <div class="terminal-header">
-          <div class="terminal-dot cyan"></div>
-          <div class="terminal-title">DATA FLOW ANALYSIS</div>
+      <!-- DATA FLOW -->
+      <div class="htb-terminal">
+        <div class="htb-terminal-header">
+          <span>DATA FLOW MONITOR</span>
+          <span>SINK: INNERHTML</span>
         </div>
-        <div class="terminal-body" style="color: var(--text-secondary); font-size: 13px;">
-          Source: <span id="sourcePreview" style="color:var(--neon-yellow);"></span> &rarr; Sink: <span style="color:var(--neon-pink);">target.innerHTML</span>
+        <div class="htb-terminal-body">
+          <span style="color: #626e84;">SOURCE (URL_PARAM) &rarr; </span><span id="sourcePreview" style="color:var(--neon-yellow);"></span>
         </div>
-      </section>
+      </div>
 
-      <!-- SEARCH CARD -->
-      <section class="card">
+      <!-- INPUT CARD -->
+      <section class="htb-card">
+        <h2 class="htb-card-title">Craft Injection Payload</h2>
         <form onsubmit="handleSearch(event)">
           <div class="form-group">
-            <label class="form-label">Search Query / XSS Payload</label>
-            <input type="text" id="searchInput" class="form-input" placeholder="<script>getFlag()</script>" oninput="updatePreview()" autocomplete="off" required>
+            <input type="text" id="searchInput" class="htb-input" placeholder="<script>getFlag()</script>" oninput="updatePreview()" autocomplete="off" required>
           </div>
-          <button type="submit" class="btn btn-primary btn-block">TRIGGER EXECUTION</button>
+          <button type="submit" class="htb-btn">Fire Exploit</button>
         </form>
       </section>
 
       <!-- RESULT STAGE -->
-      <section class="card" style="margin-top: 2rem; min-height: 200px; border-style: dashed;">
-        <div class="card-header">
-          <h2 class="card-title">Execution Stage (Sink)</h2>
+      <div class="htb-card">
+        <h2 class="htb-card-title">Execution Sink Stage</h2>
+        <div id="searchResults" class="execution-stage">
+          <div style="color: #626e84; font-size: 13px;">[ AWAITING REFLECTION ]</div>
         </div>
-        <div id="searchResults" style="padding: 1rem;">
-          <div style="text-align: center; color: var(--text-dim); margin-top: 2rem;">[ AWAITING INJECTION ]</div>
-        </div>
-      </section>
+      </div>
     </div>
   </main>
 
@@ -80,8 +117,10 @@
       const resDiv = document.getElementById('searchResults');
       
       resDiv.innerHTML = `
-        <div style="margin-bottom: 1rem; color: var(--text-dim); font-size: 11px; text-transform: uppercase;">Rendered Output:</div>
-        <div id="target" class="white" style="font-size: 1.1rem;"></div>
+        <div style="width: 100%;">
+          <div style="color: #626e84; font-size: 10px; margin-bottom: 1rem; text-transform: uppercase;">DOM Output:</div>
+          <div id="target" style="color: #fff; font-size: 1.1rem;"></div>
+        </div>
       `;
       
       const target = document.getElementById('target');
@@ -99,11 +138,11 @@
     }
 
     window.getFlag = function() {
-      showToast('XSS Triggered!', 'success');
+      showToast('XSS Success!', 'success');
       document.getElementById('searchResults').innerHTML = `
-        <div style="background:rgba(0,255,136,0.1); border:1px solid var(--neon-green); padding:2rem; border-radius:8px; text-align:center; animation: pulse 1.5s infinite;">
-          <div style="color: var(--neon-green); font-weight: bold; margin-bottom: 0.5rem; letter-spacing: 2px;">XSS EXPLOIT SUCCESSFUL</div>
-          <div style="font-family: 'Share Tech Mono'; color: var(--neon-yellow); font-size: 1.3rem;">ACT{r3fl3ct3d_xss_f0und}</div>
+        <div style="border: 1px solid var(--neon-green); background: rgba(159,239,0,0.05); padding: 2rem; border-radius: 4px; text-align: center; width: 100%;">
+          <div style="color: var(--neon-green); font-weight: bold; margin-bottom: 1rem; font-size: 12px; letter-spacing: 2px;">[ CROSS-SITE SCRIPTING TRIGGERED ]</div>
+          <div style="font-family: 'Share Tech Mono'; color: var(--neon-yellow); font-size: 1.5rem; font-weight: bold;">ACT{r3fl3ct3d_xss_f0und}</div>
         </div>
       `;
       alert('SUCCESS! FLAG: ACT{r3fl3ct3d_xss_f0und}');

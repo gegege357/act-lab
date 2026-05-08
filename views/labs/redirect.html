@@ -3,11 +3,51 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Redirect Lab - ACT LAB</title>
+  <title>Redirect Lab - ACT LAB (HTB Edition)</title>
   <link rel="stylesheet" href="/css/style.css">
+  <style>
+    body { background: #0b0e11; }
+    .htb-container { max-width: 800px; margin: 4rem auto; }
+    .machine-header { border-left: 4px solid var(--neon-green); padding-left: 1.5rem; margin-bottom: 3rem; }
+    .machine-title { font-family: 'Orbitron', sans-serif; font-size: 2rem; color: #fff; }
+    
+    .htb-card { background: #15191d; border: 1px solid #23282f; border-radius: 4px; padding: 2.5rem; margin-bottom: 2rem; }
+    .htb-card-title { font-size: 1rem; color: var(--neon-green); font-weight: bold; margin-bottom: 1.5rem; text-transform: uppercase; letter-spacing: 2px; border-bottom: 1px solid #23282f; padding-bottom: 0.75rem; }
+    
+    .htb-input { 
+      background: #0b0e11; 
+      border: 1px solid #23282f; 
+      color: #fff; 
+      font-size: 1rem; 
+      padding: 1rem; 
+      width: 100%; 
+      border-radius: 4px; 
+      font-family: 'Share Tech Mono', monospace; 
+    }
+    .htb-input:focus { border-color: var(--neon-green); outline: none; }
+    .htb-btn { 
+      background: var(--neon-green); 
+      color: #000; 
+      font-weight: bold; 
+      padding: 1rem; 
+      border: none; 
+      border-radius: 4px; 
+      cursor: pointer; 
+      text-transform: uppercase; 
+      letter-spacing: 2px; 
+      width: 100%;
+      margin-top: 1.5rem;
+    }
+
+    .htb-terminal { background: #050505; border: 1px solid #1c2126; border-radius: 4px; font-family: 'Share Tech Mono', monospace; margin-bottom: 2rem; overflow: hidden; }
+    .htb-terminal-header { background: #15191d; padding: 6px 12px; color: #626e84; font-size: 10px; display: flex; justify-content: space-between; }
+    .htb-terminal-body { padding: 1.2rem; color: var(--neon-yellow); font-size: 13px; line-height: 1.5; text-align: center; }
+
+    .flow-viz { display: flex; align-items: center; justify-content: center; gap: 2rem; padding: 2rem; background: #0b0e11; border-radius: 4px; border: 1px solid #23282f; margin-top: 2rem; }
+  </style>
 </head>
 <body>
-  <div class="cyber-bg"></div>
+  <div class="cyber-bg" style="opacity: 0.05;"></div>
 
   <nav class="navbar">
     <a href="/" class="nav-logo">
@@ -25,39 +65,38 @@
   </nav>
 
   <main class="main-content">
-    <div class="container" style="max-width: 800px;">
+    <div class="htb-container">
       <!-- HEADER -->
-      <header style="text-align: center; margin-bottom: 3rem;">
-        <div class="badge badge-redirect">MISSION: OPEN NAVIGATION</div>
-        <h1 class="hero-title" style="font-size: 3rem; margin-top: 1rem;">OPEN REDIRECT</h1>
-        <p class="text-secondary">Abuse unvalidated redirection parameters to mask malicious destinations.</p>
+      <header class="machine-header">
+        <h1 class="machine-title">OPEN REDIRECT :: NAVIGATION ABUSE</h1>
+        <p style="color: var(--text-secondary); margin-top: 0.5rem; font-size: 0.9rem;">PHASE: TRUST BOUNDARY VIOLATION & PHISHING GATEWAY</p>
       </header>
 
-      <!-- RECON BOX -->
-      <section class="terminal" style="margin-bottom: 2rem;">
-        <div class="terminal-header">
-          <div class="terminal-dot cyan"></div>
-          <div class="terminal-title">HTTP REDIRECT RECONNAISSANCE</div>
+      <!-- RECON -->
+      <div class="htb-terminal">
+        <div class="htb-terminal-header">
+          <span>HTTP REDIRECT ANALYSIS</span>
+          <span>SINK: WINDOW.LOCATION</span>
         </div>
-        <div class="terminal-body" style="color: var(--text-secondary); font-size: 13px;">
-          ENDPOINT: <code style="color: var(--neon-pink);">GET /api/redirect?url=</code><span id="urlPreview" style="color:var(--neon-yellow);">https://google.com</span>
+        <div class="htb-terminal-body">
+          <span style="color: #626e84;">ENDPOINT: </span><code style="color: #fff;">GET /api/redirect?url=</code><span id="urlPreview" style="color:var(--neon-yellow);">https://google.com</span>
         </div>
-      </section>
+      </div>
 
-      <!-- EXPLOIT CARD -->
-      <section class="card">
+      <!-- EXPLOIT -->
+      <section class="htb-card">
+        <h2 class="htb-card-title">Craft Target Destination</h2>
         <form onsubmit="testRedirect(event)">
           <div class="form-group">
-            <label class="form-label">Destination URL</label>
-            <input type="text" id="targetUrl" class="form-input" value="https://google.com" oninput="updatePreview()" autocomplete="off">
+            <input type="text" id="targetUrl" class="htb-input" value="https://google.com" oninput="updatePreview()" autocomplete="off">
           </div>
-          <button type="submit" class="btn btn-primary btn-block">EXECUTE REDIRECTION</button>
+          <button type="submit" class="htb-btn">Execute Redirection</button>
         </form>
-        
-        <div style="display: flex; align-items: center; justify-content: center; gap: 1.5rem; margin-top: 2rem; padding: 2rem; background: rgba(255,255,255,0.02); border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">
-          <div style="font-size: 14px; font-weight: bold; color: var(--neon-cyan);">ACT-LAB.ID</div>
+
+        <div class="flow-viz">
+          <div style="font-size: 13px; font-weight: bold; color: var(--neon-cyan);">ACT-LAB.ID</div>
           <div style="font-size: 20px; color: var(--neon-pink);">➔</div>
-          <div id="destDisplay" style="font-size: 14px; font-weight: bold; color: var(--neon-yellow);">GOOGLE.COM</div>
+          <div id="destDisplay" style="font-size: 13px; font-weight: bold; color: var(--neon-yellow);">GOOGLE.COM</div>
         </div>
       </section>
     </div>
@@ -78,7 +117,7 @@
     function testRedirect(e) {
       if (e) e.preventDefault();
       const url = document.getElementById('targetUrl').value;
-      showToast('Redirecting...', 'warning');
+      showToast('Machine navigating...', 'warning');
       setTimeout(() => {
         window.location.href = `/api/redirect?url=${encodeURIComponent(url)}`;
       }, 800);

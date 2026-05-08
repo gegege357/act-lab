@@ -6,23 +6,20 @@
 
 :root {
   --neon-cyan: #00f0ff;
-  --neon-green: #00ff88;
+  --neon-green: #9fef00; /* HTB Green */
   --neon-pink: #ff0066;
   --neon-purple: #b300ff;
   --neon-yellow: #ffee00;
   --neon-orange: #ff6600;
-  --bg-dark: #0a0a0f;
-  --bg-card: #0d0d1a;
-  --bg-card-hover: #12122a;
-  --bg-input: #0a0a18;
-  --border-color: #1a1a3e;
-  --text-primary: #e0e0ff;
-  --text-secondary: #8888aa;
-  --text-dim: #555577;
-  --glow-cyan: 0 0 10px rgba(0,240,255,0.3), 0 0 40px rgba(0,240,255,0.1);
-  --glow-green: 0 0 10px rgba(0,255,136,0.3), 0 0 40px rgba(0,255,136,0.1);
-  --glow-pink: 0 0 10px rgba(255,0,102,0.3), 0 0 40px rgba(255,0,102,0.1);
-  --glow-purple: 0 0 10px rgba(179,0,255,0.3), 0 0 40px rgba(179,0,255,0.1);
+  --bg-dark: #0b0e11; /* HTB Dark Background */
+  --bg-card: #15191d; /* HTB Card Background */
+  --bg-card-hover: #1c2126;
+  --bg-input: #0b0e11;
+  --border-color: #23282f; /* HTB Subtle Border */
+  --text-primary: #f0f0f0;
+  --text-secondary: #a4b1cd;
+  --text-dim: #626e84;
+  --glow-green: 0 0 10px rgba(159,239,0,0.2);
 }
 
 * {

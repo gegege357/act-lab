@@ -3,11 +3,52 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SQLi Login - ACT LAB</title>
+  <title>SQLi Login - ACT LAB (HTB Edition)</title>
   <link rel="stylesheet" href="/css/style.css">
+  <style>
+    body { background: #0b0e11; }
+    .htb-container { max-width: 800px; margin: 4rem auto; }
+    .machine-header { border-left: 4px solid var(--neon-green); padding-left: 1.5rem; margin-bottom: 3rem; }
+    .machine-title { font-family: 'Orbitron', sans-serif; font-size: 2rem; color: #fff; letter-spacing: 1px; }
+    .machine-info { color: var(--text-secondary); font-size: 0.9rem; margin-top: 0.5rem; }
+    
+    .htb-card { background: #15191d; border: 1px solid #23282f; border-radius: 4px; padding: 2.5rem; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+    .htb-card-title { font-size: 1.1rem; color: var(--neon-green); font-weight: bold; margin-bottom: 2rem; text-transform: uppercase; letter-spacing: 2px; border-bottom: 1px solid #23282f; padding-bottom: 1rem; }
+    
+    .htb-input { 
+      background: #0b0e11; 
+      border: 1px solid #23282f; 
+      color: #fff; 
+      font-size: 1rem; 
+      padding: 1rem; 
+      width: 100%; 
+      border-radius: 4px; 
+      font-family: 'Share Tech Mono', monospace; 
+      margin-top: 0.5rem;
+    }
+    .htb-input:focus { border-color: var(--neon-green); outline: none; }
+    .htb-btn { 
+      background: var(--neon-green); 
+      color: #000; 
+      font-weight: bold; 
+      padding: 1rem 2rem; 
+      border: none; 
+      border-radius: 4px; 
+      cursor: pointer; 
+      text-transform: uppercase; 
+      letter-spacing: 2px; 
+      transition: 0.3s;
+      width: 100%;
+    }
+    .htb-btn:hover { background: #8cd600; }
+    
+    .htb-terminal { background: #050505; border: 1px solid #1c2126; border-radius: 4px; font-family: 'Share Tech Mono', monospace; margin-top: 2rem; overflow: hidden; }
+    .htb-terminal-header { background: #15191d; padding: 8px 15px; color: #626e84; font-size: 11px; display: flex; justify-content: space-between; border-bottom: 1px solid #1c2126; }
+    .htb-terminal-body { padding: 1.5rem; color: var(--neon-green); font-size: 13px; line-height: 1.5; min-height: 100px; }
+  </style>
 </head>
 <body>
-  <div class="cyber-bg"></div>
+  <div class="cyber-bg" style="opacity: 0.1;"></div>
 
   <nav class="navbar">
     <a href="/" class="nav-logo">
@@ -25,52 +66,44 @@
   </nav>
 
   <main class="main-content">
-    <div class="container" style="max-width: 800px;">
+    <div class="htb-container">
       <!-- HEADER -->
-      <header style="text-align: center; margin-bottom: 3rem;">
-        <div class="badge badge-sqli">MISSION: AUTHENTICATION BYPASS</div>
-        <h1 class="hero-title" style="font-size: 3rem; margin-top: 1rem;">SQLi LOGIN</h1>
-        <p class="text-secondary">Subvert login logic using malicious SQL fragments.</p>
+      <header class="machine-header">
+        <h1 class="machine-title">SQL INJECTION :: AUTH BYPASS</h1>
+        <p class="machine-info">TARGET: AUTHENTICATION GATEWAY v4.2</p>
       </header>
 
-      <!-- QUERY PREVIEW -->
-      <section class="terminal" style="margin-bottom: 2rem;">
-        <div class="terminal-header">
-          <div class="terminal-dot green"></div>
-          <div class="terminal-title">LIVE BACKEND QUERY PREVIEW</div>
-        </div>
-        <div class="terminal-body" style="color: var(--text-secondary);">
-          SELECT * FROM users WHERE username = '<span id="userPreview" style="color:var(--neon-pink);">admin</span>' AND password = '<span id="passPreview" style="color:var(--neon-pink);"></span>'
-        </div>
-      </section>
-
-      <!-- LOGIN CARD -->
-      <section class="card">
+      <!-- EXPLOIT CARD -->
+      <section class="htb-card">
+        <h2 class="htb-card-title">Login Request</h2>
+        
         <form onsubmit="handleLogin(event)">
-          <div class="form-group">
+          <div class="form-group" style="margin-bottom: 2rem;">
             <label class="form-label">Username</label>
-            <input type="text" id="usernameInput" class="form-input" placeholder="admin" oninput="updatePreview()" autocomplete="off">
+            <input type="text" id="usernameInput" class="htb-input" placeholder="admin" oninput="updatePreview()" autocomplete="off">
           </div>
           
-          <div class="form-group">
+          <div class="form-group" style="margin-bottom: 2.5rem;">
             <label class="form-label">Password Payload</label>
-            <input type="text" id="passwordInput" class="form-input" placeholder="' OR '1'='1" oninput="updatePreview()" autocomplete="off">
+            <input type="text" id="passwordInput" class="htb-input" placeholder="' OR '1'='1" oninput="updatePreview()" autocomplete="off">
           </div>
           
-          <button type="submit" class="btn btn-primary btn-block" style="margin-top: 1rem;">AUTHENTICATE</button>
+          <button type="submit" class="htb-btn">Execute Exploit</button>
         </form>
 
         <div id="loginResult" style="margin-top: 2rem;"></div>
       </section>
 
-      <!-- LOGS -->
-      <section class="terminal" style="margin-top: 2rem;">
-        <div class="terminal-header">
-          <div class="terminal-dot red"></div>
-          <div class="terminal-title">SYSTEM TRAFFIC MONITOR</div>
+      <!-- TERMINAL -->
+      <div class="htb-terminal">
+        <div class="htb-terminal-header">
+          <span>CONSOLE LOG :: MONITORING</span>
+          <span>root@act-lab:~#</span>
         </div>
-        <div class="terminal-body" id="logContent" style="font-size: 13px;">Waiting for auth request...</div>
-      </section>
+        <div class="htb-terminal-body" id="logContent">
+          <div style="color: #626e84;">Waiting for incoming authentication request...</div>
+        </div>
+      </div>
     </div>
   </main>
 
@@ -78,15 +111,14 @@
 
   <script>
     function updatePreview() {
-      document.getElementById('userPreview').textContent = document.getElementById('usernameInput').value || 'admin';
-      document.getElementById('passPreview').textContent = document.getElementById('passwordInput').value;
+      // Backend query simulation for education
     }
 
     async function handleLogin(e) {
       if (e) e.preventDefault();
       const username = document.getElementById('usernameInput').value || 'admin';
       const password = document.getElementById('passwordInput').value;
-      addLog('POST', `/api/auth/login | Payload: ${password}`);
+      addLog('POST', `/api/auth/login [Payload: ${password}]`);
 
       try {
         const res = await fetch('/api/auth/login', {
@@ -98,26 +130,27 @@
         const resDiv = document.getElementById('loginResult');
 
         if (data.success) {
-          addLog('SUCCESS', `Authenticated as ${username}`);
+          addLog('SUCCESS', `Root Access Granted! Username: ${username}`);
           resDiv.innerHTML = `
-            <div style="background:rgba(0,255,136,0.1); border:1px solid var(--neon-green); padding: 1.5rem; border-radius: 8px; text-align: center;">
-              <div style="color: var(--neon-green); font-weight: bold; margin-bottom: 0.5rem; letter-spacing: 2px;">ACCESS GRANTED</div>
-              <div style="font-family: 'Share Tech Mono'; color: var(--neon-yellow); font-size: 1.2rem;">${data.flag}</div>
+            <div style="border: 1px solid var(--neon-green); background: rgba(159,239,0,0.05); padding: 1.5rem; border-radius: 4px; text-align: center;">
+              <div style="color: var(--neon-green); font-weight: bold; margin-bottom: 0.5rem; letter-spacing: 2px; font-size: 0.8rem;">[ MACHINE COMPROMISED ]</div>
+              <div style="font-family: 'Share Tech Mono'; color: #fff; font-size: 1.2rem; font-weight: bold;">${data.flag}</div>
             </div>
           `;
-          showToast('SQLi Success!', 'success');
+          showToast('Machine Pwned!', 'success');
         } else {
-          addLog('DENIED', `Invalid credentials: ${data.error}`);
-          resDiv.innerHTML = `<div style="text-align: center; color: var(--neon-pink); font-size: 13px; font-weight: bold;">[!] AUTHENTICATION FAILED</div>`;
+          addLog('DENIED', `Invalid authentication payload.`);
+          resDiv.innerHTML = `<div style="text-align: center; color: var(--neon-pink); font-size: 12px; font-weight: bold; letter-spacing: 1px;">AUTHENTICATION FAILED :: INVALID CREDENTIALS</div>`;
         }
-      } catch (err) { addLog('ERROR', 'System error'); }
+      } catch (err) { addLog('ERROR', 'Connection to backend failed.'); }
     }
 
     function addLog(type, msg) {
       const log = document.getElementById('logContent');
       const time = new Date().toLocaleTimeString();
       const div = document.createElement('div');
-      div.innerHTML = `<span style="color: var(--text-dim);">[${time}]</span> <span style="color: var(--neon-pink); font-weight: bold;">[${type}]</span> ${msg}`;
+      div.style.marginBottom = '5px';
+      div.innerHTML = `<span style="color: #626e84;">[${time}]</span> <span style="font-weight: bold;">[${type}]</span> ${msg}`;
       log.prepend(div);
     }
 

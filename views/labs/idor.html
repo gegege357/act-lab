@@ -3,11 +3,51 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>IDOR Lab - ACT LAB</title>
+  <title>IDOR Lab - ACT LAB (HTB Edition)</title>
   <link rel="stylesheet" href="/css/style.css">
+  <style>
+    body { background: #0b0e11; }
+    .htb-container { max-width: 800px; margin: 4rem auto; }
+    .machine-header { border-left: 4px solid var(--neon-green); padding-left: 1.5rem; margin-bottom: 3rem; }
+    .machine-title { font-family: 'Orbitron', sans-serif; font-size: 2rem; color: #fff; }
+    
+    .htb-card { background: #15191d; border: 1px solid #23282f; border-radius: 4px; padding: 2.5rem; margin-bottom: 2rem; }
+    .htb-card-title { font-size: 1rem; color: var(--neon-green); font-weight: bold; margin-bottom: 1.5rem; text-transform: uppercase; letter-spacing: 2px; border-bottom: 1px solid #23282f; padding-bottom: 0.75rem; }
+    
+    .htb-input { 
+      background: #0b0e11; 
+      border: 1px solid #23282f; 
+      color: var(--neon-green); 
+      font-size: 1.5rem; 
+      padding: 0.8rem; 
+      width: 120px; 
+      border-radius: 4px; 
+      font-family: 'Share Tech Mono', monospace; 
+      text-align: center;
+    }
+    .htb-input:focus { border-color: var(--neon-green); outline: none; }
+    .htb-btn { 
+      background: var(--neon-green); 
+      color: #000; 
+      font-weight: bold; 
+      padding: 1rem 2rem; 
+      border: none; 
+      border-radius: 4px; 
+      cursor: pointer; 
+      text-transform: uppercase; 
+      letter-spacing: 2px; 
+      flex: 1;
+    }
+
+    .htb-terminal { background: #050505; border: 1px solid #1c2126; border-radius: 4px; font-family: 'Share Tech Mono', monospace; margin-bottom: 2rem; overflow: hidden; }
+    .htb-terminal-header { background: #15191d; padding: 6px 12px; color: #626e84; font-size: 10px; display: flex; justify-content: space-between; }
+    .htb-terminal-body { padding: 1rem; color: var(--neon-cyan); font-size: 14px; line-height: 1.5; text-align: center; }
+
+    .profile-display { min-height: 250px; background: #0b0e11; border: 1px solid #23282f; border-radius: 4px; padding: 2rem; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  </style>
 </head>
 <body>
-  <div class="cyber-bg"></div>
+  <div class="cyber-bg" style="opacity: 0.05;"></div>
 
   <nav class="navbar">
     <a href="/" class="nav-logo">
@@ -25,40 +65,40 @@
   </nav>
 
   <main class="main-content">
-    <div class="container" style="max-width: 800px;">
+    <div class="htb-container">
       <!-- HEADER -->
-      <header style="text-align: center; margin-bottom: 3rem;">
-        <div class="badge badge-idor">MISSION: BROKEN OBJECT ACCESS</div>
-        <h1 class="hero-title" style="font-size: 3rem; margin-top: 1rem;">IDOR ENUMERATION</h1>
-        <p class="text-secondary">Manipulate object identifiers to access unauthorized data.</p>
+      <header class="machine-header">
+        <h1 class="machine-title">INSECURE DIRECT OBJECT REFERENCE</h1>
+        <p style="color: var(--text-secondary); margin-top: 0.5rem; font-size: 0.9rem;">PHASE: IDENTIFIER ENUMERATION & PRIVILEGE ESCALATION</p>
       </header>
 
-      <!-- API RECON -->
-      <section class="terminal" style="margin-bottom: 2rem;">
-        <div class="terminal-header">
-          <div class="terminal-dot yellow"></div>
-          <div class="terminal-title">API ENDPOINT RECONNAISSANCE</div>
+      <!-- RECON -->
+      <div class="htb-terminal">
+        <div class="htb-terminal-header">
+          <span>API RECONNAISSANCE</span>
+          <span>METHOD: GET</span>
         </div>
-        <div class="terminal-body" style="color: var(--text-secondary); font-size: 13px;">
-          REQUEST: <code style="color: var(--neon-cyan);">GET /api/profile?id=</code><span id="urlParamPreview" style="color:var(--neon-yellow); font-weight:bold;">1</span>
+        <div class="htb-terminal-body">
+          <span style="color: #626e84;">TARGET_URL: </span><code style="color: #fff;">/api/profile?id=</code><span id="urlParamPreview" style="color:var(--neon-yellow); font-weight:bold;">1</span>
+        </div>
+      </div>
+
+      <!-- EXPLOIT -->
+      <section class="htb-card">
+        <h2 class="htb-card-title">Manipulate Reference</h2>
+        <div style="display: flex; gap: 1rem;">
+          <input type="number" id="userIdInput" class="htb-input" value="1" min="1" oninput="updatePreview()">
+          <button onclick="fetchProfile()" class="htb-btn">Enumerate Profile</button>
         </div>
       </section>
 
-      <!-- EXPLOIT CARD -->
-      <section class="card">
-        <div class="card-header">
-          <h2 class="card-title">User Data Retrieval</h2>
+      <!-- DISPLAY -->
+      <div class="htb-card">
+        <h2 class="htb-card-title">Retrieved Data Response</h2>
+        <div id="profileDisplay" class="profile-display">
+          <div style="color: #626e84; font-size: 13px;">[ AWAITING_REQUEST ]</div>
         </div>
-        <div style="display: flex; gap: 1rem; margin-bottom: 1.5rem;">
-          <input type="number" id="userIdInput" class="form-input" value="1" min="1" oninput="updatePreview()" style="width: 100px; text-align: center;">
-          <button onclick="fetchProfile()" class="btn btn-primary btn-block">FETCH PROFILE</button>
-        </div>
-        
-        <!-- PROFILE RESULT -->
-        <div id="profileDisplay" style="min-height: 150px; border: 1px solid var(--border-color); border-radius: 8px; padding: 1.5rem; background: rgba(0,0,0,0.2);">
-          <div style="text-align: center; color: var(--text-dim); margin-top: 2rem;">[ NO DATA RETRIEVED ]</div>
-        </div>
-      </section>
+      </div>
     </div>
   </main>
 
@@ -72,7 +112,7 @@
     async function fetchProfile() {
       const id = document.getElementById('userIdInput').value;
       const display = document.getElementById('profileDisplay');
-      display.innerHTML = '<div class="spinner" style="margin: 2rem auto;"></div>';
+      display.innerHTML = '<div class="spinner"></div>';
 
       try {
         const res = await fetch(`/api/profile?id=${id}`);
@@ -82,31 +122,25 @@
           const isAlice = u.username.toLowerCase() === 'alice';
           
           display.innerHTML = `
-            <div style="display: flex; flex-direction: column; gap: 1rem;">
-              <div style="display: flex; align-items: center; gap: 1rem;">
-                <div class="nav-logo-icon" style="width: 40px; height: 40px; font-size: 18px;">${u.username[0].toUpperCase()}</div>
-                <div>
-                  <div style="font-size: 11px; color: var(--text-dim); text-transform: uppercase;">Username</div>
-                  <div style="font-weight: bold; color: white;">${u.username}</div>
-                </div>
-              </div>
-              <div>
-                <div style="font-size: 11px; color: var(--text-dim); text-transform: uppercase;">Bio / Secret Data</div>
-                <div style="color: var(--text-secondary); font-style: italic; font-size: 14px; margin-top: 5px;">"${u.bio || 'None'}"</div>
-              </div>
+            <div style="text-align: center; width: 100%;">
+              <div class="nav-logo-icon" style="width: 60px; height: 60px; font-size: 24px; margin: 0 auto 1.5rem auto;">${u.username[0].toUpperCase()}</div>
+              <div style="color: var(--neon-green); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 0.5rem;">User Found: #${u.id}</div>
+              <div style="color: #fff; font-size: 1.8rem; font-weight: bold; margin-bottom: 1rem;">${u.username}</div>
+              <div style="color: var(--text-secondary); font-style: italic; max-width: 400px; margin: 0 auto;">"${u.bio || 'No public information available.'}"</div>
+              
               ${isAlice ? `
-                <div style="background:rgba(0,255,136,0.1); border:1px solid var(--neon-green); padding: 1rem; border-radius: 8px; text-align: center; margin-top: 1rem;">
-                  <div style="color: var(--neon-green); font-weight: bold; font-size: 11px;">FLAG CAPTURED</div>
-                  <div style="font-family: 'Share Tech Mono'; color: var(--neon-yellow); font-size: 1.2rem;">ACT{1d0r_us3r_3num}</div>
+                <div style="border: 1px solid var(--neon-green); background: rgba(159,239,0,0.05); padding: 1.5rem; border-radius: 4px; margin-top: 2rem; animation: pulse 1.5s infinite;">
+                  <div style="color: var(--neon-green); font-weight: bold; font-size: 11px; letter-spacing: 2px; margin-bottom: 0.5rem;">[ PRIVATE DATA ACCESSED ]</div>
+                  <div style="font-family: 'Share Tech Mono'; color: var(--neon-yellow); font-size: 1.3rem;">ACT{1d0r_us3r_3num}</div>
                 </div>
               ` : ''}
             </div>
           `;
-          if (isAlice) showToast('Flag Found!', 'success');
+          if (isAlice) showToast('Unauthorized Access Detected!', 'success');
         } else {
-          display.innerHTML = '<div style="text-align: center; color: var(--neon-pink); font-size: 12px; margin-top: 2rem;">[!] USER NOT FOUND</div>';
+          display.innerHTML = '<div style="color: var(--neon-pink); font-weight: bold; font-size: 12px;">[!] 404: RESOURCE NOT FOUND</div>';
         }
-      } catch (err) { showToast('API Error', 'error'); }
+      } catch (err) { showToast('API connection error', 'error'); }
     }
 
     function showToast(msg, type) {

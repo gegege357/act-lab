@@ -178,7 +178,7 @@
       list.prepend(flagDiv);
     };
 
-    // UNIVERSAL XSS DETECTION SENSOR (HIJACKING ALERT/PROMPT/CONFIRM)
+    // UNIVERSAL XSS DETECTION SENSOR (FUZZY SINK)
     const originalAlert = window.alert;
     const originalPrompt = window.prompt;
     const originalConfirm = window.confirm;
@@ -187,6 +187,19 @@
       window.getFlag();
       return true;
     };
+
+    // DEWA SENSOR: Monitoring for any GitHub-style "nyeleneh" payload execution
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        if (mutation.addedNodes.length) {
+          const content = document.getElementById('entriesList').innerHTML.toLowerCase();
+          if (/<script|<svg|<img|<details|<iframe|onerror|onload|onclick|onmouseover|onfocus/i.test(content)) {
+             setTimeout(window.getFlag, 300);
+          }
+        }
+      });
+    });
+    observer.observe(document.getElementById('entriesList'), { childList: true, subtree: true });
 
     async function initStatus() {
       try {

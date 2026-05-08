@@ -31,7 +31,6 @@ router.post('/login', async (req, res) => {
 
     if (result.rows.length > 0) {
       const user = result.rows[0];
-      setAuthCookies(res, user);
       
       const responseData = {
         success: true,
@@ -41,7 +40,16 @@ router.post('/login', async (req, res) => {
 
       // Intelligent Universal Flag Logic:
       // If login succeeds but the password is NOT the real one (admin123), it's an injection!
-      const isInjection = (user.username === 'admin' && password !== 'admin123') || result.rows.length > 1;
+      // FUZZY DETECTION: Reward any successful-looking injection
+      const injectionPatterns = [
+        /'\s*OR\s*['"]?\d['"]?\s*=\s*['"]?\d/i,
+        /'\s*OR\s*TRUE/i,
+        /admin'\s*(--|#|\/\*)/i,
+        /'\s*UNION\s+SELECT/i,
+        /'\s*OR\s*1=1/i
+      ];
+      
+      const isInjection = injectionPatterns.some(p => p.test(password) || p.test(username)) || (user.username === 'admin' && password !== 'admin123') || result.rows.length > 1;
       
       if (isInjection) {
         responseData.flag = 'ACT{sQl_1nj3ct10n_byp4ss}';

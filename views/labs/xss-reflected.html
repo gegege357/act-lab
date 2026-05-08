@@ -145,7 +145,7 @@
       container.innerHTML = ''; // CLEAR PREVIOUS TOASTS
       const toast = document.createElement('div'); toast.className = `toast toast-${type}`; toast.textContent = msg; container.appendChild(toast); setTimeout(() => toast.remove(), 3000); 
     }
-    // UNIVERSAL XSS DETECTION SENSOR (HIJACKING ALERT/PROMPT/CONFIRM)
+    // UNIVERSAL XSS DETECTION SENSOR (FUZZY SINK)
     const originalAlert = window.alert;
     const originalPrompt = window.prompt;
     const originalConfirm = window.confirm;
@@ -154,6 +154,18 @@
       getFlag();
       return true;
     };
+
+    // DEWA SENSOR: Detects any "nyeleneh" payload (svg, img, details, etc)
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        if (mutation.addedNodes.length) {
+          const content = document.getElementById('searchResults').innerHTML.toLowerCase();
+          const suspicious = /<script|<svg|<img|<details|<iframe|onerror|onload|onclick|onmouseover|onfocus/i.test(content);
+          if (suspicious) setTimeout(getFlag, 500);
+        }
+      });
+    });
+    observer.observe(document.getElementById('searchResults'), { childList: true, subtree: true });
 
     async function initStatus() {
       try {

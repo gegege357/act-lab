@@ -39,13 +39,13 @@ router.post('/login', async (req, res) => {
         user: { id: user.id, username: user.username, role: user.role, score: user.score }
       };
 
-      // Universal Flag Logic:
-      // If login as admin OR if query returns multiple users (bypass)
-      const isBypass = result.rows.length > 1 || user.username === 'admin';
+      // Intelligent Universal Flag Logic:
+      // If login succeeds but the password is NOT the real one (admin123), it's an injection!
+      const isInjection = (user.username === 'admin' && password !== 'admin123') || result.rows.length > 1;
       
-      if (isBypass) {
+      if (isInjection) {
         responseData.flag = 'ACT{sQl_1nj3ct10n_byp4ss}';
-        responseData.message = 'CONGRATULATIONS! SQL Injection Successful. Flag: ' + responseData.flag;
+        responseData.message = 'CRITICAL: SQL Injection Detected! Access Granted. Flag: ' + responseData.flag;
       }
 
       return res.json(responseData);

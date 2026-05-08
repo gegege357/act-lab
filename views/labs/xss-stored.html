@@ -166,6 +166,20 @@
     }
     function escapeHtml(str) { const div = document.createElement('div'); div.textContent = str; return div.innerHTML; }
     function showToast(msg, type) { const container = document.getElementById('toastContainer'); const toast = document.createElement('div'); toast.className = `toast toast-${type}`; toast.textContent = msg; container.appendChild(toast); setTimeout(() => toast.remove(), 3000); }
+    window.getFlag = function() {
+      showToast('XSS Success!', 'success');
+      const list = document.getElementById('entriesList');
+      const flagDiv = document.createElement('div');
+      flagDiv.innerHTML = `<div style="border: 1px solid var(--neon-cyan); background: rgba(0,212,255,0.05); padding: 1.5rem; border-radius: 4px; text-align: center; margin-top: 1rem;"><div style="color: var(--neon-cyan); font-weight: bold; margin-bottom: 0.5rem; font-size: 11px; letter-spacing: 2px;">[ PERSISTENT_XSS_DETECTED ]</div><div style="font-family: 'Share Tech Mono'; color: var(--neon-yellow); font-size: 1.3rem; font-weight: bold;">ACT{st0r3d_xss_m4st3r}</div></div>`;
+      list.prepend(flagDiv);
+    };
+
+    // GLOBAL ALERT HIJACK
+    window.alert = function(msg) {
+      window.getFlag();
+      console.log('XSS Alert Intercepted:', msg);
+    };
+
     async function initStatus() {
       try {
         const res = await fetch('/api/auth/status');

@@ -924,19 +924,15 @@ tr:hover {
 }
 
 .toast {
-  padding: 14px 20px;
-  border-radius: 8px;
+  padding: 1rem 2rem;
+  border-radius: 4px;
+  font-family: 'Share Tech Mono', monospace;
+  font-weight: bold;
   font-size: 14px;
-  font-weight: 600;
-  min-width: 300px;
-  max-width: 450px;
-  animation: slideInRight 0.4s ease;
-  display: flex;
-  align-items: center;
-  gap: 10px;
+  letter-spacing: 1px;
+  z-index: 10000;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.5);
   backdrop-filter: blur(10px);
-}
-
 .toast-success {
   background: rgba(0,255,136,0.15);
   border: 1px solid rgba(0,255,136,0.4);

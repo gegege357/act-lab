@@ -125,10 +125,7 @@
           body: JSON.stringify({ challengeId: id, flag: flag })
         });
         const data = await res.json();
-        if (data.correct) {
-          showToast('Correct flag!', 'success');
-          // REMOVED AUTO-REDIRECT
-        } else { showToast(data.message || 'Incorrect flag', 'error'); }
+        if (data.correct) { showToast('Correct!', 'success'); } else { showToast(data.message || 'Incorrect', 'error'); }
       } catch (err) { showToast('Submission failed', 'error'); }
     }
 
@@ -171,15 +168,12 @@
       try {
         const res = await fetch('/api/auth/status');
         const data = await res.json();
-        if (data.success && !data.user.username.startsWith('guest_')) {
-          document.getElementById('navUser').innerHTML = `<span class="nav-user-badge" style="border-color:var(--neon-cyan); color:var(--neon-cyan);">Operator: ${data.user.username} (Score: ${data.user.score})</span>`;
-        } else {
-          const u = data.user || { username: 'Guest', score: 0 };
-          document.getElementById('navUser').innerHTML = `
-            <span class="nav-user-badge" style="margin-right:10px;">Guest (Score: ${u.score})</span>
-            <a href="/login" class="nav-user-badge" style="text-decoration:none; border-color:var(--neon-green); color:var(--neon-green);">Sign In</a>
-          `;
-        }
+        const u = data.user || { username: 'Guest', score: 0, role: 'user' };
+        const isAdmin = u.role === 'admin' || document.cookie.includes('role=admin');
+        let navHtml = `<span class="nav-user-badge">Status: ${u.username} (${u.score} PTS)</span>`;
+        if (isAdmin) { navHtml = `<a href="/admin" class="nav-user-badge" style="border-color:var(--neon-pink); color:var(--neon-pink); text-decoration:none; animation: pulse 1s infinite;">⚠️ ADMIN_ACCESS_GRANTED</a> ` + navHtml; }
+        document.getElementById('navUser').innerHTML = navHtml;
+        if (typeof updatePreview === 'function') updatePreview();
       } catch (err) {}
     }
     initStatus();

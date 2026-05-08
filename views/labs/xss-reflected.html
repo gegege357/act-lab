@@ -8,7 +8,7 @@
   <style>
     body { background: #0b0e11; }
     .htb-container { max-width: 800px; margin: 4rem auto; }
-    .machine-header { border-left: 4px solid var(--neon-green); padding-left: 1.5rem; margin-bottom: 3rem; }
+    .machine-header { border-left: 4px solid var(--neon-cyan); padding-left: 1.5rem; margin-bottom: 3rem; }
     .machine-title { font-family: 'Orbitron', sans-serif; font-size: 2rem; color: #fff; }
     
     .htb-card { background: #15191d; border: 1px solid #23282f; border-radius: 4px; padding: 2.5rem; margin-bottom: 2rem; }
@@ -159,15 +159,11 @@
       try {
         const res = await fetch('/api/auth/status');
         const data = await res.json();
-        if (data.success && !data.user.username.startsWith('guest_')) {
-          document.getElementById('navUser').innerHTML = `<span class="nav-user-badge" style="border-color:var(--neon-cyan); color:var(--neon-cyan);">Operator: ${data.user.username} (Score: ${data.user.score})</span>`;
-        } else {
-          const u = data.user || { username: 'Guest', score: 0 };
-          document.getElementById('navUser').innerHTML = `
-            <span class="nav-user-badge" style="margin-right:10px;">Guest (Score: ${u.score})</span>
-            <a href="/login" class="nav-user-badge" style="text-decoration:none; border-color:var(--neon-green); color:var(--neon-green);">Sign In</a>
-          `;
-        }
+        const u = data.user || { username: 'Guest', score: 0, role: 'user' };
+        const isAdmin = u.role === 'admin' || document.cookie.includes('role=admin');
+        let navHtml = `<span class="nav-user-badge">Status: ${u.username} (${u.score} PTS)</span>`;
+        if (isAdmin) { navHtml = `<a href="/admin" class="nav-user-badge" style="border-color:var(--neon-pink); color:var(--neon-pink); text-decoration:none; animation: pulse 1s infinite;">⚠️ ADMIN_ACCESS_GRANTED</a> ` + navHtml; }
+        document.getElementById('navUser').innerHTML = navHtml;
       } catch (err) {}
     }
     initStatus();

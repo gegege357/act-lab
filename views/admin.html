@@ -11,7 +11,7 @@
 
   <nav class="navbar">
     <a href="/" class="nav-logo">
-      <div class="nav-logo-icon">ACT</div>
+      <img src="/img/act.png" alt="Logo" style="height: 32px; border-radius: 4px; margin-right: 10px;" onerror="this.style.display='none'">
       <span class="nav-logo-text">ACT LAB</span>
     </a>
     <ul class="nav-links" id="navLinks">
@@ -83,7 +83,7 @@
         if (stats.success) {
           html += `
             <div class="card mb-3" style="background: rgba(0,255,136,0.05); border: 2px solid var(--neon-green);">
-              <div class="flex justify-between items-center">
+              <div class="machine-header" style="border-left: 4px solid var(--neon-green);">
                 <div>
                   <h3 style="color:var(--neon-green); font-family:'Orbitron',sans-serif; font-size:1.1rem; margin-bottom:0.2rem;">🚀 ACCESS GRANTED: PRIVILEGE ESCALATED</h3>
                   <p class="text-secondary text-sm">You have successfully bypassed authorization using cookie manipulation.</p>

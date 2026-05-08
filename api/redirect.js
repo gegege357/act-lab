@@ -27,8 +27,11 @@ router.get('/', (req, res) => {
   }
 
   // *** NO DOMAIN VALIDATION ***
-  // Challenge Reward: If redirecting to an "evil" site, show the flag first
-  if (url.includes('evil.com')) {
+  // Universal Detection: If redirecting to an external site, show the flag
+  const isExternal = url.startsWith('http') || url.startsWith('//');
+  const isLocal = url.includes('localhost') || url.includes('127.0.0.1');
+
+  if (isExternal && !isLocal) {
     return res.send(`
       <!DOCTYPE html>
       <html>

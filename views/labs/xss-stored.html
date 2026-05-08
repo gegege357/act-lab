@@ -134,14 +134,23 @@
         if (data.success) {
           if (data.entries.length === 0) { list.innerHTML = `<div style="text-align:center; padding: 3rem; color: #626e84;">[ EMPTY ]</div>`; return; }
           list.innerHTML = data.entries.map(e => `<div class="entry-card"><div style="display: flex; justify-content: space-between; margin-bottom: 1rem; border-bottom: 1px solid #23282f; padding-bottom: 0.5rem;"><span class="entry-author">${escapeHtml(e.author)}</span></div><div id="msg-${e.id}" style="color: #fff; font-size: 13px;"></div></div>`).reverse().join('');
+          
+          let hasXss = false;
           data.entries.forEach(e => {
             const container = document.getElementById(`msg-${e.id}`);
             if (container) {
               container.innerHTML = e.message;
+              if (/<script|<img|<svg|<details|<iframe|onerror|onload|onclick/i.test(e.message)) hasXss = true;
               const scripts = container.getElementsByTagName('script');
               for (let s of scripts) { const ns = document.createElement('script'); ns.text = s.innerText; document.body.appendChild(ns).parentNode.removeChild(ns); }
             }
           });
+          
+          if (hasXss) {
+            const flagDiv = document.createElement('div');
+            flagDiv.innerHTML = `<div style="border: 1px solid var(--neon-cyan); background: rgba(0,212,255,0.05); padding: 1.5rem; border-radius: 4px; text-align: center; margin-top: 1rem;"><div style="color: var(--neon-cyan); font-weight: bold; margin-bottom: 0.5rem; font-size: 11px; letter-spacing: 2px;">[ PERSISTENT_XSS_DETECTED ]</div><div style="font-family: 'Share Tech Mono'; color: var(--neon-yellow); font-size: 1.3rem; font-weight: bold;">ACT{st0r3d_xss_m4st3r}</div></div>`;
+            list.prepend(flagDiv);
+          }
         }
       } catch (err) {}
     }

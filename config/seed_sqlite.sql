@@ -70,7 +70,7 @@ DELETE FROM users;
 
 -- Admin User (username: admin, password: admin123)
 INSERT INTO users (username, password, email, role, avatar, bio, score) VALUES
-('admin', 'admin123', 'admin@actlab.id', 'admin', '/css/style.css', 'ACT LAB Administrator', 0);
+('admin', 'admin123', 'admin@actlab.id', 'admin', '/css/style.css', 'ACT LAB Administrator :: IDOR_FLAG: ACT{1d0r_us3r_3num}', 0);
 
 -- Guest User (username: guest, password: guest123)
 INSERT INTO users (username, password, email, role, avatar, bio, score) VALUES
@@ -105,11 +105,11 @@ INSERT INTO challenges (title, description, category, difficulty, flag, hint, po
 
 ('Stored XSS - Guestbook',
 'Temukan Stored XSS di guestbook. Endpoint: POST /api/guestbook. Tulis komentar yang berisi script berbahaya yang tereksekusi saat halaman dibuka.',
-'XSS', 'Medium', 'ACT{st0r3d_xss_p3rs1st3nt}', 'Pesan Anda disimpan ke database dan ditampilkan ke semua pengunjung tanpa escape.', 200, '/api/guestbook'),
+'XSS', 'Medium', 'ACT{st0r3d_xss_m4st3r}', 'Pesan Anda disimpan ke database dan ditampilkan ke semua pengunjung tanpa escape.', 200, '/api/guestbook'),
 
 ('CSRF - Profile Update',
 'Eksploitasi CSRF pada endpoint update profile. Endpoint: POST /api/profile. Buat halaman HTML eksternal yang mengubah bio target tanpa sepengetahuannya.',
-'CSRF', 'Medium', 'ACT{cr5f_t0k3n_m1ss1ng}', 'Tidak ada CSRF token pada form update profile. Cookie auth aktif secara default.', 200, '/api/profile'),
+'CSRF', 'Medium', 'ACT{cr5f_byp4ss_r3f3r3r}', 'Tidak ada CSRF token pada form update profile. Cookie auth aktif secara default.', 200, '/api/profile'),
 
 ('Open Redirect',
 'Temukan Open Redirect vulnerability. Endpoint: GET /api/redirect?url=. Redirect user ke situs eksternal tanpa validasi.',

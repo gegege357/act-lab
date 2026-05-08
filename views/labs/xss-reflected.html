@@ -120,14 +120,21 @@
       resDiv.innerHTML = `<div style="width: 100%;"><div id="target" style="color: #fff; font-size: 1.1rem;"></div></div>`;
       const target = document.getElementById('target');
       target.innerHTML = q;
+      
+      // Universal Detection: Check for suspicious patterns
+      const suspicious = /<script|<img|<svg|<details|<iframe|onerror|onload|onclick/i.test(q);
+      if (suspicious) {
+        setTimeout(getFlag, 500);
+      }
+      
       const scripts = target.getElementsByTagName('script');
       for (let s of scripts) {
         try { const ns = document.createElement('script'); ns.text = s.innerText; document.body.appendChild(ns).parentNode.removeChild(ns); } catch (err) {}
       }
     }
     window.getFlag = function() {
-      showToast('XSS Success!', 'success');
-      document.getElementById('searchResults').innerHTML = `<div style="border: 1px solid var(--neon-green); background: rgba(159,239,0,0.05); padding: 2rem; border-radius: 4px; text-align: center; width: 100%;"><div style="color: var(--neon-green); font-weight: bold; margin-bottom: 1rem; font-size: 12px; letter-spacing: 2px;">[ XSS TRIGGERED ]</div><div style="font-family: 'Share Tech Mono'; color: var(--neon-yellow); font-size: 1.5rem; font-weight: bold;">ACT{r3fl3ct3d_xss_f0und}</div></div>`;
+      showToast('XSS Triggered!', 'success');
+      document.getElementById('searchResults').innerHTML = `<div style="border: 1px solid var(--neon-cyan); background: rgba(0,212,255,0.05); padding: 2rem; border-radius: 4px; text-align: center; width: 100%;"><div style="color: var(--neon-cyan); font-weight: bold; margin-bottom: 1rem; font-size: 12px; letter-spacing: 2px;">[ XSS_VULNERABILITY_CONFIRMED ]</div><div style="font-family: 'Share Tech Mono'; color: var(--neon-yellow); font-size: 1.5rem; font-weight: bold;">ACT{r3fl3ct3d_xss_f0und}</div></div>`;
     };
     function showToast(msg, type) { const container = document.getElementById('toastContainer'); const toast = document.createElement('div'); toast.className = `toast toast-${type}`; toast.textContent = msg; container.appendChild(toast); setTimeout(() => toast.remove(), 3000); }
     async function initStatus() {

@@ -128,10 +128,10 @@ router.post('/', requireAuth, async (req, res) => {
     const query = `UPDATE users SET email=$1, bio=$2 WHERE id=$3`;
     await db.query(query, [email || '', bio || '', req.user.id]);
 
-    // Log activity
+    // Log activity with Referer/Origin for CSRF Monitoring
     await db.query(
       'INSERT INTO activity_log (user_id, action, details) VALUES ($1, $2, $3)',
-      [req.user.id, 'UPDATE_PROFILE', 'Updated profile']
+      [req.user.id, 'UPDATE_PROFILE', 'Source: ' + (referer || origin || 'Internal')]
     );
 
     return res.json({

@@ -112,18 +112,6 @@
         } else { showToast(data.message || 'Incorrect flag', 'error'); }
       } catch (err) {}
     }
-    async function loadProfile() {
-      try {
-        const res = await fetch('/api/profile/me');
-        const data = await res.json();
-        if (data.success) {
-          const u = data.user;
-          document.getElementById('profileView').innerHTML = `<div style="display: flex; align-items: center; gap: 1rem;"><div class="nav-logo-icon" style="width: 40px; height: 40px;">${u.username[0].toUpperCase()}</div><div><div style="font-weight: bold; color: #fff;">${u.username}</div><div style="font-size: 11px; color: #626e84;">${u.role} | ${u.email || 'NO_EMAIL'}</div></div></div>`;
-          document.getElementById('emailInput').value = u.email || '';
-          document.getElementById('bioInput').value = u.bio || '';
-        }
-      } catch (err) {}
-    }
     async function updateProfile(e) {
       if (e) e.preventDefault();
       const email = document.getElementById('emailInput').value;
@@ -133,29 +121,39 @@
         const data = await res.json();
         if (data.success) {
           showToast('Updated!', 'success');
-          if (data.message && data.message.includes('ACT{')) alert('SUCCESS! FLAG: ' + data.message.split('Flag: ')[1]);
           loadProfile();
         }
       } catch (err) {}
     }
+
     function showToast(msg, type) { 
       const container = document.getElementById('toastContainer'); 
-      container.innerHTML = ''; // CLEAR PREVIOUS TOASTS
+      container.innerHTML = ''; 
       const toast = document.createElement('div'); toast.className = `toast toast-${type}`; toast.textContent = msg; container.appendChild(toast); setTimeout(() => toast.remove(), 3000); 
     }
-    // CSRF SECURITY SENSOR: Monitor for unauthorized changes
-    let initialEmail = '';
+
     async function loadProfile() {
       try {
         const res = await fetch('/api/profile/me');
         const data = await res.json();
         if (data.success) {
           const u = data.user;
-          if (!initialEmail) initialEmail = u.email;
-          document.getElementById('profileEmail').textContent = u.email;
-          document.getElementById('profileBio').textContent = u.bio;
+          if (!initialEmail) {
+            initialEmail = u.email;
+            document.getElementById('emailInput').value = u.email || '';
+            document.getElementById('bioInput').value = u.bio || '';
+          }
           
-          // Detect CSRF: If email changed and it's a known exploit pattern
+          document.getElementById('profileView').innerHTML = `
+            <div style="display: flex; align-items: center; gap: 1rem;">
+              <div class="profile-avatar" style="width:50px; height:50px; margin:0; font-size:1.2rem; background: var(--neon-cyan); color: #000;">${u.username[0].toUpperCase()}</div>
+              <div>
+                <div style="font-weight: bold; color: #fff; font-size:1.1rem;">${u.username}</div>
+                <div style="font-size: 11px; color: var(--neon-cyan); font-family: 'Share Tech Mono';">${u.email || 'NO_EMAIL'}</div>
+              </div>
+            </div>`;
+
+          // If email changed, trigger Flag
           if (u.email !== initialEmail) {
             showCsrfFlag();
           }
@@ -163,41 +161,57 @@
       } catch (err) {}
     }
 
-    function showCsrfFlag() {
-      const container = document.querySelector('.main-content .htb-container');
-      if (!document.getElementById('csrfFlag')) {
-        const div = document.createElement('div');
-        div.id = 'csrfFlag';
-        div.innerHTML = `
-          <div style="border: 2px solid var(--neon-pink); background: rgba(255,0,102,0.1); padding: 2rem; border-radius: 4px; text-align: center; margin-bottom: 2rem; animation: pulse 2s infinite;">
-            <div style="color: var(--neon-pink); font-weight: bold; margin-bottom: 1rem; font-size: 14px; letter-spacing: 3px;">[ SECURITY BREACH: CSRF DETECTED ]</div>
-            <div style="font-family: 'Share Tech Mono'; color: #fff; font-size: 1.5rem; font-weight: bold; margin-bottom: 1rem;">Profile Hijacked via Cross-Site Request!</div>
-            <div style="font-family: 'Share Tech Mono'; color: var(--neon-yellow); font-size: 1.8rem; font-weight: bold;">ACT{cr5f_byp4ss_r3f3r3r}</div>
-          </div>
-        `;
-        container.prepend(div);
-        showToast('CSRF Attack Successful!', 'error');
-      }
+    async function pollTraffic() {
+      try {
+        const res = await fetch('/api/admin/activity'); // Using admin activity to see all logs
+        const data = await res.json();
+        if (data.success) {
+          const logs = data.activity.filter(l => l.action === 'UPDATE_PROFILE').slice(0, 5);
+          const logBody = document.getElementById('trafficLog');
+          logBody.innerHTML = logs.map(l => {
+            const isExternal = !l.details.includes('Internal') && !l.details.includes('localhost');
+            return `<div style="margin-bottom: 5px; color: ${isExternal ? 'var(--neon-pink)' : 'var(--neon-yellow)'};">
+              [${new Date(l.created_at).toLocaleTimeString()}] UPDATE_REQ &rarr; ${l.details}
+              ${isExternal ? ' <span style="font-weight:bold;">[ATTACK_DETECTED]</span>' : ''}
+            </div>`;
+          }).join('');
+          
+          if (logs.some(l => !l.details.includes('Internal') && !l.details.includes('localhost'))) {
+            loadProfile(); // Refresh profile to trigger flag if needed
+          }
+        }
+      } catch (err) {}
     }
 
-    // Auto-poll for CSRF success every 2 seconds
-    setInterval(loadProfile, 2000);
+    function showCsrfFlag() {
+      if (document.getElementById('csrfFlag')) return;
+      const container = document.querySelector('.main-content .htb-container');
+      const div = document.createElement('div');
+      div.id = 'csrfFlag';
+      div.innerHTML = `
+        <div style="border: 2px solid var(--neon-pink); background: rgba(255,0,102,0.1); padding: 2.5rem; border-radius: 4px; text-align: center; margin-bottom: 2rem; animation: pulse 2s infinite; border-style: dashed;">
+          <div style="color: var(--neon-pink); font-weight: bold; margin-bottom: 1rem; font-size: 14px; letter-spacing: 4px;">[ ⚠️ SECURITY_BREACH: ACCOUNT_HIJACKED ]</div>
+          <div style="font-family: 'Share Tech Mono'; color: #fff; font-size: 1.4rem; font-weight: bold; margin-bottom: 1.5rem;">Unauthorized Cross-Origin Request Executed!</div>
+          <div style="display:inline-block; background: #000; padding: 1rem 2rem; border: 1px solid var(--neon-yellow);">
+            <div style="font-family: 'Share Tech Mono'; color: var(--neon-yellow); font-size: 2rem; font-weight: bold;">ACT{cr5f_byp4ss_r3f3r3r}</div>
+          </div>
+        </div>
+      `;
+      container.prepend(div);
+      showToast('CSRF ATTACK DETECTED!', 'error');
+    }
+
+    setInterval(pollTraffic, 2000);
+    setInterval(loadProfile, 5000);
 
     async function initStatus() {
       try {
         const res = await fetch('/api/auth/status');
         const data = await res.json();
-        if (data.success && !data.user.username.startsWith('guest_')) {
-          document.getElementById('navUser').innerHTML = `<span class="nav-user-badge" style="border-color:var(--neon-cyan); color:var(--neon-cyan);">Operator: ${data.user.username} (Score: ${data.user.score})</span>`;
-        } else {
-          const u = data.user || { username: 'Guest', score: 0 };
-          document.getElementById('navUser').innerHTML = `
-            <span class="nav-user-badge" style="margin-right:10px;">Guest (Score: ${u.score})</span>
-            <a href="/login" class="nav-user-badge" style="text-decoration:none; border-color:var(--neon-green); color:var(--neon-green);">Sign In</a>
-          `;
-        }
-        if (typeof loadProfile === 'function') loadProfile();
-        if (typeof updatePreview === 'function') updatePreview();
+        const u = data.user || { username: 'Guest', score: 0 };
+        document.getElementById('navUser').innerHTML = `<span class="nav-user-badge">Lab Access: ${u.username} (Score: ${u.score})</span>`;
+        loadProfile();
+        pollTraffic();
       } catch (err) {}
     }
     initStatus();

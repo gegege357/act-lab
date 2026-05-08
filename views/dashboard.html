@@ -104,7 +104,10 @@
               <div class="mission-item">
                 <div class="mission-info"><div class="mission-title">${c.title}</div><div class="mission-meta">${c.category} | ${c.difficulty}</div></div>
                 <div class="mission-points" style="color:var(--neon-cyan);">${c.points} PTS</div>
-                <div>${isSolved ? `<span class="solved-badge">✓ SOLVED</span>` : `<a href="${c.endpoint}" class="btn-pwn">Launch</a>`}</div>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                  ${isSolved ? `<span class="solved-badge" style="font-size: 10px;">✓ SOLVED</span>` : ''}
+                  <a href="${c.endpoint}" class="btn-pwn">Launch</a>
+                </div>
               </div>`;
           }).join('');
         }

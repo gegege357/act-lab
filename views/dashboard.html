@@ -71,13 +71,14 @@
       try {
         const res = await fetch('/api/auth/status');
         const data = await res.json();
-        if (!data.success) return window.location.href = '/login';
-        const u = data.user;
+        
+        const u = data.user || { username: 'Guest', score: 0, role: 'user' };
         document.getElementById('profileName').textContent = u.username;
         document.getElementById('profileScore').textContent = `${u.score || 0} PTS`;
         document.getElementById('avatarChar').textContent = u.username[0].toUpperCase();
-        document.getElementById('statRole').textContent = u.role.toUpperCase();
+        document.getElementById('statRole').textContent = (u.role || 'USER').toUpperCase();
         document.getElementById('navUser').innerHTML = `<span class="nav-user-badge">${u.username} (Score: ${u.score || 0})</span>`;
+        
         loadMissions();
       } catch (err) {}
     }

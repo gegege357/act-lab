@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard - ACT LAB</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <div class="cyber-bg"></div>
+
+  <nav class="navbar">
+    <a href="/" class="nav-logo">
+      <div class="nav-logo-icon">ACT</div>
+      <span class="nav-logo-text">ACT LAB</span>
+    </a>
+    <ul class="nav-links" id="navLinks">
+      <li><a href="/dashboard" class="active">Dashboard</a></li>
+      <li><a href="/challenges">Missions</a></li>
+      <li><a href="/profile">Profile</a></li>
+    </ul>
+    <div class="nav-user" id="navUser">
+      <span class="nav-user-badge">Loading...</span>
+    </div>
+  </nav>
+
+  <main class="main-content">
+    <div class="container" style="max-width: 1000px;">
+      <div class="page-header" style="margin-bottom: 2rem;">
+        <h1 style="font-size: 2rem;">DASHBOARD</h1>
+        <p class="text-mono">User: <span class="text-cyan" id="welcomeUser">...</span></p>
+      </div>
+
+      <div class="dashboard-grid" style="gap: 1rem; margin-bottom: 2rem;">
+        <div class="stat-card" style="padding: 1.5rem;">
+          <div class="stat-card-value" id="statScore" style="font-size: 2rem;">0</div>
+          <div class="stat-card-label text-dim uppercase" style="font-size: 10px;">Points</div>
+        </div>
+        <div class="stat-card" style="padding: 1.5rem;">
+          <div class="stat-card-value" id="statSolved" style="font-size: 2rem;">0</div>
+          <div class="stat-card-label text-dim uppercase" style="font-size: 10px;">Solved</div>
+        </div>
+        <div class="stat-card" style="padding: 1.5rem;">
+          <div class="stat-card-value" id="statTotal" style="font-size: 2rem;">9</div>
+          <div class="stat-card-label text-dim uppercase" style="font-size: 10px;">Challenges</div>
+        </div>
+        <div class="stat-card" style="padding: 1.5rem; border-color: var(--neon-cyan);">
+          <div class="stat-card-value text-cyan" id="statPercent" style="font-size: 2rem;">0%</div>
+          <div class="stat-card-label text-dim uppercase" style="font-size: 10px;">Progress</div>
+        </div>
+      </div>
+
+      <div class="card mb-4" style="padding: 1.2rem;">
+        <div class="flex justify-between items-center mb-2">
+           <div class="text-xs uppercase text-dim">Total Progress</div>
+        </div>
+        <div class="progress-bar-container" style="height: 8px;">
+          <div class="progress-bar-fill" id="progressBar" style="width: 0%;"></div>
+        </div>
+      </div>
+
+      <div class="tabs mb-3">
+        <button class="tab-btn active" onclick="switchTab('activity', this)">LOGS</button>
+        <button class="tab-btn" onclick="switchTab('leaderboard', this)">RANKING</button>
+        <button class="tab-btn" onclick="switchTab('quick', this)">QUICK ACCESS</button>
+      </div>
+
+      <div class="tab-content active" id="tab-activity">
+        <div class="card" style="min-height: 200px;">
+          <div id="activityList" class="p-3">
+            <div class="text-dim text-center mt-4">No recent activity.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="tab-content" id="tab-leaderboard">
+        <div class="card" style="padding: 0; overflow: hidden;">
+          <div id="leaderboardContent"></div>
+        </div>
+      </div>
+
+      <div class="tab-content" id="tab-quick">
+        <div class="dashboard-grid" style="grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem;">
+          <a href="/challenges" class="card" style="text-decoration:none; padding: 1rem;">
+            <div class="card-title" style="font-size: 13px;">Missions</div>
+          </a>
+          <a href="/search" class="card" style="text-decoration:none; padding: 1rem;">
+            <div class="card-title" style="font-size: 13px;">Search Lab</div>
+          </a>
+          <a href="/guestbook" class="card" style="text-decoration:none; padding: 1rem;">
+            <div class="card-title" style="font-size: 13px;">Guestbook</div>
+          </a>
+          <a href="/admin" class="card" style="text-decoration:none; padding: 1rem; border-color: var(--neon-pink);">
+            <div class="card-title" style="font-size: 13px; color: var(--neon-pink);">Admin Panel</div>
+          </a>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    async function init() {
+      try {
+        let res = await fetch('/api/auth/status');
+        let data = await res.json();
+        if (!data.authenticated) {
+          const autoRes = await fetch('/api/auth/auto-login', { method: 'POST' });
+          data = await autoRes.json();
+        }
+        document.getElementById('welcomeUser').textContent = data.user.username;
+        document.getElementById('navUser').innerHTML = `
+          <span class="nav-user-badge">${data.user.username}</span>
+          <button class="nav-logout" onclick="logout()">Logout</button>
+        `;
+        loadProgress();
+        loadLeaderboard();
+      } catch (err) { window.location.href = '/'; }
+    }
+
+    async function loadProgress() {
+      try {
+        const res = await fetch('/api/challenges/progress/me');
+        const data = await res.json();
+        if (data.success) {
+          const percent = Math.round((data.solved / data.total) * 100);
+          document.getElementById('statScore').textContent = data.earnedPoints;
+          document.getElementById('statSolved').textContent = data.solved;
+          document.getElementById('statPercent').textContent = percent + '%';
+          document.getElementById('progressBar').style.width = percent + '%';
+        }
+      } catch (err) {}
+    }
+
+    async function loadLeaderboard() {
+      try {
+        const res = await fetch('/api/challenges/leaderboard/all');
+        const data = await res.json();
+        if (data.success) {
+          let html = '<table class="leaderboard-table"><thead><tr><th>User</th><th>Score</th></tr></thead><tbody>';
+          data.leaderboard.slice(0, 10).forEach(u => {
+            html += `<tr><td>${u.username}</td><td>${u.score}</td></tr>`;
+          });
+          html += '</tbody></table>';
+          document.getElementById('leaderboardContent').innerHTML = html;
+        }
+      } catch (err) {}
+    }
+
+    function switchTab(name, btn) {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+      document.getElementById('tab-' + name).classList.add('active');
+      btn.classList.add('active');
+    }
+
+    function logout() { fetch('/api/auth/logout', { method: 'POST' }).then(() => window.location.href = '/'); }
+    init();
+  </script>
+</body>
+</html>

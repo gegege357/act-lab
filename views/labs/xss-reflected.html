@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reflected XSS - ACT LAB</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <div class="cyber-bg"></div>
+
+  <nav class="navbar">
+    <a href="/" class="nav-logo">
+      <div class="nav-logo-icon">ACT</div>
+      <span class="nav-logo-text">ACT LAB</span>
+    </a>
+    <ul class="nav-links" id="navLinks">
+      <li><a href="/dashboard">Dashboard</a></li>
+      <li><a href="/challenges">Missions</a></li>
+      <li><a href="/profile">Profile</a></li>
+    </ul>
+    <div class="nav-user" id="navUser">
+      <span class="nav-user-badge">Connecting...</span>
+    </div>
+  </nav>
+
+  <main class="main-content">
+    <div class="container" style="max-width: 900px;">
+      <div class="page-header" style="text-align:center; margin-bottom: 2rem;">
+        <h1 style="color: var(--neon-cyan);">REFLECTED XSS</h1>
+        <p class="text-mono">Execute JavaScript via search parameters</p>
+      </div>
+
+      <div class="dashboard-grid" style="grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+        <!-- SEARCH -->
+        <div class="card" style="padding: 1.5rem; border-color: var(--neon-cyan);">
+          <div class="card-title mb-3 text-xs uppercase text-dim">Search Portal</div>
+          <form onsubmit="handleSearch(event)" class="flex gap-2 mb-3">
+            <input type="text" id="searchInput" class="form-input" placeholder="<script>getFlag()</script>" style="padding: 8px;" oninput="updateFlow()">
+            <button type="submit" class="btn btn-primary" style="background:var(--neon-cyan); border-color:var(--neon-cyan); color:black; font-weight:bold; padding: 0 15px;">
+              SEARCH
+            </button>
+          </form>
+
+          <div id="searchResults" class="card" style="background: rgba(0,0,0,0.2); border-style: dashed; text-align: center; padding: 1.5rem; min-height: 100px;">
+             <div class="text-xs text-dim uppercase">Awaiting Input...</div>
+          </div>
+        </div>
+
+        <!-- ANALYSIS -->
+        <div class="flex flex-column gap-3">
+          <div class="card" style="padding: 1rem; background: #05050d;">
+            <div class="text-xs text-dim mb-2 uppercase">Data Flow:</div>
+            <div class="terminal" style="font-size: 11px; min-height: 80px; border: none; padding: 10px;">
+              <div class="text-secondary mb-1">Source: <span id="sourcePreview" class="text-yellow"></span></div>
+              <div class="text-secondary">Sink: <code class="text-pink">target.innerHTML = input</code></div>
+            </div>
+          </div>
+
+          <div class="card" style="padding: 1rem; border-color: rgba(255,255,255,0.05);">
+            <div class="text-xs text-dim uppercase mb-2">Goal</div>
+            <p class="text-secondary text-xs">Inject a script that triggers the <code>getFlag()</code> function.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <div class="toast-container" id="toastContainer"></div>
+
+  <script>
+    function updateFlow() {
+      document.getElementById('sourcePreview').textContent = document.getElementById('searchInput').value;
+    }
+
+    async function handleSearch(e) {
+      if (e) e.preventDefault();
+      const q = document.getElementById('searchInput').value;
+      const resDiv = document.getElementById('searchResults');
+      resDiv.innerHTML = '<div class="spinner"></div>';
+
+      try {
+        const res = await fetch(`/api/search?q=${q}`);
+        const data = await res.json();
+
+        if (data.success) {
+          resDiv.innerHTML = `<div class="text-xs text-dim mb-2">RESULTS FOR:</div><div id="target" class="white"></div>`;
+          const target = document.getElementById('target');
+          target.innerHTML = q;
+
+          // Educational trigger
+          const scripts = target.getElementsByTagName('script');
+          for (let s of scripts) {
+            const ns = document.createElement('script');
+            ns.text = s.innerText;
+            document.body.appendChild(ns).parentNode.removeChild(ns);
+          }
+        }
+      } catch (err) {}
+    }
+
+    window.getFlag = function() {
+      showToast('XSS TRIGGERED!', 'success');
+      document.getElementById('searchResults').innerHTML = `
+        <div style="background:rgba(0,255,136,0.1); border:1px solid var(--neon-green); color:var(--neon-green); padding:1rem; text-align:center;">
+          <div class="text-xs font-bold mb-1">FLAG CAPTURED:</div>
+          <div class="text-sm font-bold">ACT{r3fl3ct3d_xss_f0und}</div>
+        </div>
+      `;
+    };
+
+    function showToast(msg, type) {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      toast.className = `toast toast-${type}`;
+      toast.textContent = msg;
+      container.appendChild(toast);
+      setTimeout(() => toast.remove(), 3000);
+    }
+
+    async function initAuth() {
+      try {
+        let res = await fetch('/api/auth/status');
+        let data = await res.json();
+        if (!data.authenticated) {
+          const autoRes = await fetch('/api/auth/auto-login', { method: 'POST' });
+          data = await autoRes.json();
+        }
+        if (data.success) {
+          document.getElementById('navUser').innerHTML = `
+            <span class="nav-user-badge">${data.user.username}</span>
+            <button class="nav-logout" onclick="logout()">Logout</button>
+          `;
+        }
+      } catch (err) {}
+    }
+    initAuth();
+    updateFlow();
+    function logout() { fetch('/api/auth/logout', { method: 'POST' }).then(() => window.location.href = '/'); }
+  </script>
+</body>
+</html>

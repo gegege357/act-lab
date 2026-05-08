@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SQLi Login - ACT LAB</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <div class="cyber-bg"></div>
+
+  <nav class="navbar">
+    <a href="/" class="nav-logo">
+      <div class="nav-logo-icon">ACT</div>
+      <span class="nav-logo-text">ACT LAB</span>
+    </a>
+    <ul class="nav-links" id="navLinks">
+      <li><a href="/dashboard">Dashboard</a></li>
+      <li><a href="/challenges">Missions</a></li>
+      <li><a href="/profile">Profile</a></li>
+    </ul>
+    <div class="nav-user" id="navUser">
+      <span class="nav-user-badge">Connecting...</span>
+    </div>
+  </nav>
+
+  <main class="main-content">
+    <div class="container" style="max-width: 900px;">
+      <div class="page-header" style="text-align:center; margin-bottom: 2rem;">
+        <h1 style="color: var(--neon-pink);">SQLi LOGIN BYPASS</h1>
+        <p class="text-mono">Subvert authentication logic</p>
+      </div>
+
+      <div class="dashboard-grid" style="grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+        <!-- LOGIN -->
+        <div class="card" style="padding: 1.5rem; border-color: var(--neon-pink);">
+          <div style="text-align:center; margin-bottom: 1.5rem;">
+            <h2 class="text-xs uppercase text-dim tracking-widest">Secure Entry</h2>
+          </div>
+
+          <form onsubmit="handleLogin(event)" class="flex flex-column gap-3">
+            <div class="form-group">
+              <label class="text-xs text-dim">Username</label>
+              <input type="text" id="usernameInput" name="username" class="form-input" style="padding: 8px;" oninput="updateQueryPreview()" required>
+            </div>
+            <div class="form-group">
+              <label class="text-xs text-dim">Password</label>
+              <input type="password" id="passwordInput" name="password" class="form-input" style="padding: 8px;" oninput="updateQueryPreview()" required>
+            </div>
+            <button type="submit" class="btn btn-primary btn-block" id="loginBtn" style="background:var(--neon-pink); border-color:var(--neon-pink); color:black; font-weight:bold; padding: 10px;">
+              LOGIN
+            </button>
+          </form>
+
+          <div id="loginResult" class="mt-3"></div>
+        </div>
+
+        <!-- ANALYSIS -->
+        <div class="flex flex-column gap-3">
+          <div class="card" style="padding: 1rem; background: #05050d;">
+            <div class="text-xs text-dim mb-2 uppercase">Backend Query:</div>
+            <div class="terminal" style="font-size: 11px; min-height: 60px; border: none; padding: 10px;">
+              <span class="text-secondary">SELECT * FROM users WHERE user='</span><span id="userPreview" style="color:var(--neon-yellow);"></span><span class="text-secondary">' AND pass='</span><span id="passPreview" style="color:var(--neon-yellow);"></span><span class="text-secondary">'</span>
+            </div>
+          </div>
+
+          <div class="card" style="padding: 1rem; border-color: rgba(255,255,255,0.05);">
+            <div class="text-xs text-dim uppercase mb-2">Hints</div>
+            <p class="text-secondary text-xs">Try to force the WHERE condition to be TRUE.</p>
+            <code class="text-pink text-xs block mt-2" style="background:rgba(0,0,0,0.3); padding:5px;">' OR '1'='1</code>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    function updateQueryPreview() {
+      document.getElementById('userPreview').textContent = document.getElementById('usernameInput').value;
+      document.getElementById('passPreview').textContent = document.getElementById('passwordInput').value;
+    }
+
+    async function handleLogin(e) {
+      e.preventDefault();
+      const btn = document.getElementById('loginBtn');
+      const resDiv = document.getElementById('loginResult');
+      
+      btn.textContent = '...';
+      btn.disabled = true;
+
+      try {
+        const formData = new URLSearchParams();
+        formData.append('username', document.getElementById('usernameInput').value);
+        formData.append('password', document.getElementById('passwordInput').value);
+
+        const res = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: formData.toString()
+        });
+        const data = await res.json();
+
+        if (data.success) {
+          resDiv.innerHTML = `<div class="p-3 rounded text-center" style="background:rgba(0,255,136,0.1); border:1px solid var(--neon-green); color:var(--neon-green);">
+            <div class="text-xs mb-1">SUCCESS! FLAG:</div>
+            <div class="text-sm font-bold">${data.flag}</div>
+          </div>`;
+          btn.textContent = 'ACCESS GRANTED';
+        } else {
+          resDiv.innerHTML = `<div class="text-xs text-pink text-center">[!] ${data.error}</div>`;
+          btn.textContent = 'LOGIN';
+          btn.disabled = false;
+        }
+      } catch (err) { btn.disabled = false; }
+    }
+
+    async function initAuth() {
+      try {
+        let res = await fetch('/api/auth/status');
+        let data = await res.json();
+        if (!data.authenticated) {
+          const autoRes = await fetch('/api/auth/auto-login', { method: 'POST' });
+          data = await autoRes.json();
+        }
+        if (data.success) {
+          document.getElementById('navUser').innerHTML = `
+            <span class="nav-user-badge">${data.user.username}</span>
+            <button class="nav-logout" onclick="logout()">Logout</button>
+          `;
+        }
+      } catch (err) {}
+    }
+    initAuth();
+    updateQueryPreview();
+    function logout() { fetch('/api/auth/logout', { method: 'POST' }).then(() => window.location.href = '/'); }
+  </script>
+</body>
+</html>

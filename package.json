@@ -1,0 +1,20 @@
+{
+  "name": "act-lab",
+  "version": "1.0.0",
+  "description": "ACT LAB - Vulnerable Web Application Training Platform for Cyber Security Education",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "engines": {
+    "node": "24.x"
+  },
+  "dependencies": {
+    "cookie-parser": "^1.4.6",
+    "dotenv": "^17.4.2",
+    "express": "^4.18.2",
+    "pg": "^8.11.3",
+    "sqlite3": "^5.1.6"
+  }
+}

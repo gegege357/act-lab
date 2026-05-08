@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Challenge - ACT LAB</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <div class="cyber-bg"></div>
+
+  <nav class="navbar">
+    <a href="/" class="nav-logo">
+      <div class="nav-logo-icon">ACT</div>
+      <span class="nav-logo-text">ACT LAB</span>
+    </a>
+    <ul class="nav-links" id="navLinks">
+      <li><a href="/challenges">Challenges</a></li>
+      <li><a href="/dashboard">Dashboard</a></li>
+    </ul>
+    <div class="nav-user" id="navUser">
+      <a href="/login" class="btn btn-primary btn-sm">Login</a>
+    </div>
+  </nav>
+
+  <main class="main-content">
+    <div class="container" style="max-width: 800px;">
+      <div class="mb-3">
+        <a href="/challenges" class="text-cyan text-sm" style="text-decoration:none;">&larr; Back to Challenges</a>
+      </div>
+
+      <div id="challengeContent">
+        <div class="spinner"></div>
+      </div>
+    </div>
+  </main>
+
+  <div class="toast-container" id="toastContainer"></div>
+
+  <script>
+    const challengeId = window.location.pathname.split('/').pop();
+
+    async function loadChallenge() {
+      try {
+        const res = await fetch(`/api/challenges/${challengeId}`);
+        const data = await res.json();
+
+        if (!data.success) {
+          document.getElementById('challengeContent').innerHTML = '<div class="empty-state"><div class="empty-state-text">Challenge not found</div></div>';
+          return;
+        }
+
+        const c = data.challenge;
+        const solved = data.solved;
+
+        const catBadge = {
+          'SQL Injection': 'badge-sqli',
+          'XSS': 'badge-xss',
+          'CSRF': 'badge-csrf',
+          'IDOR': 'badge-idor',
+          'Open Redirect': 'badge-redirect'
+        }[c.category] || 'badge-easy';
+
+        const diffBadge = {
+          'Easy': 'badge-easy',
+          'Medium': 'badge-medium',
+          'Hard': 'badge-hard'
+        }[c.difficulty] || 'badge-easy';
+
+        let html = `
+          <div class="card" style="border-color: rgba(0,240,255,0.2); margin-bottom: 1.5rem;">
+            <div class="flex justify-between items-center mb-2" style="flex-wrap:wrap; gap:8px;">
+              <div class="flex gap-1">
+                <span class="badge ${catBadge}">${c.category}</span>
+                <span class="badge ${diffBadge}">${c.difficulty}</span>
+                ${solved ? '<span class="badge badge-solved">SOLVED</span>' : ''}
+              </div>
+              <div style="font-family:'Orbitron',sans-serif; font-size:18px; color:var(--neon-yellow);">${c.points} PTS</div>
+            </div>
+            <h1 style="font-family:'Orbitron',sans-serif; font-size:1.3rem; font-weight:700; margin-bottom:1rem;">${escapeHtml(c.title)}</h1>
+            <p style="color:var(--text-secondary); line-height:1.7; margin-bottom: 1.5rem;">${escapeHtml(c.description)}</p>
+            
+            <div style="border-top: 1px solid var(--border-color); padding-top: 1.5rem;">
+              <a href="${c.endpoint}" target="_blank" class="btn btn-primary btn-block" style="background:var(--neon-cyan); color:black; font-weight:bold; letter-spacing:1px;">
+                LAUNCH PLAYGROUND &nearr;
+              </a>
+              <p class="text-center text-dim text-xs mt-2">The vulnerable lab will open in a new tab</p>
+            </div>
+          </div>
+
+          <div class="card mb-3">
+            <div class="card-title mb-2">TARGET ENDPOINT</div>
+            <div class="terminal">
+              <div class="terminal-header">
+                <div class="terminal-dot red"></div>
+                <div class="terminal-dot yellow"></div>
+                <div class="terminal-dot green"></div>
+                <span class="terminal-title">target_url</span>
+              </div>
+              <div class="terminal-body">${window.location.origin}${escapeHtml(c.endpoint)}</div>
+            </div>
+          </div>
+
+          <div class="hint-box mb-3">
+            <div class="hint-box-title">&#128161; HINT</div>
+            <div class="hint-box-content">${escapeHtml(c.hint)}</div>
+          </div>
+
+          <div class="card mb-3" style="border-color: var(--neon-green);">
+            <div class="card-title mb-2" style="color:var(--neon-green)">SUBMIT FLAG</div>
+            <form onsubmit="submitFlag(event)">
+              <div class="form-group">
+                <input type="text" class="form-input" id="flagInput" placeholder="ACT{...}" required style="font-family:'Share Tech Mono',monospace; text-align:center; font-size:1.1rem; border-color:rgba(0,255,136,0.3);">
+              </div>
+              <button type="submit" class="btn btn-success btn-block" id="submitBtn">AUTHENTICATE FLAG &rarr;</button>
+            </form>
+            <div id="flagResult" class="mt-2" style="display:none;"></div>
+          </div>
+        `;
+
+        document.getElementById('challengeContent').innerHTML = html;
+      } catch (err) {
+        document.getElementById('challengeContent').innerHTML = '<div class="empty-state"><div class="empty-state-text">Failed to load challenge</div></div>';
+      }
+    }
+
+    async function submitFlag(e) {
+      e.preventDefault();
+      const flag = document.getElementById('flagInput').value;
+      const btn = document.getElementById('submitBtn');
+      const resultDiv = document.getElementById('flagResult');
+
+      btn.textContent = 'CHECKING...';
+      btn.disabled = true;
+
+      try {
+        const formData = new URLSearchParams();
+        formData.append('challengeId', challengeId);
+        formData.append('flag', flag);
+
+        const res = await fetch('/api/challenges/submit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: formData.toString()
+        });
+
+        const data = await res.json();
+
+        resultDiv.style.display = 'block';
+
+        if (data.correct) {
+          resultDiv.innerHTML = `<div style="background:rgba(0,255,136,0.1); border:1px solid rgba(0,255,136,0.4); border-radius:8px; padding:14px; color:var(--neon-green); font-weight:600;">&#9989; ${data.message} +${data.points} points! Total: ${data.newScore} pts</div>`;
+          showToast(data.message, 'success');
+          setTimeout(() => loadChallenge(), 2000);
+        } else if (data.alreadySolved) {
+          resultDiv.innerHTML = `<div style="background:rgba(0,240,255,0.1); border:1px solid rgba(0,240,255,0.4); border-radius:8px; padding:14px; color:var(--neon-cyan); font-weight:600;">&#8505; ${data.message}</div>`;
+        } else {
+          resultDiv.innerHTML = `<div style="background:rgba(255,0,102,0.1); border:1px solid rgba(255,0,102,0.4); border-radius:8px; padding:14px; color:var(--neon-pink); font-weight:600;">&#10060; ${data.message}</div>`;
+        }
+      } catch (err) {
+        resultDiv.innerHTML = `<div style="background:rgba(255,0,102,0.1); border:1px solid rgba(255,0,102,0.4); border-radius:8px; padding:14px; color:var(--neon-pink);">Error: ${err.message}</div>`;
+      }
+
+      btn.textContent = 'SUBMIT FLAG';
+      btn.disabled = false;
+    }
+
+    function escapeHtml(str) {
+      const div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
+    function showToast(msg, type) {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      toast.className = `toast toast-${type}`;
+      toast.textContent = msg;
+      container.appendChild(toast);
+      setTimeout(() => toast.remove(), 4000);
+    }
+
+    // Check auth and auto-login if needed
+    async function initAuth() {
+      try {
+        let res = await fetch('/api/auth/status');
+        let data = await res.json();
+
+        if (!data.authenticated) {
+          const autoRes = await fetch('/api/auth/auto-login', { method: 'POST' });
+          data = await autoRes.json();
+        }
+
+        if (data.success) {
+          document.getElementById('navUser').innerHTML = `
+            <span class="nav-user-badge">${data.user.username}</span>
+            <a href="/dashboard" class="btn btn-primary btn-sm">Dashboard</a>
+            <button class="nav-logout" onclick="logout()">Logout</button>
+          `;
+        }
+      } catch (err) {
+        console.error('Auth error:', err);
+      }
+    }
+
+    function logout() {
+      fetch('/api/auth/logout', { method: 'POST' }).then(() => window.location.href = '/');
+    }
+
+    initAuth();
+    loadChallenge();
+  </script>
+</body>
+</html>

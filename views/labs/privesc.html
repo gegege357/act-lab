@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PrivEsc Lab - ACT LAB</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <div class="cyber-bg"></div>
+
+  <nav class="navbar">
+    <a href="/" class="nav-logo">
+      <div class="nav-logo-icon">ACT</div>
+      <span class="nav-logo-text">ACT LAB</span>
+    </a>
+    <ul class="nav-links" id="navLinks">
+      <li><a href="/dashboard">Dashboard</a></li>
+      <li><a href="/challenges">Missions</a></li>
+      <li><a href="/profile">Profile</a></li>
+    </ul>
+    <div class="nav-user" id="navUser">
+      <span class="nav-user-badge">Connecting...</span>
+    </div>
+  </nav>
+
+  <main class="main-content">
+    <div class="container" style="max-width: 900px;">
+      <div class="page-header" style="text-align:center; margin-bottom: 2rem;">
+        <h1 style="color: var(--neon-purple);">PRIVILEGE ESCALATION</h1>
+        <p class="text-mono">Elevate session privileges to access admin data</p>
+      </div>
+
+      <div class="dashboard-grid" style="grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+        <!-- CONTENT -->
+        <div id="adminContent" class="card" style="min-height: 250px; padding: 1.5rem; border-color: rgba(255,255,255,0.05); display: flex; align-items: center; justify-content: center; text-align: center;">
+          <div class="spinner"></div>
+        </div>
+
+        <!-- ANALYSIS -->
+        <div class="flex flex-column gap-3">
+          <div class="card" style="padding: 1rem; background: #05050d;">
+            <div class="flex justify-between items-center mb-2">
+              <span class="text-xs text-dim uppercase">Cookies</span>
+              <button onclick="loadAdmin()" class="text-xs text-cyan" style="background:none; border:none; cursor:pointer; text-decoration:underline;">REFRESH</button>
+            </div>
+            <div id="cookieList" class="flex flex-column gap-2"></div>
+          </div>
+
+          <div class="card" style="padding: 1rem;">
+             <p class="text-secondary text-xs">The server checks the <code>role</code> cookie. If it's not <code>admin</code>, access is denied. Try to poison the cookie.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    function updateCookieInspector() {
+      const list = document.getElementById('cookieList');
+      const cookies = document.cookie.split(';');
+      if (!cookies[0]) {
+        list.innerHTML = '<div class="text-xs text-dim">No cookies</div>';
+        return;
+      }
+      list.innerHTML = cookies.map(c => {
+        const [n, v] = c.split('=').map(s => s.trim());
+        const isRole = n === 'role';
+        return `<div class="flex justify-between p-2 rounded bg-black text-xs" style="border: 1px solid ${isRole ? 'var(--neon-purple)' : '#222'}">
+          <span class="${isRole ? 'text-purple' : 'text-dim'}">${n}</span>
+          <span class="text-mono">${v}</span>
+        </div>`;
+      }).join('');
+    }
+
+    async function loadAdmin() {
+      updateCookieInspector();
+      const content = document.getElementById('adminContent');
+      content.innerHTML = '<div class="spinner"></div>';
+      try {
+        const res = await fetch('/api/admin/stats');
+        const data = await res.json();
+        if (data.success) {
+          content.innerHTML = `
+            <div style="width:100%">
+              <div class="text-xs text-green font-bold mb-2">SUCCESSFULLY ESCALATED</div>
+              <div class="p-3 bg-green/10 border border-green rounded">
+                <div class="text-xs text-dim mb-1">FLAG:</div>
+                <div class="text-sm text-yellow font-bold">ACT{pr1v1l3g3_3sc4l4t10n_succ3ss}</div>
+              </div>
+            </div>
+          `;
+        } else {
+          content.innerHTML = `<div><div style="font-size:32px; margin-bottom:1rem;">🔒</div><div class="text-xs text-dim">ACCESS DENIED<br>Required: role=admin</div></div>`;
+        }
+      } catch (err) {}
+    }
+
+    async function initAuth() {
+      try {
+        let res = await fetch('/api/auth/status');
+        let data = await res.json();
+        if (!data.authenticated) {
+          const autoRes = await fetch('/api/auth/auto-login', { method: 'POST' });
+          data = await autoRes.json();
+        }
+        if (data.success) {
+          document.getElementById('navUser').innerHTML = `
+            <span class="nav-user-badge">${data.user.username}</span>
+            <button class="nav-logout" onclick="logout()">Logout</button>
+          `;
+          loadAdmin();
+        }
+      } catch (err) {}
+    }
+    initAuth();
+    function logout() { fetch('/api/auth/logout', { method: 'POST' }).then(() => window.location.href = '/'); }
+  </script>
+</body>
+</html>

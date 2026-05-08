@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Search Lab - ACT LAB</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <div class="cyber-bg"></div>
+
+  <nav class="navbar">
+    <a href="/" class="nav-logo">
+      <div class="nav-logo-icon">ACT</div>
+      <span class="nav-logo-text">ACT LAB</span>
+    </a>
+    <ul class="nav-links" id="navLinks">
+      <li><a href="/dashboard">Dashboard</a></li>
+      <li><a href="/challenges">Challenges</a></li>
+      <li><a href="/search" class="active">Search Lab</a></li>
+      <li><a href="/guestbook">Guestbook</a></li>
+    </ul>
+    <div class="nav-user" id="navUser">
+      <span class="nav-user-badge">Loading...</span>
+    </div>
+    <button class="mobile-menu-btn" onclick="document.getElementById('navLinks').classList.toggle('open')">&#9776;</button>
+  </nav>
+
+  <main class="main-content">
+    <div class="container">
+      <div class="page-header">
+        <h1>// SEARCH LAB</h1>
+        <p>Test SQL Injection and Reflected XSS vulnerabilities</p>
+      </div>
+
+      <div class="card mb-4">
+        <form onsubmit="handleSearch(event)" class="flex gap-2">
+          <input type="text" id="searchInput" class="form-input" placeholder="Search challenges (e.g. SQL, XSS, Admin)..." required>
+          <button type="submit" class="btn btn-primary">SEARCH</button>
+        </form>
+      </div>
+
+      <div id="searchResults">
+        <div class="empty-state">
+          <div class="empty-state-icon">&#128269;</div>
+          <div class="empty-state-text">Enter a query to search the challenge database</div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <div class="toast-container" id="toastContainer"></div>
+
+  <script>
+    async function initAuth() {
+      try {
+        let res = await fetch('/api/auth/status');
+        let data = await res.json();
+        if (!data.authenticated) {
+          const autoRes = await fetch('/api/auth/auto-login', { method: 'POST' });
+          data = await autoRes.json();
+        }
+        if (data.success) {
+          document.getElementById('navUser').innerHTML = `
+            <span class="nav-user-badge">${data.user.username}</span>
+            <a href="/dashboard" class="btn btn-primary btn-sm">Dashboard</a>
+            <button class="nav-logout" onclick="logout()">Logout</button>
+          `;
+        }
+      } catch (err) { console.error(err); }
+    }
+
+    async function handleSearch(e) {
+      e.preventDefault();
+      const q = document.getElementById('searchInput').value;
+      const resultsDiv = document.getElementById('searchResults');
+      resultsDiv.innerHTML = '<div class="spinner"></div>';
+
+      try {
+        const res = await fetch(`/api/search?q=${q}`);
+        const data = await res.json();
+
+        if (data.success) {
+          if (data.results.length === 0) {
+            resultsDiv.innerHTML = `<div class="empty-state"><div class="empty-state-text">No results found for "${q}"</div></div>`;
+          } else {
+            const keys = Object.keys(data.results[0]);
+            let html = `<p class="mb-2 text-dim text-sm">Found ${data.count} results for <strong>${escapeHtml(q)}</strong></p>`;
+            
+            html += `
+              <div class="card" style="overflow-x: auto; padding: 0; border-color: var(--neon-cyan);">
+                <table class="leaderboard-table" style="margin: 0; width: 100%;">
+                  <thead>
+                    <tr>
+                      ${keys.map(k => `<th>${escapeHtml(k.toUpperCase())}</th>`).join('')}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${data.results.map(row => `
+                      <tr>
+                        ${keys.map(k => {
+                          const val = row[k];
+                          const isSensitive = k.toLowerCase().includes('pass') || k.toLowerCase().includes('flag') || k.toLowerCase().includes('secret');
+                          return `<td class="${isSensitive ? 'text-yellow text-mono' : ''}" style="max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(String(val || ''))}</td>`;
+                        }).join('')}
+                      </tr>
+                    `).join('')}
+                  </tbody>
+                </table>
+              </div>
+            `;
+            resultsDiv.innerHTML = html;
+          }
+        } else {
+          // SQL Injection Error details often shown here
+          resultsDiv.innerHTML = `
+            <div class="card" style="border-color:var(--neon-pink)">
+              <h3 style="color:var(--neon-pink)">SQL Error</h3>
+              <pre style="background:rgba(0,0,0,0.3); padding:1rem; border-radius:8px; overflow-x:auto; margin-top:1rem; color:#ff80ab; font-family:'Share Tech Mono', monospace;">${data.error}</pre>
+            </div>
+          `;
+        }
+      } catch (err) {
+        resultsDiv.innerHTML = `<div class="text-pink">Error: ${err.message}</div>`;
+      }
+    }
+
+    function logout() {
+      fetch('/api/auth/logout', { method: 'POST' }).then(() => window.location.href = '/');
+    }
+
+    // Secret function for XSS Challenge
+    window.getFlag = function() {
+      showToast('XSS SUCCESS! Flag: ACT{r3fl3ct3d_xss_f0und}', 'success');
+      console.log('%c FLAG: ACT{r3fl3ct3d_xss_f0und} ', 'background: #222; color: #bada55; font-size: 20px;');
+    };
+
+    initAuth();
+  </script>
+</body>
+</html>

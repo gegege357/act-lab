@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Blind SQLi - ACT LAB</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <div class="cyber-bg"></div>
+
+  <nav class="navbar">
+    <a href="/" class="nav-logo">
+      <div class="nav-logo-icon">ACT</div>
+      <span class="nav-logo-text">ACT LAB</span>
+    </a>
+    <ul class="nav-links" id="navLinks">
+      <li><a href="/dashboard">Dashboard</a></li>
+      <li><a href="/challenges">Missions</a></li>
+      <li><a href="/profile">Profile</a></li>
+    </ul>
+    <div class="nav-user" id="navUser">
+      <span class="nav-user-badge">Connecting...</span>
+    </div>
+  </nav>
+
+  <main class="main-content">
+    <div class="container" style="max-width: 900px;">
+      <div class="page-header" style="text-align:center; margin-bottom: 2rem;">
+        <h1 style="color: var(--neon-cyan);">BLIND SQLi</h1>
+        <p class="text-mono">Extract data character-by-character</p>
+      </div>
+
+      <div class="dashboard-grid" style="grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+        <!-- SEARCH -->
+        <div class="card" style="padding: 1.5rem; border-color: var(--neon-cyan);">
+          <div class="card-title mb-3 text-xs uppercase text-dim">Boolean Engine</div>
+          
+          <form onsubmit="handleSearch(event)" class="flex gap-2 mb-4">
+            <input type="text" id="searchInput" class="form-input" placeholder="Condition..." required oninput="updateQueryPreview()" style="padding: 8px;">
+            <button type="submit" class="btn btn-primary" style="background:var(--neon-cyan); border-color:var(--neon-cyan); color:black; font-weight:bold; padding: 0 15px;">
+              TEST
+            </button>
+          </form>
+
+          <div class="card" style="background: rgba(0,0,0,0.2); border-style: dashed; text-align: center; padding: 2rem; margin-bottom: 1.5rem;">
+            <div style="width: 30px; height: 30px; border-radius: 50%; background: #222; margin: 0 auto 0.5rem;" id="statusLight"></div>
+            <div class="text-xs text-dim uppercase" id="statusText">WAITING...</div>
+          </div>
+
+          <div class="text-xs text-dim uppercase mb-1">Backend View:</div>
+          <div class="terminal" style="font-size: 11px; min-height: 60px; background: rgba(0,0,0,0.4); border: none; padding: 10px;">
+            <span class="text-secondary">SELECT id FROM challenges WHERE title LIKE '%</span><span id="sqlPreviewInput" style="color: #ffcc00;"></span><span class="text-secondary">%'</span>
+          </div>
+        </div>
+
+        <!-- ANALYSIS -->
+        <div class="flex flex-column gap-3">
+          <div class="card" style="padding: 1.2rem; border-color: rgba(255,255,255,0.05);">
+            <div class="text-xs text-dim uppercase mb-2">Guide</div>
+            <p class="text-secondary text-xs" style="line-height: 1.6;">
+              Observe the light. <span class="text-green">Green</span> means TRUE, <span class="text-pink">Pink</span> means FALSE.
+            </p>
+            <div class="mt-3">
+               <code class="text-cyan text-xs block mb-1" style="background:rgba(0,0,0,0.3); padding:5px;">' AND (1=1)--</code>
+               <code class="text-yellow text-xs block" style="background:rgba(0,0,0,0.3); padding:5px; font-size: 9px;">' AND (SELECT SUBSTR(secret_value,1,1) FROM secret_vault)='A'--</code>
+            </div>
+          </div>
+          
+          <div class="card" style="background: rgba(0,240,255,0.02); border-color: rgba(0,240,255,0.1); padding: 1rem;">
+             <p class="text-xs text-cyan" style="margin:0;">
+               Use the boolean logic to extract the flag from the <code>secret_vault</code> table.
+             </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    function updateQueryPreview() {
+      document.getElementById('sqlPreviewInput').textContent = document.getElementById('searchInput').value;
+    }
+
+    async function handleSearch(e) {
+      if (e) e.preventDefault();
+      const q = document.getElementById('searchInput').value;
+      const light = document.getElementById('statusLight');
+      const text = document.getElementById('statusText');
+      
+      text.textContent = '...';
+      light.style.background = '#333';
+
+      try {
+        const res = await fetch(`/api/search?q=${q}`);
+        const data = await res.json();
+
+        if (data.success && data.results && data.results.length > 0) {
+          light.style.background = 'var(--neon-green)';
+          text.innerHTML = '<span class="text-green">TRUE</span>';
+        } else {
+          light.style.background = 'var(--neon-pink)';
+          text.innerHTML = '<span class="text-pink">FALSE</span>';
+        }
+      } catch (err) { text.textContent = 'ERR'; }
+    }
+
+    async function initAuth() {
+      try {
+        let res = await fetch('/api/auth/status');
+        let data = await res.json();
+        if (!data.authenticated) {
+          const autoRes = await fetch('/api/auth/auto-login', { method: 'POST' });
+          data = await autoRes.json();
+        }
+        if (data.success) {
+          document.getElementById('navUser').innerHTML = `
+            <span class="nav-user-badge">${data.user.username}</span>
+            <button class="nav-logout" onclick="logout()">Logout</button>
+          `;
+        }
+      } catch (err) {}
+    }
+    initAuth();
+    updateQueryPreview();
+    function logout() { fetch('/api/auth/logout', { method: 'POST' }).then(() => window.location.href = '/'); }
+  </script>
+</body>
+</html>

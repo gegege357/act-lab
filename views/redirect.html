@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Redirect Lab - ACT LAB</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <div class="cyber-bg"></div>
+
+  <nav class="navbar">
+    <a href="/" class="nav-logo">
+      <div class="nav-logo-icon">ACT</div>
+      <span class="nav-logo-text">ACT LAB</span>
+    </a>
+    <ul class="nav-links" id="navLinks">
+      <li><a href="/dashboard">Dashboard</a></li>
+      <li><a href="/challenges">Challenges</a></li>
+      <li><a href="/redirect" class="active">Redirect Lab</a></li>
+    </ul>
+    <div class="nav-user" id="navUser">
+      <span class="nav-user-badge">Loading...</span>
+    </div>
+    <button class="mobile-menu-btn" onclick="document.getElementById('navLinks').classList.toggle('open')">&#9776;</button>
+  </nav>
+
+  <main class="main-content">
+    <div class="container">
+      <div class="page-header">
+        <h1>// REDIRECT LAB</h1>
+        <p>Test Open Redirect vulnerabilities and phishing attack vectors</p>
+      </div>
+
+      <div class="dashboard-grid">
+        <div class="card">
+          <div class="card-title mb-2">Safe Redirection</div>
+          <p class="text-secondary text-sm mb-3">Redirect to an internal page using the redirect API.</p>
+          <a href="/api/redirect?url=/dashboard" class="btn btn-secondary btn-sm">Redirect to Dashboard</a>
+          <div class="mt-2 text-xs text-mono text-dim">URL: /api/redirect?url=/dashboard</div>
+        </div>
+
+        <div class="card">
+          <div class="card-title mb-2">External Redirection</div>
+          <p class="text-secondary text-sm mb-3">This endpoint is vulnerable. Try to redirect to any external site.</p>
+          <div class="flex gap-2">
+            <input type="text" id="targetUrl" class="form-input" placeholder="https://example.com" value="https://google.com">
+            <button onclick="testRedirect()" class="btn btn-primary">GO</button>
+          </div>
+          <div class="mt-2 text-xs text-mono text-dim" id="exploitUrl">URL: /api/redirect?url=https://google.com</div>
+        </div>
+      </div>
+
+      <div class="card mt-4" style="border-color: rgba(255,255,255,0.1)">
+        <div class="card-title mb-2">Challenge Hint</div>
+        <p class="text-secondary text-sm">
+          An open redirect vulnerability occurs when an application uses a user-supplied URL to perform a redirection without proper validation. 
+          Attackers use this to craft phishing links that look like they belong to the trusted site.
+        </p>
+      </div>
+    </div>
+  </main>
+
+  <div class="toast-container" id="toastContainer"></div>
+
+  <script>
+    async function initAuth() {
+      try {
+        let res = await fetch('/api/auth/status');
+        let data = await res.json();
+        if (!data.authenticated) {
+          const autoRes = await fetch('/api/auth/auto-login', { method: 'POST' });
+          data = await autoRes.json();
+        }
+        if (data.success) {
+          document.getElementById('navUser').innerHTML = `
+            <span class="nav-user-badge">${data.user.username}</span>
+            <a href="/dashboard" class="btn btn-primary btn-sm">Dashboard</a>
+            <button class="nav-logout" onclick="logout()">Logout</button>
+          `;
+        }
+      } catch (err) { console.error(err); }
+    }
+
+    function testRedirect() {
+      const url = document.getElementById('targetUrl').value;
+      window.location.href = `/api/redirect?url=${encodeURIComponent(url)}`;
+    }
+
+    document.getElementById('targetUrl').addEventListener('input', (e) => {
+      document.getElementById('exploitUrl').textContent = `URL: /api/redirect?url=${e.target.value}`;
+    });
+
+    function logout() {
+      fetch('/api/auth/logout', { method: 'POST' }).then(() => window.location.href = '/');
+    }
+
+    initAuth();
+  </script>
+</body>
+</html>

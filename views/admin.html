@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Panel - ACT LAB</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <div class="cyber-bg"></div>
+
+  <nav class="navbar">
+    <a href="/" class="nav-logo">
+      <div class="nav-logo-icon">ACT</div>
+      <span class="nav-logo-text">ACT LAB</span>
+    </a>
+    <ul class="nav-links" id="navLinks">
+      <li><a href="/dashboard">Dashboard</a></li>
+      <li><a href="/challenges">Missions</a></li>
+      <li><a href="/profile">Profile</a></li>
+      <li><a href="/admin" class="active">Admin</a></li>
+    </ul>
+    <div class="nav-user" id="navUser">
+      <a href="/login" class="btn btn-primary btn-sm">Login</a>
+    </div>
+  </nav>
+
+  <main class="main-content">
+    <div class="container" style="max-width: 1000px;">
+      <div class="page-header">
+        <h1>// ADMIN PANEL</h1>
+        <p>System administration - admin access required</p>
+      </div>
+
+      <div id="adminContent">
+        <div class="spinner"></div>
+      </div>
+    </div>
+  </main>
+
+  <div class="toast-container" id="toastContainer"></div>
+
+  <script>
+    async function loadAdmin() {
+      try {
+        const [statsRes, usersRes, activitiesRes] = await Promise.all([
+          fetch('/api/admin/stats'),
+          fetch('/api/admin/users'),
+          fetch('/api/admin/activities')
+        ]);
+
+        const stats = await statsRes.json();
+        const users = await usersRes.json();
+        const activities = await activitiesRes.json();
+
+        if (!stats.success && stats.error && stats.error.includes('Admin')) {
+          document.getElementById('adminContent').innerHTML = `
+            <div class="card" style="border-color: rgba(255,0,102,0.3);">
+              <div style="text-align:center; padding: 3rem;">
+                <div style="font-size: 48px; margin-bottom: 1rem;">&#128274;</div>
+                <h2 style="color: var(--neon-pink); font-family: 'Orbitron', sans-serif; margin-bottom: 0.5rem;">ACCESS DENIED</h2>
+                <p class="text-secondary">Admin privileges required to access this panel.</p>
+                <p class="text-dim text-sm mt-2">Try to find a way in... (hint: cookie manipulation)</p>
+                <div class="hint-box mt-3" style="text-align:left; max-width: 500px; margin: 1.5rem auto 0;">
+                  <div class="hint-box-title">&#128161; Hint</div>
+                  <div class="hint-box-content">
+                    The role check is done via cookie. Can you change your role cookie from "user" to "admin"?
+                    <br><br>
+                    In browser console: <code style="background:rgba(255,255,255,0.1);padding:2px 6px;border-radius:3px;font-family:'Share Tech Mono',monospace;">document.cookie="role=admin;path=/"</code>
+                    <br><br>
+                    Or use Burp Suite to intercept any request and add/modify the <code style="background:rgba(255,255,255,0.1);padding:2px 6px;border-radius:3px;font-family:'Share Tech Mono',monospace;">Cookie: role=admin</code> header.
+                  </div>
+                </div>
+              </div>
+            </div>
+          `;
+          return;
+        }
+
+        let html = '';
+
+        // Stats
+        if (stats.success) {
+          html += `
+            <div class="card mb-3" style="background: rgba(0,255,136,0.05); border: 2px solid var(--neon-green);">
+              <div class="flex justify-between items-center">
+                <div>
+                  <h3 style="color:var(--neon-green); font-family:'Orbitron',sans-serif; font-size:1.1rem; margin-bottom:0.2rem;">🚀 ACCESS GRANTED: PRIVILEGE ESCALATED</h3>
+                  <p class="text-secondary text-sm">You have successfully bypassed authorization using cookie manipulation.</p>
+                </div>
+                <div style="text-align:right;">
+                  <span class="text-xs text-dim text-mono">ADMIN FLAG:</span>
+                  <div class="text-mono text-yellow" style="font-size:1.2rem; font-weight:bold; letter-spacing:1px;">ACT{pr1v1l3g3_3sc4l4t10n_succ3ss}</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="dashboard-grid mb-3">
+              <div class="stat-card">
+                <div class="stat-card-icon">&#128100;</div>
+                <div class="stat-card-value">${stats.stats.totalUsers}</div>
+                <div class="stat-card-label">Total Users</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-card-icon">&#127942;</div>
+                <div class="stat-card-value">${stats.stats.totalChallenges}</div>
+                <div class="stat-card-label">Challenges</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-card-icon">&#9989;</div>
+                <div class="stat-card-value">${stats.stats.totalSolved}</div>
+                <div class="stat-card-label">Total Solves</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-card-icon">&#128172;</div>
+                <div class="stat-card-value">${stats.stats.totalGuestbook}</div>
+                <div class="stat-card-label">Guestbook</div>
+              </div>
+            </div>
+          `;
+        }
+
+        // Users Table
+        if (users.success) {
+          html += `
+            <div class="card mb-3">
+              <div class="card-title mb-2">REGISTERED USERS</div>
+              <div style="overflow-x: auto;">
+                <table class="leaderboard-table">
+                  <thead>
+                    <tr>
+                      <th>ID</th>
+                      <th>Username</th>
+                      <th>Email</th>
+                      <th>Role</th>
+                      <th>Score</th>
+                      <th>Joined</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${users.users.map(u => `
+                      <tr>
+                        <td class="text-mono text-cyan">${u.id}</td>
+                        <td class="text-mono">${escapeHtml(u.username)}</td>
+                        <td class="text-mono text-sm">${escapeHtml(u.email || '-')}</td>
+                        <td><span class="badge ${u.role === 'admin' ? 'badge-hard' : 'badge-easy'}">${escapeHtml(u.role)}</span></td>
+                        <td style="color:var(--neon-yellow); font-family:'Orbitron',sans-serif; font-size:13px;">${u.score}</td>
+                        <td class="text-sm">${u.created_at ? new Date(u.created_at).toLocaleDateString() : '-'}</td>
+                      </tr>
+                    `).join('')}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          `;
+        }
+
+        // Activity Log
+        if (activities.success) {
+          html += `
+            <div class="card mb-3">
+              <div class="card-title mb-2">ACTIVITY LOG</div>
+              <div style="max-height: 400px; overflow-y: auto;">
+                ${activities.activities.length > 0 ? activities.activities.map(a => `
+                  <div style="padding: 8px 0; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+                    <div>
+                      <span class="text-cyan text-mono text-sm">${escapeHtml(a.username || 'system')}</span>
+                      <span class="text-dim text-xs"> - </span>
+                      <span class="text-secondary text-sm">${escapeHtml(a.action)}</span>
+                      ${a.details ? `<span class="text-dim text-xs"> - ${escapeHtml(a.details)}</span>` : ''}
+                    </div>
+                    <span class="text-dim text-xs text-mono">${a.created_at ? new Date(a.created_at).toLocaleString() : ''}</span>
+                  </div>
+                `).join('') : '<div class="empty-state"><div class="empty-state-text">No activities</div></div>'}
+              </div>
+            </div>
+          `;
+        }
+
+        // Reset Button
+        html += `
+          <div class="card">
+            <div class="card-title mb-2">DANGER ZONE</div>
+            <div class="flex gap-2" style="flex-wrap:wrap;">
+              <button class="btn btn-danger btn-sm" onclick="resetData()">RESET ALL PROGRESS</button>
+              <button class="btn btn-sm" style="background:rgba(255,165,0,0.1); border:1px solid orange; color:orange;" onclick="reseedSystem()">RE-SEED SYSTEM (RESTORE ALL)</button>
+            </div>
+            <p class="text-dim text-xs mt-2">Reseed will restore all challenges, users, and reset everything to default state.</p>
+          </div>
+        `;
+
+        document.getElementById('adminContent').innerHTML = html;
+
+      } catch (err) {
+        document.getElementById('adminContent').innerHTML = `
+          <div class="card" style="border-color: rgba(255,0,102,0.3);">
+            <div class="text-pink text-center" style="padding: 2rem;">Failed to load admin panel</div>
+          </div>
+        `;
+      }
+    }
+
+    async function resetData() {
+      if (!confirm('Are you sure? This will reset all user progress!')) return;
+
+      try {
+        const res = await fetch('/api/admin/reset', { method: 'POST' });
+        const data = await res.json();
+
+        if (data.success) {
+          showToast('Progress reset successfully', 'success');
+          loadAdmin();
+        } else {
+          showToast(data.error, 'error');
+        }
+      } catch (err) {
+        showToast('Error: ' + err.message, 'error');
+      }
+    }
+
+    async function reseedSystem() {
+      if (!confirm('WARNING: This will restore ALL challenges and DELETE all custom users/progress. Continue?')) return;
+      
+      try {
+        const res = await fetch('/api/admin/reseed', { method: 'POST' });
+        const data = await res.json();
+        if (data.success) {
+          showToast(data.message, 'success');
+          loadAdmin();
+        } else {
+          showToast(data.error, 'error');
+        }
+      } catch (err) {
+        showToast('Error: ' + err.message, 'error');
+      }
+    }
+
+    function escapeHtml(str) {
+      const div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
+    function showToast(msg, type) {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      toast.className = `toast toast-${type}`;
+      toast.textContent = msg;
+      container.appendChild(toast);
+      setTimeout(() => toast.remove(), 4000);
+    }
+
+    // Check auth and auto-login if needed
+    async function initAuth() {
+      try {
+        let res = await fetch('/api/auth/status');
+        let data = await res.json();
+
+        if (!data.authenticated) {
+          const autoRes = await fetch('/api/auth/auto-login', { method: 'POST' });
+          data = await autoRes.json();
+        }
+
+        if (data.success) {
+          document.getElementById('navUser').innerHTML = `
+            <span class="nav-user-badge">${escapeHtml(data.user.username)}</span>
+            <a href="/dashboard" class="btn btn-primary btn-sm">Dashboard</a>
+            <button class="nav-logout" onclick="logout()">Logout</button>
+          `;
+          loadAdmin();
+        }
+      } catch (err) {
+        console.error('Auth error:', err);
+      }
+    }
+
+    function logout() {
+      fetch('/api/auth/logout', { method: 'POST' }).then(() => window.location.href = '/');
+    }
+
+    initAuth();
+  </script>
+</body>
+</html>

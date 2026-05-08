@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CSRF Lab - ACT LAB</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <div class="cyber-bg"></div>
+
+  <nav class="navbar">
+    <a href="/" class="nav-logo">
+      <div class="nav-logo-icon">ACT</div>
+      <span class="nav-logo-text">ACT LAB</span>
+    </a>
+    <ul class="nav-links" id="navLinks">
+      <li><a href="/dashboard">Dashboard</a></li>
+      <li><a href="/challenges">Missions</a></li>
+      <li><a href="/profile">Profile</a></li>
+    </ul>
+    <div class="nav-user" id="navUser">
+      <span class="nav-user-badge">Connecting...</span>
+    </div>
+  </nav>
+
+  <main class="main-content">
+    <div class="container" style="max-width: 900px;">
+      <div class="page-header" style="text-align:center; margin-bottom: 2rem;">
+        <h1 style="color: var(--neon-yellow);">CSRF CHALLENGE</h1>
+        <p class="text-mono">Bypass the Origin Verification System</p>
+      </div>
+
+      <div class="dashboard-grid" style="grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+        <!-- PROFILE FORM -->
+        <div class="card" style="padding: 1.5rem; border-color: var(--neon-yellow);">
+          <div class="card-title mb-3 text-xs uppercase text-dim">Active Session: Profile Settings</div>
+          
+          <div id="profileView" class="mb-4">
+            <div class="spinner"></div>
+          </div>
+
+          <form onsubmit="updateProfile(event)" class="flex flex-column gap-3">
+            <div class="form-group">
+              <label class="form-label text-xs">Email</label>
+              <input type="email" id="emailInput" class="form-input" style="padding: 8px;">
+            </div>
+            <div class="form-group">
+              <label class="form-label text-xs">Bio</label>
+              <textarea id="bioInput" class="form-input" rows="2" style="padding: 8px;"></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary btn-block" style="background:var(--neon-yellow); border-color:var(--neon-yellow); color:black; font-weight:bold; padding: 10px;">
+              UPDATE PROFILE
+            </button>
+          </form>
+        </div>
+
+        <!-- INFO & LOGS -->
+        <div class="flex flex-column gap-3">
+          <div class="card" style="padding: 1.2rem; border-color: var(--neon-cyan);">
+             <div class="text-xs font-bold text-cyan uppercase mb-2">🛡️ Security Status: Active</div>
+             <p class="text-secondary" style="font-size: 11px;">
+                Verification logic checks if <code class="text-cyan">act-lab-csrf-sqli.vercel.app</code> is <strong>included</strong> in the Referer/Origin header.
+             </p>
+          </div>
+
+          <div class="card" style="padding: 1.2rem;">
+            <div class="text-xs text-dim uppercase mb-2">Mission Briefing</div>
+            <p class="text-secondary" style="font-size: 11px; line-height: 1.6;">
+              A normal CSRF form will fail. You must craft a payload that fools the <code>.includes()</code> check by manipulating your exploit URL.
+            </p>
+          </div>
+
+          <div class="card" style="padding: 1rem; background: rgba(0,0,0,0.3);">
+            <div class="text-xs text-dim mb-2">LIVE LOGS</div>
+            <div id="trafficLog" class="text-mono" style="font-size: 10px; max-height: 100px; overflow-y: auto;">
+              <div class="text-dim">// Awaiting request...</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <div class="toast-container" id="toastContainer"></div>
+
+  <script>
+    async function loadProfile() {
+      try {
+        const res = await fetch('/api/profile/me');
+        const data = await res.json();
+        if (data.success) {
+          const u = data.user;
+          document.getElementById('profileView').innerHTML = `
+            <div class="flex items-center gap-3">
+              <div class="avatar-placeholder" style="width: 40px; height: 40px; font-size: 16px; background: var(--neon-yellow); color: black;">${u.username[0].toUpperCase()}</div>
+              <div>
+                <div class="text-sm font-bold white">${u.username}</div>
+                <div class="text-dim text-xs uppercase">${u.role}</div>
+              </div>
+            </div>
+          `;
+          document.getElementById('emailInput').value = u.email || '';
+          document.getElementById('bioInput').value = u.bio || '';
+        }
+      } catch (err) {}
+    }
+
+    async function updateProfile(e) {
+      if (e) e.preventDefault();
+      const email = document.getElementById('emailInput').value;
+      const bio = document.getElementById('bioInput').value;
+      logTraffic(email, bio);
+
+      try {
+        const res = await fetch('/api/profile', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, bio })
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast('Updated!', 'success');
+          if (data.message && data.message.includes('ACT{')) showFlag(data.message);
+          loadProfile();
+        } else {
+          showToast(data.error || 'Failed', 'error');
+        }
+      } catch (err) {}
+    }
+
+    function logTraffic(email, bio) {
+      const log = document.getElementById('trafficLog');
+      log.innerHTML = `<div class="text-cyan mt-1">POST /api/profile -> ${email.substring(0,10)}...</div>` + log.innerHTML;
+    }
+
+    function showFlag(msg) {
+      const flag = msg.split('Flag: ')[1];
+      showToast('FLAG FOUND: ' + flag, 'success');
+      alert('SUCCESS! FLAG: ' + flag);
+    }
+
+    function showToast(msg, type) {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      toast.className = `toast toast-${type}`;
+      toast.textContent = msg;
+      container.appendChild(toast);
+      setTimeout(() => toast.remove(), 3000);
+    }
+
+    async function initAuth() {
+      try {
+        let res = await fetch('/api/auth/status');
+        let data = await res.json();
+        if (!data.authenticated) {
+          const autoRes = await fetch('/api/auth/auto-login', { method: 'POST' });
+          data = await autoRes.json();
+        }
+        if (data.success) {
+          document.getElementById('navUser').innerHTML = `
+            <span class="nav-user-badge">${data.user.username}</span>
+            <button class="nav-logout" onclick="logout()">Logout</button>
+          `;
+          loadProfile();
+        }
+      } catch (err) {}
+    }
+    initAuth();
+    function logout() { fetch('/api/auth/logout', { method: 'POST' }).then(() => window.location.href = '/'); }
+  </script>
+</body>
+</html>

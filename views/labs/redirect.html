@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Redirect Lab - ACT LAB</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <div class="cyber-bg"></div>
+
+  <nav class="navbar">
+    <a href="/" class="nav-logo">
+      <div class="nav-logo-icon">ACT</div>
+      <span class="nav-logo-text">ACT LAB</span>
+    </a>
+    <ul class="nav-links" id="navLinks">
+      <li><a href="/dashboard">Dashboard</a></li>
+      <li><a href="/challenges">Missions</a></li>
+      <li><a href="/profile">Profile</a></li>
+    </ul>
+    <div class="nav-user" id="navUser">
+      <span class="nav-user-badge">Connecting...</span>
+    </div>
+  </nav>
+
+  <main class="main-content">
+    <div class="container" style="max-width: 900px;">
+      <div class="page-header" style="text-align:center; margin-bottom: 2rem;">
+        <h1 style="color: var(--neon-pink);">OPEN REDIRECT</h1>
+        <p class="text-mono">Redirect traffic to untrusted domains</p>
+      </div>
+
+      <div class="dashboard-grid" style="grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+        <!-- CONTROLS -->
+        <div class="flex flex-column gap-3">
+          <div class="card" style="padding: 1.5rem; border-color: var(--neon-pink);">
+            <div class="text-xs uppercase text-dim mb-3">Execute Redirect</div>
+            <div class="flex gap-2 mb-3">
+              <input type="text" id="targetUrl" class="form-input" value="https://google.com" style="padding: 8px;" oninput="updateRedirectView()">
+              <button onclick="testRedirect()" class="btn btn-primary" style="background:var(--neon-pink); border-color:var(--neon-pink); color:black; font-weight:bold; padding: 0 15px;">
+                GO
+              </button>
+            </div>
+            <div class="mt-2 pt-2 border-top" style="border-top:1px solid #222;">
+               <code class="text-xs text-pink" id="exploitUrlPreview">/api/redirect?url=...</code>
+            </div>
+          </div>
+
+          <a href="/api/redirect?url=/dashboard" class="card" style="text-decoration:none; padding: 1rem; border-color: var(--neon-cyan); text-align:center;">
+             <span class="text-xs text-cyan">SAFE REDIRECT: /dashboard</span>
+          </a>
+        </div>
+
+        <!-- ANALYSIS -->
+        <div class="flex flex-column gap-3">
+          <div class="card" style="padding: 1rem; background: #05050d;">
+            <div class="text-xs text-dim mb-2 uppercase">Traffic Flow</div>
+            <div class="flex flex-column items-center gap-1">
+               <div class="text-xs text-cyan">ACT-LAB.ID</div>
+               <div class="text-dim">↓</div>
+               <div id="destDomain" class="text-xs text-yellow font-bold">AWAITING</div>
+            </div>
+          </div>
+
+          <div class="card" style="padding: 1rem;">
+             <p class="text-secondary text-xs">Attackers use this to mask malicious links behind a trusted domain. Highly effective for phishing.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    function updateRedirectView() {
+      const url = document.getElementById('targetUrl').value;
+      document.getElementById('exploitUrlPreview').textContent = `/api/redirect?url=${encodeURIComponent(url)}`;
+      try {
+        const domain = url.startsWith('http') ? new URL(url).hostname : url;
+        document.getElementById('destDomain').textContent = domain.toUpperCase();
+      } catch (e) { document.getElementById('destDomain').textContent = 'INVALID'; }
+    }
+
+    function testRedirect() {
+      const url = document.getElementById('targetUrl').value;
+      window.location.href = `/api/redirect?url=${encodeURIComponent(url)}`;
+    }
+
+    async function initAuth() {
+      try {
+        let res = await fetch('/api/auth/status');
+        let data = await res.json();
+        if (!data.authenticated) {
+          const autoRes = await fetch('/api/auth/auto-login', { method: 'POST' });
+          data = await autoRes.json();
+        }
+        if (data.success) {
+          document.getElementById('navUser').innerHTML = `
+            <span class="nav-user-badge">${data.user.username}</span>
+            <button class="nav-logout" onclick="logout()">Logout</button>
+          `;
+          updateRedirectView();
+        }
+      } catch (err) {}
+    }
+    initAuth();
+    function logout() { fetch('/api/auth/logout', { method: 'POST' }).then(() => window.location.href = '/'); }
+  </script>
+</body>
+</html>

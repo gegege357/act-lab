@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SQLi UNION Extraction - ACT LAB</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <div class="cyber-bg"></div>
+
+  <nav class="navbar">
+    <a href="/" class="nav-logo">
+      <div class="nav-logo-icon">ACT</div>
+      <span class="nav-logo-text">ACT LAB</span>
+    </a>
+    <ul class="nav-links" id="navLinks">
+      <li><a href="/dashboard">Dashboard</a></li>
+      <li><a href="/challenges">Missions</a></li>
+      <li><a href="/profile">Profile</a></li>
+    </ul>
+    <div class="nav-user" id="navUser">
+      <span class="nav-user-badge">Connecting...</span>
+    </div>
+  </nav>
+
+  <main class="main-content">
+    <div class="container" style="max-width: 1000px;">
+      <div class="page-header" style="text-align:center; margin-bottom: 2rem;">
+        <h1 style="color: var(--neon-cyan);">// DATA EXTRACTION LAB: UNION SELECT</h1>
+        <p class="text-mono">Target: Exfiltrate "secret_agent" credentials from the internal database</p>
+      </div>
+
+      <div class="dashboard-grid" style="grid-template-columns: 1fr; gap: 2rem;">
+        <!-- SEARCH INTERFACE -->
+        <div class="card" style="border-color: var(--neon-cyan);">
+          <div class="card-title mb-3 text-xs uppercase tracking-widest text-dim">Search Database</div>
+          <form onsubmit="handleSearch(event)" class="flex gap-2">
+            <input type="text" id="searchInput" class="form-input" placeholder="Search mission titles..." required oninput="updateQueryPreview()">
+            <button type="submit" class="btn btn-primary" style="background:var(--neon-cyan); border-color:var(--neon-cyan); color:black; font-weight:bold;">
+              EXECUTE QUERY &rarr;
+            </button>
+          </form>
+
+          <!-- LIVE QUERY PREVIEW -->
+          <div class="mt-4">
+            <div class="text-xs text-dim uppercase mb-2">Backend SQL Reconstruction:</div>
+            <div class="terminal" style="font-size: 13px; min-height: 80px; background: rgba(0,0,0,0.4);">
+              <div class="terminal-body" style="word-break: break-all; line-height: 1.6;">
+                <span class="text-secondary">SELECT id, title, description, category, difficulty, hint, points, endpoint FROM challenges WHERE title LIKE '%</span><span id="sqlPreviewInput" style="color: #ffcc00; font-weight: bold; text-decoration: underline;"></span><span class="text-secondary">%'</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- RESULTS AREA -->
+        <div id="searchResults"></div>
+      </div>
+    </div>
+  </main>
+
+  <div class="toast-container" id="toastContainer"></div>
+
+  <script>
+    function updateQueryPreview() {
+      const input = document.getElementById('searchInput').value;
+      document.getElementById('sqlPreviewInput').textContent = input;
+    }
+
+    async function handleSearch(e) {
+      if (e) e.preventDefault();
+      const q = document.getElementById('searchInput').value;
+      const resultsDiv = document.getElementById('searchResults');
+      resultsDiv.innerHTML = '<div class="spinner"></div>';
+
+      try {
+        const res = await fetch(`/api/search?q=${q}`);
+        const data = await res.json();
+
+        if (data.success) {
+          if (data.results.length === 0) {
+            resultsDiv.innerHTML = `<div class="empty-state"><div class="empty-state-text">No data returned for "${escapeHtml(q)}"</div></div>`;
+          } else {
+            const keys = Object.keys(data.results[0]);
+            let html = `
+              <div class="flex justify-between items-center mb-3">
+                <p class="text-dim text-sm">Query successful. Retrieved <strong>${data.count}</strong> records.</p>
+                ${data.results.some(r => r.username === 'secret_agent') ? '<span class="badge badge-success">TARGET ACQUIRED</span>' : ''}
+              </div>
+            `;
+            
+            html += `
+              <div class="card" style="overflow-x: auto; padding: 0; border-color: var(--neon-cyan); background: rgba(0,0,0,0.2);">
+                <table class="leaderboard-table" style="margin: 0; width: 100%; font-size: 0.85rem;">
+                  <thead>
+                    <tr>
+                      ${keys.map(k => `<th>${escapeHtml(k.toUpperCase())}</th>`).join('')}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${data.results.map(row => `
+                      <tr style="${row.username === 'secret_agent' ? 'background: rgba(0,255,255,0.05);' : ''}">
+                        ${keys.map(k => {
+                          const val = row[k];
+                          const isFlag = String(val).startsWith('ACT{');
+                          return `<td class="${isFlag ? 'text-yellow font-bold text-mono' : ''}" style="max-width: 250px; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(String(val || ''))}</td>`;
+                        }).join('')}
+                      </tr>
+                    `).join('')}
+                  </tbody>
+                </table>
+              </div>
+            `;
+            resultsDiv.innerHTML = html;
+          }
+        } else {
+          resultsDiv.innerHTML = `
+            <div class="card" style="border-color:var(--neon-pink); background: rgba(255,0,85,0.03);">
+              <div class="flex items-center gap-2 mb-2">
+                <span style="color:var(--neon-pink); font-weight:bold;">[!] SQL EXCEPTION</span>
+              </div>
+              <pre style="background:rgba(0,0,0,0.5); padding:1.2rem; border-radius:8px; overflow-x:auto; color:#ff80ab; font-family:'Share Tech Mono', monospace; font-size:0.9rem; border: 1px solid rgba(255,0,85,0.2);">${data.error}</pre>
+              <p class="mt-3 text-xs text-dim">Tip: The error indicates a mismatch in the UNION structure or a syntax error in your injection payload.</p>
+            </div>
+          `;
+        }
+      } catch (err) {
+        resultsDiv.innerHTML = `<div class="text-pink">Transmission Error: ${err.message}</div>`;
+      }
+    }
+
+    function escapeHtml(str) {
+      const div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
+    async function initAuth() {
+      try {
+        let res = await fetch('/api/auth/status');
+        let data = await res.json();
+        if (!data.authenticated) {
+          const autoRes = await fetch('/api/auth/auto-login', { method: 'POST' });
+          data = await autoRes.json();
+        }
+        if (data.success) {
+          document.getElementById('navUser').innerHTML = `
+            <span class="nav-user-badge">${data.user.username}</span>
+            <a href="/dashboard" class="btn btn-primary btn-sm">Dashboard</a>
+            <button class="nav-logout" onclick="logout()">Logout</button>
+          `;
+        }
+      } catch (err) {}
+    }
+    initAuth();
+    
+    function logout() {
+      fetch('/api/auth/logout', { method: 'POST' }).then(() => window.location.href = '/');
+    }
+    
+    // Set initial preview
+    updateQueryPreview();
+  </script>
+
+    function escapeHtml(str) {
+      const div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
+    async function initAuth() {
+      try {
+        let res = await fetch('/api/auth/status');
+        let data = await res.json();
+        if (!data.authenticated) {
+          const autoRes = await fetch('/api/auth/auto-login', { method: 'POST' });
+          data = await autoRes.json();
+        }
+        if (data.success) {
+          document.getElementById('navUser').innerHTML = `
+            <span class="nav-user-badge">${data.user.username}</span>
+            <a href="/dashboard" class="btn btn-primary btn-sm">Dashboard</a>
+            <button class="nav-logout" onclick="logout()">Logout</button>
+          `;
+        }
+      } catch (err) {}
+    }
+    initAuth();
+  </script>
+</body>
+</html>

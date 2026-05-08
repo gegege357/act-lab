@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Stored XSS - ACT LAB</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <div class="cyber-bg"></div>
+
+  <nav class="navbar">
+    <a href="/" class="nav-logo">
+      <div class="nav-logo-icon">ACT</div>
+      <span class="nav-logo-text">ACT LAB</span>
+    </a>
+    <ul class="nav-links" id="navLinks">
+      <li><a href="/dashboard">Dashboard</a></li>
+      <li><a href="/challenges">Missions</a></li>
+      <li><a href="/profile">Profile</a></li>
+    </ul>
+    <div class="nav-user" id="navUser">
+      <span class="nav-user-badge">Connecting...</span>
+    </div>
+  </nav>
+
+  <main class="main-content">
+    <div class="container" style="max-width: 1000px;">
+      <div class="page-header" style="text-align:center; margin-bottom: 2rem;">
+        <h1 style="color: var(--neon-cyan);">STORED XSS</h1>
+        <p class="text-mono">Permanent Script Injection Lab</p>
+      </div>
+
+      <div class="dashboard-grid" style="grid-template-columns: 1fr 1.5fr; gap: 1.5rem;">
+        <!-- INPUT -->
+        <div class="flex flex-column gap-3">
+          <div class="card" style="padding: 1.5rem; border-color: var(--neon-cyan);">
+            <div class="text-xs uppercase text-dim mb-3">Post Entry</div>
+            <form onsubmit="postEntry(event)" class="flex flex-column gap-3">
+              <div class="form-group">
+                <label class="text-xs text-dim">Author</label>
+                <input type="text" id="author" class="form-input" style="padding: 8px;" required>
+              </div>
+              <div class="form-group">
+                <label class="text-xs text-dim">Message</label>
+                <textarea id="message" class="form-input" style="padding: 8px;" rows="3" required></textarea>
+              </div>
+              <button type="submit" class="btn btn-primary btn-block" style="background:var(--neon-cyan); border-color:var(--neon-cyan); color:black; font-weight:bold; padding: 10px;">
+                SAVE TO DATABASE
+              </button>
+            </form>
+          </div>
+
+          <div class="card" style="padding: 1rem;">
+            <div class="text-xs text-dim mb-2 uppercase">Lab Info</div>
+            <p class="text-secondary text-xs">Payloads are stored permanently. Every visitor will execute your script.</p>
+          </div>
+        </div>
+
+        <!-- FEED -->
+        <div class="card" style="background: rgba(0,0,0,0.3); min-height: 400px; padding: 1.5rem;">
+          <div class="text-xs text-dim uppercase mb-3">Guestbook Feed</div>
+          <div id="entriesList" class="flex flex-column gap-3">
+            <div class="spinner"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <div class="toast-container" id="toastContainer"></div>
+
+  <script>
+    async function loadEntries() {
+      try {
+        const res = await fetch('/api/guestbook');
+        const data = await res.json();
+        const list = document.getElementById('entriesList');
+        if (data.success) {
+          list.innerHTML = data.entries.map(e => `
+            <div class="card" style="padding: 1rem; border-color: #222;">
+              <div class="flex justify-between mb-2">
+                <span class="text-cyan text-xs font-bold">${escapeHtml(e.author)}</span>
+                <span class="text-dim text-xs">${new Date(e.created_at).toLocaleTimeString()}</span>
+              </div>
+              <div id="msg-${e.id}" class="text-sm"></div>
+            </div>
+          `).reverse().join('');
+          
+          data.entries.forEach(e => {
+            const container = document.getElementById(`msg-${e.id}`);
+            if (container) {
+              container.innerHTML = e.message;
+              const scripts = container.getElementsByTagName('script');
+              for (let s of scripts) {
+                const ns = document.createElement('script');
+                ns.text = s.innerText;
+                document.body.appendChild(ns).parentNode.removeChild(ns);
+              }
+            }
+          });
+        }
+      } catch (err) {}
+    }
+
+    async function postEntry(e) {
+      e.preventDefault();
+      const author = document.getElementById('author').value;
+      const message = document.getElementById('message').value;
+      try {
+        const res = await fetch('/api/guestbook', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: new URLSearchParams({ author, message }).toString()
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast('Posted!', 'success');
+          document.getElementById('message').value = '';
+          loadEntries();
+        }
+      } catch (err) {}
+    }
+
+    function escapeHtml(str) {
+      const div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
+    function showToast(msg, type) {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      toast.className = `toast toast-${type}`;
+      toast.textContent = msg;
+      container.appendChild(toast);
+      setTimeout(() => toast.remove(), 3000);
+    }
+
+    async function initAuth() {
+      try {
+        let res = await fetch('/api/auth/status');
+        let data = await res.json();
+        if (!data.authenticated) {
+          const autoRes = await fetch('/api/auth/auto-login', { method: 'POST' });
+          data = await autoRes.json();
+        }
+        if (data.success) {
+          document.cookie = "admin_session=ACT{st0r3d_xss_p3rs1st3nt}; path=/lab/xss-stored; max-age=3600";
+          document.getElementById('navUser').innerHTML = `
+            <span class="nav-user-badge">${data.user.username}</span>
+            <button class="nav-logout" onclick="logout()">Logout</button>
+          `;
+          loadEntries();
+        }
+      } catch (err) {}
+    }
+    initAuth();
+    function logout() { fetch('/api/auth/logout', { method: 'POST' }).then(() => window.location.href = '/'); }
+  </script>
+</body>
+</html>

@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IDOR Lab - ACT LAB</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <div class="cyber-bg"></div>
+
+  <nav class="navbar">
+    <a href="/" class="nav-logo">
+      <div class="nav-logo-icon">ACT</div>
+      <span class="nav-logo-text">ACT LAB</span>
+    </a>
+    <ul class="nav-links" id="navLinks">
+      <li><a href="/dashboard">Dashboard</a></li>
+      <li><a href="/challenges">Missions</a></li>
+      <li><a href="/profile">Profile</a></li>
+    </ul>
+    <div class="nav-user" id="navUser">
+      <span class="nav-user-badge">Connecting...</span>
+    </div>
+  </nav>
+
+  <main class="main-content">
+    <div class="container" style="max-width: 900px;">
+      <div class="page-header" style="text-align:center; margin-bottom: 2rem;">
+        <h1 style="color: var(--neon-green);">IDOR LAB</h1>
+        <p class="text-mono">Enumerate and access private data</p>
+      </div>
+
+      <div class="dashboard-grid" style="grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+        <!-- VIEWER -->
+        <div class="card" style="padding: 1.5rem; border-color: var(--neon-green);">
+          <div class="text-xs uppercase text-dim mb-3">Retrieve Profile</div>
+          <div class="flex gap-2 mb-3">
+            <input type="number" id="userIdInput" class="form-input" value="1" min="1" style="padding: 8px;" oninput="updateUrlPreview()">
+            <button onclick="fetchProfile()" class="btn btn-primary" style="background:var(--neon-green); border-color:var(--neon-green); color:black; font-weight:bold; padding: 0 15px;">
+              FETCH
+            </button>
+          </div>
+          <div id="profileDisplay" style="min-height: 150px;">
+            <div class="spinner"></div>
+          </div>
+          <div class="mt-3 pt-2 border-top" style="border-top:1px solid #222;">
+            <code class="text-xs text-cyan">/api/profile?id=<span id="urlParamPreview" class="text-yellow">1</span></code>
+          </div>
+        </div>
+
+        <!-- ANALYSIS -->
+        <div class="flex flex-column gap-3">
+          <div class="card" style="padding: 1rem; background: #05050d;">
+            <div class="text-xs text-dim mb-2 uppercase">Comparator</div>
+            <div class="flex flex-column gap-2">
+               <div class="flex justify-between p-2 bg-black rounded text-xs">
+                  <span class="text-dim">YOUR_ID:</span>
+                  <span class="text-green font-bold" id="sessionUidPreview">?</span>
+               </div>
+               <div class="flex justify-between p-2 bg-black rounded text-xs">
+                  <span class="text-dim">TARGET_ID:</span>
+                  <span class="text-yellow font-bold" id="requestedUidPreview">1</span>
+               </div>
+            </div>
+          </div>
+
+          <div class="card" style="padding: 1rem;">
+            <p class="text-secondary text-xs">Find <strong>Alice's</strong> ID to reveal her flag. The server doesn't verify if you own the ID.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    function updateUrlPreview() {
+      const id = document.getElementById('userIdInput').value;
+      document.getElementById('urlParamPreview').textContent = id;
+      document.getElementById('requestedUidPreview').textContent = id;
+    }
+
+    async function fetchProfile() {
+      const id = document.getElementById('userIdInput').value;
+      const display = document.getElementById('profileDisplay');
+      display.innerHTML = '<div class="spinner"></div>';
+      try {
+        const res = await fetch(`/api/profile?id=${id}`);
+        const data = await res.json();
+        if (data.success) {
+          const u = data.user;
+          const isAlice = u.username.toLowerCase() === 'alice';
+          display.innerHTML = `
+            <div class="p-3 border rounded mt-2" style="border-color:#333; background:rgba(255,255,255,0.02);">
+              <div class="text-xs text-dim uppercase">Username</div>
+              <div class="white font-bold mb-2">${u.username}</div>
+              <div class="text-xs text-dim uppercase">Bio</div>
+              <div class="text-sm text-secondary">${u.bio || 'None'}</div>
+              ${isAlice ? `<div class="mt-3 p-2 bg-green/10 border border-green rounded text-center">
+                <div class="text-xs text-green font-bold">FLAG CAPTURED:</div>
+                <div class="text-sm text-yellow font-bold">ACT{1d0r_us3r_3num}</div>
+              </div>` : ''}
+            </div>
+          `;
+        } else {
+          display.innerHTML = '<div class="text-xs text-pink mt-4 text-center">User not found</div>';
+        }
+      } catch (err) {}
+    }
+
+    async function initAuth() {
+      try {
+        let res = await fetch('/api/auth/status');
+        let data = await res.json();
+        if (!data.authenticated) {
+          const autoRes = await fetch('/api/auth/auto-login', { method: 'POST' });
+          data = await autoRes.json();
+        }
+        if (data.success) {
+          document.getElementById('sessionUidPreview').textContent = data.user.id;
+          document.getElementById('navUser').innerHTML = `
+            <span class="nav-user-badge">${data.user.username}</span>
+            <button class="nav-logout" onclick="logout()">Logout</button>
+          `;
+          fetchProfile();
+        }
+      } catch (err) {}
+    }
+    initAuth();
+    function logout() { fetch('/api/auth/logout', { method: 'POST' }).then(() => window.location.href = '/'); }
+  </script>
+</body>
+</html>

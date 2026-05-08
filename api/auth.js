@@ -65,6 +65,43 @@ router.post('/login', async (req, res) => {
   }
 });
 
+router.post('/register', async (req, res) => {
+  const db = require('../config/database');
+  const { username, password } = req.body;
+
+  if (!username || !password) {
+    return res.status(400).json({ success: false, error: 'Username and password are required' });
+  }
+
+  try {
+    // Check if user exists
+    const existing = await db.query('SELECT * FROM users WHERE username = $1', [username]);
+    if (existing.rows.length > 0) {
+      return res.status(400).json({ success: false, error: 'Username already taken' });
+    }
+
+    // Create user
+    await db.query(
+      'INSERT INTO users (username, password, role, bio, score) VALUES ($1, $2, $3, $4, $5)',
+      [username, password, 'user', 'ACT LAB Participant', 0]
+    );
+
+    // Get the new user to set cookies
+    const newUserResult = await db.query('SELECT * FROM users WHERE username = $1', [username]);
+    const user = newUserResult.rows[0];
+    
+    setAuthCookies(res, user);
+
+    return res.json({
+      success: true,
+      message: 'Registration successful',
+      user: { id: user.id, username: user.username, role: user.role }
+    });
+  } catch (err) {
+    return res.status(500).json({ success: false, error: 'Registration failed: ' + err.message });
+  }
+});
+
 // ============================================
 // AUTO-LOGIN (Pencegah History Bentrok)
 // Setiap pengunjung baru dapat ID unik

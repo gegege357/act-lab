@@ -30,7 +30,7 @@ app.use((req, res, next) => {
 
 // Auto-auth middleware: If no session, create a guest session automatically
 app.use(async (req, res, next) => {
-  if (req.path.includes('.') || req.path.startsWith('/api/auth/login') || req.path.startsWith('/api/auth/logout')) {
+  if (req.path.includes('.') || req.path.startsWith('/api/auth/login') || req.path.startsWith('/api/auth/register') || req.path.startsWith('/api/auth/logout')) {
     return next();
   }
 
@@ -76,6 +76,7 @@ app.use('/api/admin', require('./api/admin'));
 const pageRoutes = {
   '/': 'index.html',
   '/login': 'login.html',
+  '/register': 'register.html',
   '/dashboard': 'dashboard.html',
   '/challenges': 'challenges.html',
   '/profile': 'profile.html',

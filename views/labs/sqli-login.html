@@ -79,11 +79,11 @@
         <form onsubmit="handleLogin(event)">
           <div class="form-group" style="margin-bottom: 2rem;">
             <label class="form-label">Username</label>
-            <input type="text" id="usernameInput" class="htb-input" placeholder="admin" oninput="updatePreview()" autocomplete="off">
+            <input type="text" id="usernameInput" class="htb-input" placeholder="admin" autocomplete="off">
           </div>
           <div class="form-group" style="margin-bottom: 2.5rem;">
             <label class="form-label">Password Payload</label>
-            <input type="text" id="passwordInput" class="htb-input" placeholder="' OR '1'='1" oninput="updatePreview()" autocomplete="off">
+            <input type="text" id="passwordInput" class="htb-input" placeholder="' OR '1'='1" autocomplete="off">
           </div>
           <button type="submit" class="htb-btn">Execute Exploit</button>
         </form>
@@ -91,7 +91,7 @@
       </section>
 
       <!-- TERMINAL -->
-      <div class="htb-terminal">
+      <div class="htb-terminal" style="margin-bottom: 3rem;">
         <div class="htb-terminal-header">
           <span>CONSOLE LOG :: MONITORING</span>
           <span>root@act-lab:~#</span>
@@ -101,12 +101,12 @@
         </div>
       </div>
 
-      <!-- SUBMIT FLAG SECTION -->
-      <section class="htb-card" style="margin-top: 4rem; border-color: var(--neon-green);">
-        <h2 class="htb-card-title" style="color: #fff;">Submit Flag</h2>
+      <!-- SUBMIT FLAG SECTION (MOVED UP) -->
+      <section class="htb-card" style="border: 1px solid var(--neon-green); background: rgba(159,239,0,0.02);">
+        <h2 class="htb-card-title" style="margin-bottom: 1.5rem; font-size: 0.9rem;">Submit Flag Found</h2>
         <div style="display: flex; gap: 1rem;">
-          <input type="text" id="flagInput" class="htb-input" placeholder="ACT{flag_here}" style="flex: 1; margin-top: 0;">
-          <button onclick="submitFlag(1)" class="htb-btn" style="width: auto; padding: 0 2rem;">Submit</button>
+          <input type="text" id="flagInput" class="htb-input" placeholder="ACT{flag_here}" style="flex: 1; margin-top: 0; height: 45px; font-size: 14px;">
+          <button onclick="submitFlag(1)" class="htb-btn" style="width: auto; padding: 0 1.5rem; height: 45px; font-size: 12px;">Submit Flag</button>
         </div>
       </section>
     </div>
@@ -118,7 +118,6 @@
     async function submitFlag(id) {
       const flag = document.getElementById('flagInput').value;
       if (!flag) return showToast('Please enter a flag', 'error');
-      
       try {
         const res = await fetch('/api/challenges/submit', {
           method: 'POST',
@@ -128,11 +127,8 @@
         const data = await res.json();
         if (data.correct) {
           showToast('Correct flag! Points awarded.', 'success');
-          document.getElementById('flagInput').value = '';
-          setTimeout(() => window.location.href = '/dashboard', 2000);
-        } else {
-          showToast(data.message || 'Incorrect flag', 'error');
-        }
+          setTimeout(() => window.location.href = '/dashboard', 1500);
+        } else { showToast(data.message || 'Incorrect flag', 'error'); }
       } catch (err) { showToast('Submission failed', 'error'); }
     }
 
@@ -141,47 +137,32 @@
       const username = document.getElementById('usernameInput').value || 'admin';
       const password = document.getElementById('passwordInput').value;
       addLog('POST', `/api/auth/login [Payload: ${password}]`);
-
       try {
-        const res = await fetch('/api/auth/login', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ username, password })
-        });
+        const res = await fetch('/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username, password }) });
         const data = await res.json();
         const resDiv = document.getElementById('loginResult');
-
         if (data.success) {
-          addLog('SUCCESS', `Root Access Granted! Username: ${username}`);
-          resDiv.innerHTML = `
-            <div style="border: 1px solid var(--neon-green); background: rgba(159,239,0,0.05); padding: 1.5rem; border-radius: 4px; text-align: center;">
-              <div style="color: var(--neon-green); font-weight: bold; margin-bottom: 0.5rem; letter-spacing: 2px; font-size: 0.8rem;">[ MACHINE COMPROMISED ]</div>
-              <div style="font-family: 'Share Tech Mono'; color: #fff; font-size: 1.2rem; font-weight: bold;">${data.flag}</div>
-            </div>
-          `;
+          addLog('SUCCESS', `Root Access Granted!`);
+          resDiv.innerHTML = `<div style="border: 1px solid var(--neon-green); background: rgba(159,239,0,0.05); padding: 1.5rem; border-radius: 4px; text-align: center;"><div style="color: var(--neon-green); font-weight: bold; margin-bottom: 0.5rem; letter-spacing: 2px; font-size: 0.8rem;">[ MACHINE COMPROMISED ]</div><div style="font-family: 'Share Tech Mono'; color: #fff; font-size: 1.2rem; font-weight: bold;">${data.flag}</div></div>`;
           showToast('Machine Pwned!', 'success');
         } else {
           addLog('DENIED', `Invalid authentication payload.`);
           resDiv.innerHTML = `<div style="text-align: center; color: var(--neon-pink); font-size: 12px; font-weight: bold; letter-spacing: 1px;">AUTHENTICATION FAILED :: INVALID CREDENTIALS</div>`;
         }
-      } catch (err) { addLog('ERROR', 'Connection failed.'); }
+      } catch (err) {}
     }
 
     function addLog(type, msg) {
       const log = document.getElementById('logContent');
       const time = new Date().toLocaleTimeString();
       const div = document.createElement('div');
-      div.style.marginBottom = '5px';
       div.innerHTML = `<span style="color: #626e84;">[${time}]</span> <span style="font-weight: bold;">[${type}]</span> ${msg}`;
       log.prepend(div);
     }
 
     function showToast(msg, type) {
       const container = document.getElementById('toastContainer');
-      const toast = document.createElement('div');
-      toast.className = `toast toast-${type}`;
-      toast.textContent = msg;
-      container.appendChild(toast);
+      const toast = document.createElement('div'); toast.className = `toast toast-${type}`; toast.textContent = msg; container.appendChild(toast);
       setTimeout(() => toast.remove(), 3000);
     }
 

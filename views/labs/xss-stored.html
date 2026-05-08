@@ -44,7 +44,7 @@
     .htb-terminal-header { background: #15191d; padding: 6px 12px; color: #626e84; font-size: 10px; display: flex; justify-content: space-between; border-bottom: 1px solid #1c2126; }
     .htb-terminal-body { padding: 1rem; color: var(--neon-green); font-size: 12px; height: 120px; overflow-y: auto; }
 
-    .guestbook-feed { height: 500px; overflow-y: auto; padding-right: 10px; }
+    .guestbook-feed { height: 450px; overflow-y: auto; padding-right: 10px; }
     .entry-card { background: #1a1e23; border: 1px solid #23282f; border-radius: 4px; padding: 1.5rem; margin-bottom: 1rem; }
     .entry-author { color: var(--neon-green); font-weight: bold; font-size: 12px; text-transform: uppercase; }
     
@@ -52,8 +52,6 @@
   </style>
 </head>
 <body>
-  <div class="cyber-bg" style="opacity: 0.1;"></div>
-
   <nav class="navbar">
     <a href="/" class="nav-logo">
       <img src="/img/act.png" alt="Logo" style="height: 32px; border-radius: 4px; margin-right: 10px;" onerror="this.style.display='none'">
@@ -64,18 +62,24 @@
       <li><a href="/challenges">Missions</a></li>
       <li><a href="/profile">Profile</a></li>
     </ul>
-    <div class="nav-user" id="navUser">
-      <span class="nav-user-badge">Connecting...</span>
-    </div>
+    <div class="nav-user" id="navUser"><span class="nav-user-badge">Connecting...</span></div>
   </nav>
 
   <main class="main-content">
     <div class="htb-container">
-      <!-- HEADER -->
       <header class="machine-header">
         <h1 class="machine-title">STORED XSS :: GUESTBOOK</h1>
         <p style="color: var(--text-secondary); margin-top: 0.5rem; font-size: 0.9rem;">PHASE: DATA PERSISTENCE & INJECTION</p>
       </header>
+
+      <!-- SUBMIT FLAG SECTION (MOVED UP) -->
+      <section class="htb-card" style="grid-column: span 2; border: 1px solid var(--neon-green); background: rgba(159,239,0,0.02); margin-bottom: 1rem;">
+        <h2 class="htb-card-title" style="margin-bottom: 1.2rem; font-size: 0.9rem;">Submit Flag Found</h2>
+        <div style="display: flex; gap: 1rem;">
+          <input type="text" id="flagInput" class="htb-input" placeholder="ACT{flag_here}" style="flex: 1; height: 45px; margin-top: 0;">
+          <button onclick="submitFlag(4)" class="htb-btn" style="width: auto; padding: 0 1.5rem; height: 45px; font-size: 12px; margin-top: 0;">Submit Flag</button>
+        </div>
+      </section>
 
       <!-- INPUT SECTION -->
       <section>
@@ -94,7 +98,7 @@
           </form>
         </div>
         <div class="htb-terminal">
-          <div class="htb-terminal-header"><span>STORAGE MONITOR :: WATCHING</span></div>
+          <div class="htb-terminal-header"><span>STORAGE MONITOR</span></div>
           <div class="htb-terminal-body" id="trafficLog"><div>Engine ready...</div></div>
         </div>
       </section>
@@ -103,15 +107,6 @@
       <section class="htb-card">
         <h2 class="htb-card-title">Live Global Feed</h2>
         <div id="entriesList" class="guestbook-feed"><div class="spinner"></div></div>
-      </section>
-
-      <!-- SUBMIT FLAG SECTION -->
-      <section class="htb-card" style="grid-column: span 2; margin-top: 2rem; border-color: var(--neon-green);">
-        <h2 class="htb-card-title" style="color: #fff;">Submit Flag</h2>
-        <div style="display: flex; gap: 1rem;">
-          <input type="text" id="flagInput" class="htb-input" placeholder="ACT{flag_here}" style="flex: 1; margin-top: 0;">
-          <button onclick="submitFlag(4)" class="htb-btn" style="width: auto; padding: 0 2rem; margin-top: 0;">Submit</button>
-        </div>
       </section>
     </div>
   </main>
@@ -123,84 +118,50 @@
       const flag = document.getElementById('flagInput').value;
       if (!flag) return showToast('Please enter a flag', 'error');
       try {
-        const res = await fetch('/api/challenges/submit', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ challengeId: id, flag: flag })
-        });
+        const res = await fetch('/api/challenges/submit', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ challengeId: id, flag: flag }) });
         const data = await res.json();
         if (data.correct) {
           showToast('Correct flag!', 'success');
-          setTimeout(() => window.location.href = '/dashboard', 2000);
+          setTimeout(() => window.location.href = '/dashboard', 1500);
         } else { showToast(data.message || 'Incorrect flag', 'error'); }
-      } catch (err) { showToast('Submission failed', 'error'); }
+      } catch (err) {}
     }
-
     async function loadEntries() {
       try {
         const res = await fetch('/api/guestbook');
         const data = await res.json();
         const list = document.getElementById('entriesList');
         if (data.success) {
-          if (data.entries.length === 0) { list.innerHTML = `<div style="text-align:center; padding: 3rem; color: #626e84; font-size: 13px;">[ DATABASE_EMPTY ]</div>`; return; }
-          list.innerHTML = data.entries.map(e => `<div class="entry-card"><div style="display: flex; justify-content: space-between; margin-bottom: 1rem; border-bottom: 1px solid #23282f; padding-bottom: 0.5rem;"><span class="entry-author">${escapeHtml(e.author)}</span></div><div id="msg-${e.id}" style="color: #fff; font-size: 13px; line-height: 1.5; word-break: break-all;"></div></div>`).reverse().join('');
+          if (data.entries.length === 0) { list.innerHTML = `<div style="text-align:center; padding: 3rem; color: #626e84;">[ EMPTY ]</div>`; return; }
+          list.innerHTML = data.entries.map(e => `<div class="entry-card"><div style="display: flex; justify-content: space-between; margin-bottom: 1rem; border-bottom: 1px solid #23282f; padding-bottom: 0.5rem;"><span class="entry-author">${escapeHtml(e.author)}</span></div><div id="msg-${e.id}" style="color: #fff; font-size: 13px;"></div></div>`).reverse().join('');
           data.entries.forEach(e => {
             const container = document.getElementById(`msg-${e.id}`);
             if (container) {
               container.innerHTML = e.message;
               const scripts = container.getElementsByTagName('script');
-              for (let s of scripts) {
-                const ns = document.createElement('script'); ns.text = s.innerText; document.body.appendChild(ns).parentNode.removeChild(ns);
-              }
+              for (let s of scripts) { const ns = document.createElement('script'); ns.text = s.innerText; document.body.appendChild(ns).parentNode.removeChild(ns); }
             }
           });
         }
       } catch (err) {}
     }
-
     async function postEntry(e) {
       if (e) e.preventDefault();
       const author = document.getElementById('author').value;
       const message = document.getElementById('message').value;
-      addLog('WRITE', `Saving entry from ${author}...`);
       try {
-        const res = await fetch('/api/guestbook', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-          body: new URLSearchParams({ author, message }).toString()
-        });
+        const res = await fetch('/api/guestbook', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams({ author, message }).toString() });
         const data = await res.json();
-        if (data.success) {
-          showToast('Data Stored!', 'success');
-          document.getElementById('message').value = '';
-          loadEntries();
-        }
+        if (data.success) { showToast('Stored!', 'success'); document.getElementById('message').value = ''; loadEntries(); }
       } catch (err) {}
     }
-
-    function addLog(type, msg) {
-      const log = document.getElementById('trafficLog');
-      const time = new Date().toLocaleTimeString();
-      const div = document.createElement('div');
-      div.innerHTML = `<span style="color: #626e84;">[${time}]</span> <span style="font-weight: bold;">[${type}]</span> ${msg}`;
-      log.prepend(div);
-    }
-
     function escapeHtml(str) { const div = document.createElement('div'); div.textContent = str; return div.innerHTML; }
-    function showToast(msg, type) {
-      const container = document.getElementById('toastContainer');
-      const toast = document.createElement('div'); toast.className = `toast toast-${type}`; toast.textContent = msg; container.appendChild(toast);
-      setTimeout(() => toast.remove(), 3000);
-    }
-
+    function showToast(msg, type) { const container = document.getElementById('toastContainer'); const toast = document.createElement('div'); toast.className = `toast toast-${type}`; toast.textContent = msg; container.appendChild(toast); setTimeout(() => toast.remove(), 3000); }
     async function initAuth() {
       try {
         const res = await fetch('/api/auth/status');
         const data = await res.json();
-        if (data.success) {
-          document.getElementById('navUser').innerHTML = `<span class="nav-user-badge">${data.user.username} (Score: ${data.user.score || 0})</span>`;
-          loadEntries();
-        }
+        if (data.success) { document.getElementById('navUser').innerHTML = `<span class="nav-user-badge">${data.user.username} (Score: ${data.user.score || 0})</span>`; loadEntries(); }
       } catch (err) {}
     }
     initAuth();

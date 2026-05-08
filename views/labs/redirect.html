@@ -6,14 +6,24 @@
   <title>Redirect Lab - ACT LAB</title>
   <link rel="stylesheet" href="/css/style.css">
   <style>
-    .lab-container { max-width: 800px; margin: 0 auto; display: flex; flex-direction: column; gap: 1.5rem; }
-    .url-recon-box { background: #05050d; border: 1px solid rgba(255, 0, 255, 0.3); padding: 15px; border-radius: 8px; font-family: 'Share Tech Mono', monospace; font-size: 14px; }
-    .terminal-window { background: rgba(0, 0, 0, 0.8); border: 1px solid var(--neon-pink); border-radius: 8px; overflow: hidden; font-family: 'Share Tech Mono', monospace; }
-    .terminal-header { background: var(--neon-pink); color: black; padding: 5px 15px; font-size: 12px; font-weight: bold; display: flex; justify-content: space-between; }
-    .terminal-body { padding: 15px; height: 120px; overflow-y: auto; font-size: 13px; color: var(--neon-pink); }
-    .flow-visualization { display: flex; align-items: center; justify-content: center; gap: 20px; padding: 20px; background: rgba(255, 255, 255, 0.02); border-radius: 8px; }
-    .flow-node { padding: 10px 15px; border: 1px solid rgba(255,255,255,0.1); border-radius: 4px; font-size: 12px; }
-    .flow-arrow { font-size: 20px; color: var(--neon-pink); }
+    .exploit-container { max-width: 900px; margin: 0 auto; padding: 2rem 0; }
+    .giant-input { 
+      width: 100%; 
+      background: rgba(0,0,0,0.4); 
+      border: 2px solid var(--neon-pink); 
+      color: var(--neon-pink); 
+      font-size: 1.5rem; 
+      padding: 1.2rem; 
+      border-radius: 12px; 
+      font-family: 'Share Tech Mono', monospace;
+      outline: none;
+    }
+    .recon-box { background: #05050d; padding: 1.5rem; border-radius: 8px; border-left: 4px solid var(--neon-pink); margin-bottom: 2rem; font-family: 'Share Tech Mono'; font-size: 1.1rem; color: #555; text-align: center; }
+    .btn-giant { width: 100%; padding: 1.5rem; font-size: 1.2rem; font-weight: 900; letter-spacing: 4px; background: var(--neon-pink); color: black; border: none; border-radius: 12px; cursor: pointer; transition: 0.3s; margin-top: 1rem; }
+    .flow-viz { display: flex; align-items: center; justify-content: center; gap: 30px; padding: 3rem; background: rgba(255,255,255,0.02); border-radius: 15px; margin-top: 3rem; border: 1px solid rgba(255,255,255,0.05); }
+    .node { padding: 20px 30px; border-radius: 8px; border: 2px solid; font-size: 1.2rem; font-weight: bold; }
+    .arrow { font-size: 2rem; color: var(--neon-pink); animation: slideRight 1s infinite; }
+    @keyframes slideRight { 0% { transform: translateX(0); opacity: 0; } 50% { opacity: 1; } 100% { transform: translateX(20px); opacity: 0; } }
   </style>
 </head>
 <body>
@@ -35,51 +45,32 @@
   </nav>
 
   <main class="main-content">
-    <div class="lab-container">
-      <div class="page-header" style="text-align:center;">
-        <h1 style="color: var(--neon-pink); margin-bottom: 0.5rem;">OPEN REDIRECT</h1>
-        <p class="text-mono">Manipulate Navigation Flow to Untrusted Destinations</p>
+    <div class="exploit-container">
+      <div class="page-header" style="text-align:center; margin-bottom: 4rem;">
+        <h1 style="color: var(--neon-pink); font-size: 3rem; text-shadow: 0 0 20px rgba(255, 0, 85, 0.4);">OPEN REDIRECT</h1>
+        <p class="text-mono" style="font-size: 1.2rem; color: #888;">UNVALIDATED NAVIGATION PARAMETER MANIPULATION</p>
       </div>
 
-      <!-- URL RECON -->
-      <div class="url-recon-box">
-        <div class="text-xs text-dim mb-2 uppercase tracking-widest">Redirect Request Reconstruction:</div>
-        <div class="white">
-          <span class="text-dim">Endpoint: </span><code class="text-pink">GET /api/redirect?url=</code><span id="urlPreview" style="color:var(--neon-yellow); font-weight:bold;"></span><br>
-          <span class="text-dim">Status: </span><span class="text-xs" style="color:#aaa;">UNFILTERED PARAMETER</span>
-        </div>
+      <!-- RECON BOX -->
+      <div class="recon-box">
+        <span style="color: #444;">HTTP REQUEST RECON:</span><br>
+        <code>GET /api/redirect?url=<span id="urlPreview" style="color:var(--neon-yellow); font-weight:bold;">https://google.com</span></code>
       </div>
 
-      <!-- MAIN PANEL -->
-      <div class="card" style="padding: 2rem; border-color: var(--neon-pink);">
-        <div class="flex justify-between items-center mb-6">
-          <div class="text-xs uppercase text-dim">Navigation Controller</div>
-          <div class="text-xs text-pink">THREAT: PHISHING ENABLED</div>
-        </div>
-
-        <div class="flex gap-3 mb-6">
-          <input type="text" id="targetUrl" class="form-input" value="https://google.com" oninput="updatePreview()" style="font-size: 1.1rem; padding: 12px;">
-          <button onclick="testRedirect()" class="btn btn-primary" style="background:var(--neon-pink); border-color:var(--neon-pink); color:black; font-weight:bold; padding: 0 40px;">
-            EXECUTE
-          </button>
-        </div>
-
-        <div class="flow-visualization">
-          <div class="flow-node" style="border-color: var(--neon-cyan); color: var(--neon-cyan);">ACT LAB (Trusted)</div>
-          <div class="flow-arrow">➔</div>
-          <div class="flow-node" id="destDisplay" style="border-color: var(--neon-yellow); color: var(--neon-yellow);">AWAITING</div>
-        </div>
+      <!-- MAIN INPUT -->
+      <div class="card" style="padding: 3rem; border-color: rgba(255, 0, 85, 0.2); border-width: 2px;">
+        <div class="text-xs uppercase text-dim mb-4 tracking-widest text-center">Craft Destination URL</div>
+        <form onsubmit="testRedirect(event)" class="flex flex-column gap-5">
+          <input type="text" id="targetUrl" class="giant-input" value="https://google.com" oninput="updatePreview()" autocomplete="off">
+          <button type="submit" class="btn-giant">EXECUTE REDIRECTION</button>
+        </form>
       </div>
 
-      <!-- LOGS -->
-      <div class="terminal-window">
-        <div class="terminal-header">
-          <span>TRAFFIC INTERCEPTOR</span>
-          <span>● CAPTURING</span>
-        </div>
-        <div class="terminal-body" id="trafficLog">
-          <div class="log-entry">Navigation monitor active. Waiting for GET request...</div>
-        </div>
+      <!-- FLOW VISUALIZATION -->
+      <div class="flow-viz">
+        <div class="node" style="border-color: var(--neon-cyan); color: var(--neon-cyan); box-shadow: 0 0 15px rgba(0, 255, 255, 0.2);">ACT-LAB.ID</div>
+        <div class="arrow">➔</div>
+        <div class="node" id="destDisplay" style="border-color: var(--neon-yellow); color: var(--neon-yellow); box-shadow: 0 0 15px rgba(255, 204, 0, 0.2);">GOOGLE.COM</div>
       </div>
     </div>
   </main>
@@ -98,22 +89,14 @@
       }
     }
 
-    function testRedirect() {
+    function testRedirect(e) {
+      if (e) e.preventDefault();
       const url = document.getElementById('targetUrl').value;
-      addLog('NAVIGATE', `Requesting redirection to: ${url}`);
-      showToast('Redirecting...', 'warning');
+      showToast('Intercepting and redirecting...', 'warning');
       
       setTimeout(() => {
         window.location.href = `/api/redirect?url=${encodeURIComponent(url)}`;
-      }, 800);
-    }
-
-    function addLog(type, msg) {
-      const log = document.getElementById('trafficLog');
-      const time = new Date().toLocaleTimeString();
-      const entry = document.createElement('div');
-      entry.innerHTML = `<span class="text-dim">[${time}]</span> <span class="font-bold">[${type}]</span> ${msg}`;
-      log.prepend(entry);
+      }, 1000);
     }
 
     function showToast(msg, type) {
@@ -129,21 +112,13 @@
       try {
         let res = await fetch('/api/auth/status');
         let data = await res.json();
-        if (!data.authenticated) {
-          const autoRes = await fetch('/api/auth/auto-login', { method: 'POST' });
-          data = await autoRes.json();
-        }
         if (data.success) {
-          document.getElementById('navUser').innerHTML = `
-            <span class="nav-user-badge">${data.user.username}</span>
-            <button class="nav-logout" onclick="logout()">Logout</button>
-          `;
+          document.getElementById('navUser').innerHTML = `<span class="nav-user-badge">${data.user.username}</span>`;
           updatePreview();
         }
       } catch (err) {}
     }
     initAuth();
-    function logout() { fetch('/api/auth/logout', { method: 'POST' }).then(() => window.location.href = '/'); }
   </script>
 </body>
 </html>

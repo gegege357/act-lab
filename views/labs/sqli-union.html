@@ -6,13 +6,26 @@
   <title>SQLi UNION Extraction - ACT LAB</title>
   <link rel="stylesheet" href="/css/style.css">
   <style>
-    .lab-container { max-width: 900px; margin: 0 auto; display: flex; flex-direction: column; gap: 1.5rem; }
-    .query-box { background: #05050d; border: 1px solid rgba(0, 255, 255, 0.3); padding: 15px; border-radius: 8px; font-family: 'Share Tech Mono', monospace; font-size: 13px; }
-    .results-table-container { overflow-x: auto; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; background: rgba(0, 0, 0, 0.4); }
-    table { width: 100%; border-collapse: collapse; font-size: 12px; }
-    th { background: rgba(0, 255, 255, 0.1); color: var(--neon-cyan); text-align: left; padding: 10px; border-bottom: 1px solid rgba(0, 255, 255, 0.2); }
-    td { padding: 10px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); color: #ccc; }
+    .exploit-container { max-width: 1000px; margin: 0 auto; padding: 2rem 0; }
+    .giant-input { 
+      width: 100%; 
+      background: rgba(0,0,0,0.4); 
+      border: 2px solid var(--neon-cyan); 
+      color: var(--neon-cyan); 
+      font-size: 1.5rem; 
+      padding: 1.2rem; 
+      border-radius: 12px; 
+      font-family: 'Share Tech Mono', monospace;
+      outline: none;
+    }
+    .query-preview { background: #05050d; padding: 1.5rem; border-radius: 8px; border-left: 4px solid var(--neon-cyan); margin-bottom: 2rem; font-family: 'Share Tech Mono'; font-size: 1rem; color: #555; overflow-x: auto; }
+    .btn-giant { width: 100%; padding: 1.2rem; font-size: 1.2rem; font-weight: 900; letter-spacing: 4px; background: var(--neon-cyan); color: black; border: none; border-radius: 12px; cursor: pointer; transition: 0.3s; margin-top: 1rem; }
+    .results-table-container { margin-top: 3rem; background: rgba(0,0,0,0.3); border: 1px solid #222; border-radius: 12px; overflow: hidden; }
+    table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    th { background: rgba(0, 255, 255, 0.1); color: var(--neon-cyan); text-align: left; padding: 15px; border-bottom: 1px solid rgba(0, 255, 255, 0.2); text-transform: uppercase; letter-spacing: 1px; }
+    td { padding: 15px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); color: #ccc; }
     .highlight-row { background: rgba(255, 255, 0, 0.05); }
+    .flag-cell { color: var(--neon-yellow); font-weight: bold; font-family: 'Share Tech Mono'; }
   </style>
 </head>
 <body>
@@ -34,34 +47,29 @@
   </nav>
 
   <main class="main-content">
-    <div class="lab-container">
-      <div class="page-header" style="text-align:center;">
-        <h1 style="color: var(--neon-cyan); margin-bottom: 0.5rem;">SQLi UNION EXTRACTION</h1>
-        <p class="text-mono">Exfiltrate Hidden Data via UNION SELECT Attacks</p>
+    <div class="exploit-container">
+      <div class="page-header" style="text-align:center; margin-bottom: 4rem;">
+        <h1 style="color: var(--neon-cyan); font-size: 3rem; text-shadow: 0 0 20px rgba(0, 255, 255, 0.5);">SQLi UNION EXTRACTION</h1>
+        <p class="text-mono" style="font-size: 1.2rem; color: #888;">EXFILTRATE SENSITIVE DATA FROM HIDDEN TABLES</p>
       </div>
 
       <!-- SQL PREVIEW -->
-      <div class="query-box">
-        <div class="text-xs text-dim mb-2 uppercase tracking-widest">Active Search Query:</div>
-        <div class="white">
-          <span class="text-dim">SELECT id, title, description, category FROM challenges WHERE title LIKE '%</span><span id="sqlPreview" style="color:var(--neon-yellow);"></span><span class="text-dim">%'</span>
-        </div>
+      <div class="query-preview">
+        <span style="color: #444;">ACTIVE SQL QUERY:</span><br>
+        <code>SELECT id, title, description, category FROM challenges WHERE title LIKE '%<span id="sqlPreview" style="color:var(--neon-yellow); font-weight:bold;"></span>%'</code>
       </div>
 
-      <!-- SEARCH FORM -->
-      <div class="card" style="padding: 1.5rem; border-color: var(--neon-cyan);">
-        <form onsubmit="handleSearch(event)" class="flex gap-3">
-          <input type="text" id="searchInput" class="form-input" placeholder="Search mission database..." oninput="updatePreview()" required>
-          <button type="submit" class="btn btn-primary" style="background:var(--neon-cyan); border-color:var(--neon-cyan); color:black; font-weight:bold; padding: 0 30px;">
-            QUERY
-          </button>
+      <!-- MAIN SEARCH -->
+      <div class="card" style="padding: 2.5rem; border-color: rgba(0, 255, 255, 0.2); border-width: 2px;">
+        <div class="text-xs uppercase text-dim mb-4 tracking-widest">Search Database / Inject Payload</div>
+        <form onsubmit="handleSearch(event)" class="flex flex-column gap-4">
+          <input type="text" id="searchInput" class="giant-input" placeholder="Enter search or UNION payload..." oninput="updatePreview()" autocomplete="off" required>
+          <button type="submit" class="btn-giant">EXECUTE UNION ATTACK</button>
         </form>
       </div>
 
-      <!-- RESULTS AREA -->
-      <div id="resultsArea" class="flex flex-column gap-3">
-        <!-- Table will be injected here -->
-      </div>
+      <!-- RESULTS -->
+      <div id="resultsArea"></div>
     </div>
   </main>
 
@@ -76,7 +84,7 @@
       if (e) e.preventDefault();
       const q = document.getElementById('searchInput').value;
       const resultsDiv = document.getElementById('resultsArea');
-      resultsDiv.innerHTML = '<div class="spinner"></div>';
+      resultsDiv.innerHTML = '<div class="spinner" style="margin-top: 4rem;"></div>';
 
       try {
         const res = await fetch(`/api/search?q=${q}`);
@@ -84,42 +92,47 @@
 
         if (data.success) {
           if (data.results.length === 0) {
-            resultsDiv.innerHTML = `<div class="card text-center text-dim">No records found for your query.</div>`;
+            resultsDiv.innerHTML = `<div class="card text-center text-dim mt-5">NO RECORDS MATCH YOUR QUERY</div>`;
           } else {
             const keys = Object.keys(data.results[0]);
             let html = `
               <div class="results-table-container">
                 <table>
                   <thead>
-                    <tr>${keys.map(k => `<th>${k.toUpperCase()}</th>`).join('')}</tr>
+                    <tr>${keys.map(k => `<th>${k}</th>`).join('')}</tr>
                   </thead>
                   <tbody>
-                    ${data.results.map(row => `
-                      <tr class="${JSON.stringify(row).includes('ACT{') ? 'highlight-row' : ''}">
-                        ${keys.map(k => {
-                          const val = row[k];
-                          const isFlag = String(val).startsWith('ACT{');
-                          return `<td class="${isFlag ? 'text-yellow font-bold' : ''}">${escapeHtml(String(val || ''))}</td>`;
-                        }).join('')}
-                      </tr>
-                    `).join('')}
+                    ${data.results.map(row => {
+                      const rowStr = JSON.stringify(row);
+                      const isSecret = rowStr.includes('ACT{') || rowStr.toLowerCase().includes('agent');
+                      return `
+                        <tr class="${isSecret ? 'highlight-row' : ''}">
+                          ${keys.map(k => {
+                            const val = String(row[k] || '');
+                            const isFlag = val.startsWith('ACT{');
+                            return `<td class="${isFlag ? 'flag-cell' : ''}">${escapeHtml(val)}</td>`;
+                          }).join('')}
+                        </tr>
+                      `;
+                    }).join('')}
                   </tbody>
                 </table>
               </div>
             `;
             resultsDiv.innerHTML = html;
-            if (JSON.stringify(data.results).includes('ACT{')) showToast('SECRET DATA DETECTED!', 'success');
+            if (JSON.stringify(data.results).includes('ACT{')) showToast('SECRET DATA LEAKED!', 'success');
           }
         } else {
           resultsDiv.innerHTML = `
-            <div class="card" style="border-color:var(--neon-pink); background: rgba(255,0,85,0.05);">
-              <div class="text-xs text-pink font-bold mb-2 uppercase">SQL EXECUTION ERROR</div>
-              <pre style="font-family:'Share Tech Mono'; font-size:12px; color:#ff80ab; white-space: pre-wrap;">${data.error}</pre>
+            <div class="card mt-5" style="border-color:var(--neon-pink); background: rgba(255,0,85,0.05); padding: 2rem;">
+              <div class="text-xs text-pink font-bold mb-3 uppercase tracking-widest">SQL EXECUTION ERROR</div>
+              <pre style="font-family:'Share Tech Mono'; font-size:14px; color:#ff80ab; white-space: pre-wrap; background: black; padding: 1rem; border-radius: 8px;">${data.error}</pre>
+              <p class="mt-4 text-xs text-dim">Hint: The number of columns in your UNION SELECT must match the original query (4 columns).</p>
             </div>
           `;
         }
       } catch (err) {
-        showToast('System connection error', 'error');
+        showToast('System connection failure', 'error');
       }
     }
 
@@ -140,23 +153,15 @@
 
     async function initAuth() {
       try {
-        let res = await fetch('/api/auth/status');
-        let data = await res.json();
-        if (!data.authenticated) {
-          const autoRes = await fetch('/api/auth/auto-login', { method: 'POST' });
-          data = await autoRes.json();
-        }
+        const res = await fetch('/api/auth/status');
+        const data = await res.json();
         if (data.success) {
-          document.getElementById('navUser').innerHTML = `
-            <span class="nav-user-badge">${data.user.username}</span>
-            <button class="nav-logout" onclick="logout()">Logout</button>
-          `;
+          document.getElementById('navUser').innerHTML = `<span class="nav-user-badge">${data.user.username}</span>`;
         }
       } catch (err) {}
     }
     initAuth();
     updatePreview();
-    function logout() { fetch('/api/auth/logout', { method: 'POST' }).then(() => window.location.href = '/'); }
   </script>
 </body>
 </html>

@@ -6,12 +6,25 @@
   <title>Stored XSS - ACT LAB</title>
   <link rel="stylesheet" href="/css/style.css">
   <style>
-    .lab-container { max-width: 1000px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1.5fr; gap: 2rem; }
-    .entry-card { background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 8px; padding: 15px; margin-bottom: 1rem; position: relative; }
+    .exploit-container { max-width: 1100px; margin: 0 auto; padding: 2rem 0; display: grid; grid-template-columns: 1fr 1.5fr; gap: 3rem; }
+    .giant-input { 
+      width: 100%; 
+      background: rgba(0,0,0,0.4); 
+      border: 2px solid var(--neon-cyan); 
+      color: var(--neon-cyan); 
+      font-size: 1.2rem; 
+      padding: 1rem; 
+      border-radius: 12px; 
+      font-family: 'Share Tech Mono', monospace;
+      outline: none;
+    }
+    .btn-giant { width: 100%; padding: 1.2rem; font-size: 1.1rem; font-weight: 900; letter-spacing: 3px; background: var(--neon-cyan); color: black; border: none; border-radius: 12px; cursor: pointer; transition: 0.3s; margin-top: 1rem; }
+    .feed-container { background: rgba(0,0,0,0.3); border: 2px solid rgba(0, 255, 255, 0.1); border-radius: 15px; padding: 2rem; min-height: 500px; max-height: 700px; overflow-y: auto; }
+    .entry-card { background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 10px; padding: 20px; margin-bottom: 1.5rem; transition: 0.3s; }
     .entry-card:hover { border-color: var(--neon-cyan); background: rgba(0, 255, 255, 0.02); }
-    .terminal-window { background: rgba(0, 0, 0, 0.8); border: 1px solid var(--neon-cyan); border-radius: 8px; overflow: hidden; font-family: 'Share Tech Mono', monospace; }
-    .terminal-header { background: var(--neon-cyan); color: black; padding: 5px 15px; font-size: 12px; font-weight: bold; display: flex; justify-content: space-between; }
-    .terminal-body { padding: 15px; height: 150px; overflow-y: auto; font-size: 13px; color: var(--neon-cyan); }
+    .terminal-window { background: #000; border: 1px solid #222; border-radius: 12px; overflow: hidden; margin-top: 2rem; }
+    .terminal-header { background: #111; color: var(--neon-cyan); padding: 8px 15px; font-size: 11px; font-weight: bold; border-bottom: 1px solid #222; }
+    .terminal-body { padding: 15px; height: 150px; overflow-y: auto; font-family: 'Share Tech Mono'; font-size: 13px; color: var(--neon-cyan); }
   </style>
 </head>
 <body>
@@ -33,49 +46,44 @@
   </nav>
 
   <main class="main-content">
-    <div style="max-width: 1000px; margin: 0 auto; margin-bottom: 2rem; text-align: center;">
-      <h1 style="color: var(--neon-cyan); margin-bottom: 0.5rem;">STORED XSS</h1>
-      <p class="text-mono">Permanent Data Injection & Script Persistence</p>
+    <div style="max-width: 1100px; margin: 0 auto; text-align: center; margin-bottom: 3rem;">
+      <h1 style="color: var(--neon-cyan); font-size: 3rem; text-shadow: 0 0 20px rgba(0, 255, 255, 0.4);">STORED XSS</h1>
+      <p class="text-mono" style="font-size: 1.2rem; color: #888;">PERMANENT DATABASE PAYLOAD INJECTION</p>
     </div>
 
-    <div class="lab-container">
+    <div class="exploit-container">
       <!-- INPUT SECTION -->
-      <div class="flex flex-column gap-3">
-        <div class="card" style="padding: 2rem; border-color: var(--neon-cyan);">
-          <div class="text-xs uppercase text-dim mb-4 tracking-widest">New Guestbook Entry</div>
-          <form onsubmit="postEntry(event)" class="flex flex-column gap-3">
+      <div class="flex flex-column gap-4">
+        <div class="card" style="padding: 2.5rem; border-color: rgba(0, 255, 255, 0.2); border-width: 2px;">
+          <div class="text-xs uppercase text-dim mb-4 tracking-widest">New Submission</div>
+          <form onsubmit="postEntry(event)" class="flex flex-column gap-4">
             <div class="form-group">
-              <label class="form-label">Author Name</label>
-              <input type="text" id="author" class="form-input" placeholder="Anonymous" required>
+              <label class="text-xs text-cyan uppercase mb-2 block font-bold">Author</label>
+              <input type="text" id="author" class="giant-input" placeholder="Anonymous Hacker" required>
             </div>
             <div class="form-group">
-              <label class="form-label">Message Content</label>
-              <textarea id="message" class="form-input" rows="4" placeholder="Your message here..." required></textarea>
+              <label class="text-xs text-cyan uppercase mb-2 block font-bold">Injected Payload</label>
+              <textarea id="message" class="giant-input" rows="5" placeholder="<script>alert(1)</script>" required></textarea>
             </div>
-            <button type="submit" class="btn btn-primary btn-block" style="background:var(--neon-cyan); border-color:var(--neon-cyan); color:black; font-weight:bold; padding: 12px;">
-              POST MESSAGE
-            </button>
+            <button type="submit" class="btn-giant">STORE IN DATABASE</button>
           </form>
         </div>
 
         <div class="terminal-window">
-          <div class="terminal-header">
-            <span>STORAGE MONITOR</span>
-            <span>● PERSISTENT</span>
-          </div>
+          <div class="terminal-header">STORAGE MONITOR :: LOGS</div>
           <div class="terminal-body" id="trafficLog">
-            <div class="log-entry">Database ready. Watching for commits...</div>
+            <div>Waiting for DB transaction...</div>
           </div>
         </div>
       </div>
 
       <!-- FEED SECTION -->
-      <div class="card" style="background: rgba(0,0,0,0.3); padding: 1.5rem; border-color: rgba(255,255,255,0.05);">
-        <div class="flex justify-between items-center mb-4">
-          <div class="text-xs uppercase text-dim tracking-widest">Global Feed</div>
-          <div class="text-xs text-cyan">SINK: .innerHTML</div>
+      <div class="feed-container">
+        <div class="flex justify-between items-center mb-6">
+          <div class="text-xs uppercase text-dim tracking-widest">Live Global Feed</div>
+          <div class="text-xs text-cyan font-bold">VULNERABILITY: UNESCAPED OUTPUT</div>
         </div>
-        <div id="entriesList" style="max-height: 500px; overflow-y: auto; padding-right: 10px;">
+        <div id="entriesList">
           <div class="spinner"></div>
         </div>
       </div>
@@ -92,24 +100,24 @@
         const list = document.getElementById('entriesList');
         if (data.success) {
           if (data.entries.length === 0) {
-            list.innerHTML = `<div class="text-center text-dim mt-5">No messages yet.</div>`;
+            list.innerHTML = `<div class="text-center text-dim mt-10">THE DATABASE IS EMPTY</div>`;
             return;
           }
           
           list.innerHTML = data.entries.map(e => `
             <div class="entry-card">
-              <div class="flex justify-between mb-2">
-                <span class="text-cyan text-xs font-bold uppercase">${escapeHtml(e.author)}</span>
+              <div class="flex justify-between mb-3">
+                <span class="text-cyan font-bold uppercase letter-spacing-1">${escapeHtml(e.author)}</span>
                 <span class="text-dim text-xs">${new Date(e.created_at).toLocaleTimeString()}</span>
               </div>
-              <div id="msg-${e.id}" class="white text-sm" style="word-break: break-all;"></div>
+              <div id="msg-${e.id}" class="white" style="font-size: 1.1rem; line-height: 1.5; word-break: break-all;"></div>
             </div>
           `).reverse().join('');
           
           data.entries.forEach(e => {
             const container = document.getElementById(`msg-${e.id}`);
             if (container) {
-              // THE VULNERABILITY:
+              // EXECUTION SINK
               container.innerHTML = e.message;
               
               const scripts = container.getElementsByTagName('script');
@@ -122,7 +130,7 @@
           });
         }
       } catch (err) {
-        addLog('ERROR', 'Failed to retrieve database entries');
+        addLog('ERROR', 'Could not sync with guestbook database');
       }
     }
 
@@ -131,7 +139,7 @@
       const author = document.getElementById('author').value;
       const message = document.getElementById('message').value;
       
-      addLog('COMMIT', `Saving entry by ${author}...`);
+      addLog('WRITE', `Initiating storage for author: ${author}`);
 
       try {
         const res = await fetch('/api/guestbook', {
@@ -141,22 +149,23 @@
         });
         const data = await res.json();
         if (data.success) {
-          showToast('Message posted successfully!', 'success');
-          addLog('SUCCESS', `Entry ID ${data.id} stored in database.`);
+          showToast('Entry successfully stored!', 'success');
+          addLog('COMMIT', `Payload persistent in row #${data.id}`);
           document.getElementById('message').value = '';
           loadEntries();
         }
       } catch (err) {
-        addLog('ERROR', 'Storage failure: Connection lost');
+        addLog('ERROR', 'Network failure during database write');
       }
     }
 
     function addLog(type, msg) {
       const log = document.getElementById('trafficLog');
       const time = new Date().toLocaleTimeString();
-      const entry = document.createElement('div');
-      entry.innerHTML = `<span class="text-dim">[${time}]</span> <span class="font-bold">[${type}]</span> ${msg}`;
-      log.prepend(entry);
+      const div = document.createElement('div');
+      div.style.marginBottom = '5px';
+      div.innerHTML = `<span style="color: #444;">[${time}]</span> <span style="font-weight: bold;">[${type}]</span> ${msg}`;
+      log.prepend(div);
     }
 
     function escapeHtml(str) {
@@ -178,23 +187,15 @@
       try {
         let res = await fetch('/api/auth/status');
         let data = await res.json();
-        if (!data.authenticated) {
-          const autoRes = await fetch('/api/auth/auto-login', { method: 'POST' });
-          data = await autoRes.json();
-        }
         if (data.success) {
-          // Set a session cookie for XSS stealing demonstration
+          // Flag for demonstration
           document.cookie = "admin_session=ACT{st0r3d_xss_p3rs1st3nt}; path=/; max-age=3600";
-          document.getElementById('navUser').innerHTML = `
-            <span class="nav-user-badge">${data.user.username}</span>
-            <button class="nav-logout" onclick="logout()">Logout</button>
-          `;
+          document.getElementById('navUser').innerHTML = `<span class="nav-user-badge">${data.user.username}</span>`;
           loadEntries();
         }
       } catch (err) {}
     }
     initAuth();
-    function logout() { fetch('/api/auth/logout', { method: 'POST' }).then(() => window.location.href = '/'); }
   </script>
 </body>
 </html>

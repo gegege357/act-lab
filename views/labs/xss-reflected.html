@@ -6,12 +6,22 @@
   <title>Reflected XSS - ACT LAB</title>
   <link rel="stylesheet" href="/css/style.css">
   <style>
-    .lab-container { max-width: 800px; margin: 0 auto; display: flex; flex-direction: column; gap: 1.5rem; }
-    .data-flow-box { background: #05050d; border: 1px solid rgba(0, 255, 255, 0.3); padding: 15px; border-radius: 8px; font-family: 'Share Tech Mono', monospace; font-size: 14px; }
-    .terminal-window { background: rgba(0, 0, 0, 0.8); border: 1px solid var(--neon-cyan); border-radius: 8px; overflow: hidden; font-family: 'Share Tech Mono', monospace; }
-    .terminal-header { background: var(--neon-cyan); color: black; padding: 5px 15px; font-size: 12px; font-weight: bold; display: flex; justify-content: space-between; }
-    .terminal-body { padding: 15px; height: 120px; overflow-y: auto; font-size: 13px; color: var(--neon-cyan); }
-    .result-display { min-height: 150px; background: rgba(255,255,255,0.02); border: 1px dashed rgba(255,255,255,0.1); border-radius: 8px; padding: 20px; display: flex; align-items: center; justify-content: center; position: relative; }
+    .exploit-container { max-width: 900px; margin: 0 auto; padding: 2rem 0; }
+    .giant-input { 
+      width: 100%; 
+      background: rgba(0,0,0,0.4); 
+      border: 2px solid var(--neon-cyan); 
+      color: var(--neon-cyan); 
+      font-size: 1.5rem; 
+      padding: 1.2rem; 
+      border-radius: 12px; 
+      font-family: 'Share Tech Mono', monospace;
+      outline: none;
+    }
+    .flow-box { background: #05050d; padding: 1.5rem; border-radius: 8px; border-left: 4px solid var(--neon-cyan); margin-bottom: 2rem; font-family: 'Share Tech Mono'; font-size: 1rem; color: #555; }
+    .btn-giant { width: 100%; padding: 1.2rem; font-size: 1.2rem; font-weight: 900; letter-spacing: 4px; background: var(--neon-cyan); color: black; border: none; border-radius: 12px; cursor: pointer; transition: 0.3s; margin-top: 1rem; }
+    .result-stage { min-height: 250px; background: rgba(255,255,255,0.02); border: 2px dashed rgba(255,255,255,0.1); border-radius: 12px; margin-top: 3rem; padding: 3rem; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; }
+    .stage-label { position: absolute; top: 15px; left: 15px; font-size: 10px; color: #444; letter-spacing: 2px; text-transform: uppercase; }
   </style>
 </head>
 <body>
@@ -33,49 +43,31 @@
   </nav>
 
   <main class="main-content">
-    <div class="lab-container">
-      <div class="page-header" style="text-align:center;">
-        <h1 style="color: var(--neon-cyan); margin-bottom: 0.5rem;">REFLECTED XSS</h1>
-        <p class="text-mono">Inject JavaScript via Insecure Search Parameters</p>
+    <div class="exploit-container">
+      <div class="page-header" style="text-align:center; margin-bottom: 4rem;">
+        <h1 style="color: var(--neon-cyan); font-size: 3rem; text-shadow: 0 0 20px rgba(0, 255, 255, 0.5);">REFLECTED XSS</h1>
+        <p class="text-mono" style="font-size: 1.2rem; color: #888;">INJECT SCRIPTS INTO THE DOM THROUGH URL PARAMETERS</p>
       </div>
 
-      <!-- DATA FLOW -->
-      <div class="data-flow-box">
-        <div class="text-xs text-dim mb-2 uppercase tracking-widest">Client-Side Data Flow:</div>
-        <div class="white">
-          <span class="text-dim">Source (URL/Input): </span><span id="sourcePreview" style="color:var(--neon-cyan);"></span><br>
-          <span class="text-dim">Sink (DOM): </span><code class="text-pink">element.innerHTML = source</code>
-        </div>
+      <!-- FLOW VISUALIZER -->
+      <div class="flow-box">
+        <span style="color: #444;">DATA FLOW RECON:</span><br>
+        <code>Source: <span id="sourcePreview" style="color:var(--neon-yellow);"></span> &rarr; Sink: <span class="text-pink">.innerHTML</span></code>
       </div>
 
-      <!-- MAIN SEARCH -->
-      <div class="card" style="padding: 2rem; border-color: var(--neon-cyan);">
-        <div class="flex justify-between items-center mb-4">
-          <div class="text-xs uppercase text-dim">Search Portal v2.0</div>
-          <div class="text-xs text-cyan">STATUS: BYPASSABLE</div>
-        </div>
-
-        <form onsubmit="handleSearch(event)" class="flex gap-3 mb-4">
-          <input type="text" id="searchInput" class="form-input" placeholder="Enter keywords..." oninput="updatePreview()" required>
-          <button type="submit" class="btn btn-primary" style="background:var(--neon-cyan); border-color:var(--neon-cyan); color:black; font-weight:bold; padding: 0 25px;">
-            EXECUTE
-          </button>
+      <!-- MAIN INPUT -->
+      <div class="card" style="padding: 3rem; border-color: rgba(0, 255, 255, 0.2); border-width: 2px;">
+        <div class="text-xs uppercase text-dim mb-4 tracking-widest">Craft Your XSS Payload</div>
+        <form onsubmit="handleSearch(event)" class="flex flex-column gap-4">
+          <input type="text" id="searchInput" class="giant-input" placeholder="&lt;script&gt;getFlag()&lt;/script&gt;" oninput="updatePreview()" autocomplete="off" required>
+          <button type="submit" class="btn-giant">TRIGGER EXECUTION</button>
         </form>
-
-        <div id="searchResults" class="result-display">
-          <div class="text-xs text-dim uppercase">Awaiting Execution...</div>
-        </div>
       </div>
 
-      <!-- LOGS -->
-      <div class="terminal-window">
-        <div class="terminal-header">
-          <span>CONSOLE MONITOR</span>
-          <span>● LISTENING</span>
-        </div>
-        <div class="terminal-body" id="trafficLog">
-          <div class="log-entry">Engine ready. Waiting for input string...</div>
-        </div>
+      <!-- RESULT STAGE -->
+      <div class="result-stage" id="searchResults">
+        <div class="stage-label">Insecure Execution Sink</div>
+        <div class="text-xs text-dim uppercase">Awaiting Script Reflection...</div>
       </div>
     </div>
   </main>
@@ -90,50 +82,45 @@
     async function handleSearch(e) {
       if (e) e.preventDefault();
       const q = document.getElementById('searchInput').value;
-      addLog('INBOUND', `Search query received: ${q.substring(0, 30)}${q.length > 30 ? '...' : ''}`);
-
       const resDiv = document.getElementById('searchResults');
-      resDiv.innerHTML = `<div class="w-full h-full"><div class="text-xs text-dim mb-2 uppercase">Rendering Response:</div><div id="target" class="white"></div></div>`;
+      
+      resDiv.innerHTML = `
+        <div class="stage-label">Insecure Execution Sink</div>
+        <div class="w-full h-full">
+          <div class="text-xs text-dim mb-4 uppercase tracking-tighter">Rendered Response Output:</div>
+          <div id="target" class="white" style="font-size: 1.2rem;"></div>
+        </div>
+      `;
       
       const target = document.getElementById('target');
-      // THE VULNERABILITY:
+      // THE VULNERABILITY
       target.innerHTML = q;
-      
-      addLog('RENDER', 'Payload injected into DOM via .innerHTML');
 
-      // Manual script execution for reflected simulation in single page app
+      // Force script execution for simulation
       const scripts = target.getElementsByTagName('script');
-      if (scripts.length > 0) addLog('TRIGGER', `Detected ${scripts.length} script tags. Executing...`);
       for (let s of scripts) {
         try {
           const ns = document.createElement('script');
           ns.text = s.innerText;
           document.body.appendChild(ns).parentNode.removeChild(ns);
-        } catch (err) {
-          addLog('ERROR', `Script execution failed: ${err.message}`);
-        }
+        } catch (err) { console.error(err); }
       }
     }
 
     window.getFlag = function() {
-      showToast('XSS SUCCESS!', 'success');
-      addLog('FLAG', 'getFlag() triggered! Capturing secret...');
+      showToast('XSS VULNERABILITY TRIGGERED!', 'success');
       document.getElementById('searchResults').innerHTML = `
-        <div style="background:rgba(0,255,136,0.1); border:1px solid var(--neon-green); color:var(--neon-green); padding:1.5rem; text-align:center; width: 100%; animation: pulse 1.5s infinite;">
-          <div class="text-sm font-bold uppercase mb-1">XSS VULNERABILITY CONFIRMED</div>
-          <div class="text-xs">FLAG: ACT{r3fl3ct3d_xss_f0und}</div>
+        <div class="stage-label">Insecure Execution Sink</div>
+        <div style="background:rgba(0,255,136,0.1); border:2px solid var(--neon-green); padding:3rem; border-radius:12px; text-align:center; width: 100%; animation: pulse 1.5s infinite;">
+          <h2 style="color: var(--neon-green); margin-bottom: 1.5rem; letter-spacing: 5px;">XSS EXPLOITED</h2>
+          <div style="background: black; padding: 1rem; border-radius: 8px; display: inline-block; min-width: 300px;">
+            <span style="color: #666; font-size: 0.8rem;">FLAG CAPTURED:</span><br>
+            <span style="color: var(--neon-yellow); font-size: 1.8rem; font-weight: bold; font-family: 'Share Tech Mono';">ACT{r3fl3ct3d_xss_f0und}</span>
+          </div>
         </div>
       `;
       alert('SUCCESS! FLAG: ACT{r3fl3ct3d_xss_f0und}');
     };
-
-    function addLog(type, msg) {
-      const log = document.getElementById('trafficLog');
-      const time = new Date().toLocaleTimeString();
-      const entry = document.createElement('div');
-      entry.innerHTML = `<span class="text-dim">[${time}]</span> <span class="font-bold">[${type}]</span> ${msg}`;
-      log.prepend(entry);
-    }
 
     function showToast(msg, type) {
       const container = document.getElementById('toastContainer');
@@ -146,23 +133,15 @@
 
     async function initAuth() {
       try {
-        let res = await fetch('/api/auth/status');
-        let data = await res.json();
-        if (!data.authenticated) {
-          const autoRes = await fetch('/api/auth/auto-login', { method: 'POST' });
-          data = await autoRes.json();
-        }
+        const res = await fetch('/api/auth/status');
+        const data = await res.json();
         if (data.success) {
-          document.getElementById('navUser').innerHTML = `
-            <span class="nav-user-badge">${data.user.username}</span>
-            <button class="nav-logout" onclick="logout()">Logout</button>
-          `;
+          document.getElementById('navUser').innerHTML = `<span class="nav-user-badge">${data.user.username}</span>`;
         }
       } catch (err) {}
     }
     initAuth();
     updatePreview();
-    function logout() { fetch('/api/auth/logout', { method: 'POST' }).then(() => window.location.href = '/'); }
   </script>
 </body>
 </html>

@@ -6,39 +6,23 @@
   <title>CSRF Lab - ACT LAB</title>
   <link rel="stylesheet" href="/css/style.css">
   <style>
-    .lab-container {
-      max-width: 800px;
-      margin: 0 auto;
-      display: flex;
-      flex-direction: column;
-      gap: 1.5rem;
-    }
-    .terminal-window {
-      background: rgba(0, 0, 0, 0.8);
-      border: 1px solid var(--neon-cyan);
-      border-radius: 8px;
+    .exploit-container { max-width: 900px; margin: 0 auto; padding: 2rem 0; }
+    .giant-input { 
+      width: 100%; 
+      background: rgba(0,0,0,0.4); 
+      border: 2px solid var(--neon-yellow); 
+      color: var(--neon-yellow); 
+      font-size: 1.5rem; 
+      padding: 1.2rem; 
+      border-radius: 12px; 
       font-family: 'Share Tech Mono', monospace;
-      overflow: hidden;
+      outline: none;
     }
-    .terminal-header {
-      background: var(--neon-cyan);
-      color: black;
-      padding: 5px 15px;
-      font-size: 12px;
-      font-weight: bold;
-      display: flex;
-      justify-content: space-between;
-    }
-    .terminal-body {
-      padding: 15px;
-      height: 150px;
-      overflow-y: auto;
-      font-size: 13px;
-      color: #0f0;
-      line-height: 1.5;
-    }
-    .log-entry { margin-bottom: 5px; }
-    .log-time { color: var(--neon-cyan); margin-right: 10px; }
+    .btn-giant { width: 100%; padding: 1.2rem; font-size: 1.2rem; font-weight: 900; letter-spacing: 4px; background: var(--neon-yellow); color: black; border: none; border-radius: 12px; cursor: pointer; transition: 0.3s; margin-top: 1rem; }
+    .terminal-window { background: #000; border: 1px solid #333; border-radius: 12px; overflow: hidden; margin-top: 3rem; }
+    .terminal-header { background: #111; color: var(--neon-yellow); padding: 10px 20px; font-size: 12px; font-weight: bold; border-bottom: 1px solid #222; display: flex; justify-content: space-between; }
+    .terminal-body { padding: 20px; height: 180px; overflow-y: auto; font-family: 'Share Tech Mono'; font-size: 14px; color: var(--neon-yellow); line-height: 1.6; }
+    .log-entry { margin-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.02); padding-bottom: 4px; }
   </style>
 </head>
 <body>
@@ -60,46 +44,44 @@
   </nav>
 
   <main class="main-content">
-    <div class="lab-container">
-      <div class="page-header" style="text-align:center;">
-        <h1 style="color: var(--neon-yellow); margin-bottom: 0.5rem;">CSRF CHALLENGE</h1>
-        <p class="text-mono">Target: Vulnerable Profile Update Form</p>
+    <div class="exploit-container">
+      <div class="page-header" style="text-align:center; margin-bottom: 4rem;">
+        <h1 style="color: var(--neon-yellow); font-size: 3rem; text-shadow: 0 0 20px rgba(255, 204, 0, 0.4);">CSRF CHALLENGE</h1>
+        <p class="text-mono" style="font-size: 1.2rem; color: #888;">BYPASS CROSS-ORIGIN VERIFICATION LOGIC</p>
       </div>
 
-      <!-- MAIN LAB CARD -->
-      <div class="card" style="padding: 2rem; border-color: var(--neon-yellow);">
-        <div class="flex justify-between items-center mb-4">
-          <div class="text-xs uppercase text-dim">Profile Management System</div>
+      <!-- MAIN TARGET PANEL -->
+      <div class="card" style="padding: 3rem; border-color: rgba(255, 204, 0, 0.2); border-width: 2px;">
+        <div class="flex justify-between items-center mb-6">
+          <div class="text-xs uppercase text-dim tracking-widest">Target: Profile Management System</div>
           <div class="text-xs text-yellow">SECURITY: WEAK ORIGIN CHECK</div>
         </div>
-        
-        <div id="profileView" class="mb-4">
+
+        <div id="profileView" class="mb-6">
           <div class="spinner"></div>
         </div>
 
-        <form onsubmit="updateProfile(event)" class="flex flex-column gap-3">
+        <form onsubmit="updateProfile(event)" class="flex flex-column gap-5">
           <div class="form-group">
-            <label class="form-label">Email Address</label>
-            <input type="email" id="emailInput" class="form-input" placeholder="Enter new email...">
+            <label class="text-xs text-yellow uppercase mb-3 block font-bold">New Email Address</label>
+            <input type="email" id="emailInput" class="giant-input" placeholder="attacker@exploit.com" required>
           </div>
           <div class="form-group">
-            <label class="form-label">Biography</label>
-            <textarea id="bioInput" class="form-input" rows="3" placeholder="Tell us about yourself..."></textarea>
+            <label class="text-xs text-yellow uppercase mb-3 block font-bold">New Bio / Description</label>
+            <textarea id="bioInput" class="giant-input" rows="3" placeholder="Injected via CSRF..."></textarea>
           </div>
-          <button type="submit" class="btn btn-primary btn-block" style="background:var(--neon-yellow); border-color:var(--neon-yellow); color:black; font-weight:bold; padding: 12px; font-size: 1rem;">
-            SAVE CHANGES
-          </button>
+          <button type="submit" class="btn-giant">SIMULATE NORMAL UPDATE</button>
         </form>
       </div>
 
       <!-- LIVE LOGS TERMINAL -->
       <div class="terminal-window">
         <div class="terminal-header">
-          <span>LIVE TRAFFIC MONITOR</span>
-          <span>● ACTIVE</span>
+          <span>HTTP TRAFFIC MONITOR</span>
+          <span>● LISTENING</span>
         </div>
         <div class="terminal-body" id="trafficLog">
-          <div class="log-entry"><span class="log-time">[SYSTEM]</span> Awaiting inbound requests...</div>
+          <div class="log-entry"><span style="color: #444;">[SYSTEM]</span> Awaiting inbound cross-site requests...</div>
         </div>
       </div>
     </div>
@@ -115,20 +97,18 @@
         if (data.success) {
           const u = data.user;
           document.getElementById('profileView').innerHTML = `
-            <div class="flex items-center gap-4">
-              <div class="avatar-placeholder" style="width: 50px; height: 50px; font-size: 20px; background: var(--neon-yellow); color: black;">${u.username[0].toUpperCase()}</div>
+            <div class="flex items-center gap-5">
+              <div class="avatar-placeholder" style="width: 60px; height: 60px; font-size: 24px; background: var(--neon-yellow); color: black;">${u.username[0].toUpperCase()}</div>
               <div>
-                <div class="text-lg font-bold white">${u.username}</div>
-                <div class="text-dim text-xs uppercase letter-spacing-1">${u.role} | Score: ${u.score}</div>
+                <div class="text-xl font-bold white">${u.username}</div>
+                <div class="text-dim text-xs uppercase tracking-widest">${u.role} | Current Email: ${u.email || 'N/A'}</div>
               </div>
             </div>
           `;
           document.getElementById('emailInput').value = u.email || '';
           document.getElementById('bioInput').value = u.bio || '';
         }
-      } catch (err) {
-        addLog('ERROR', 'Failed to fetch profile data');
-      }
+      } catch (err) {}
     }
 
     async function updateProfile(e) {
@@ -147,35 +127,33 @@
         const data = await res.json();
         if (data.success) {
           showToast('Profile updated!', 'success');
-          addLog('SUCCESS', `DB modified. New email: ${email}`);
+          addLog('SUCCESS', `Database modified. Email set to: ${email}`);
           if (data.message && data.message.includes('ACT{')) showFlag(data.message);
           loadProfile();
         } else {
           showToast(data.error || 'Update failed', 'error');
-          addLog('REJECTED', data.error || 'Validation failed');
+          addLog('REJECTED', `Reason: ${data.error}`);
         }
       } catch (err) {
-        addLog('ERROR', 'Network connection failure');
+        addLog('ERROR', 'System connection lost');
       }
     }
 
     function addLog(type, msg) {
       const log = document.getElementById('trafficLog');
       const time = new Date().toLocaleTimeString();
-      const color = type === 'SUCCESS' ? '#0f0' : (type === 'REJECTED' || type === 'ERROR' ? '#f00' : '#0ff');
-      
       const entry = document.createElement('div');
       entry.className = 'log-entry';
-      entry.innerHTML = `<span class="log-time">[${time}]</span> <span style="color: ${color}">[${type}]</span> ${msg}`;
-      
+      const color = type === 'SUCCESS' ? '#0f0' : (type === 'REJECTED' || type === 'ERROR' ? '#f00' : '#ff0');
+      entry.innerHTML = `<span style="color: #444;">[${time}]</span> <span style="color: ${color}; font-weight: bold;">[${type}]</span> ${msg}`;
       log.prepend(entry);
     }
 
     function showFlag(msg) {
       const flag = msg.split('Flag: ')[1];
-      showToast('FLAG FOUND!', 'success');
-      addLog('CONGRATS', `Captured Flag: ${flag}`);
-      alert('SUCCESS! FLAG: ' + flag);
+      showToast('FLAG CAPTURED!', 'success');
+      addLog('EXPLOIT', `CSRF Successful! Captured Flag: ${flag}`);
+      alert('SUCCESS! CSRF Exploit Successful.\nFLAG: ' + flag);
     }
 
     function showToast(msg, type) {
@@ -196,16 +174,12 @@
           data = await autoRes.json();
         }
         if (data.success) {
-          document.getElementById('navUser').innerHTML = `
-            <span class="nav-user-badge">${data.user.username}</span>
-            <button class="nav-logout" onclick="logout()">Logout</button>
-          `;
+          document.getElementById('navUser').innerHTML = `<span class="nav-user-badge">${data.user.username}</span>`;
           loadProfile();
         }
       } catch (err) {}
     }
     initAuth();
-    function logout() { fetch('/api/auth/logout', { method: 'POST' }).then(() => window.location.href = '/'); }
   </script>
 </body>
 </html>

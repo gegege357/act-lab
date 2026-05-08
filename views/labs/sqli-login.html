@@ -6,11 +6,26 @@
   <title>SQLi Login - ACT LAB</title>
   <link rel="stylesheet" href="/css/style.css">
   <style>
-    .lab-container { max-width: 800px; margin: 0 auto; display: flex; flex-direction: column; gap: 1.5rem; }
-    .query-box { background: #05050d; border: 1px solid rgba(255, 0, 255, 0.3); padding: 15px; border-radius: 8px; font-family: 'Share Tech Mono', monospace; font-size: 14px; }
-    .terminal-window { background: rgba(0, 0, 0, 0.8); border: 1px solid var(--neon-pink); border-radius: 8px; overflow: hidden; font-family: 'Share Tech Mono', monospace; }
-    .terminal-header { background: var(--neon-pink); color: black; padding: 5px 15px; font-size: 12px; font-weight: bold; display: flex; justify-content: space-between; }
-    .terminal-body { padding: 15px; height: 120px; overflow-y: auto; font-size: 13px; color: var(--neon-pink); }
+    .exploit-container { max-width: 900px; margin: 0 auto; padding: 2rem 0; }
+    .giant-input { 
+      width: 100%; 
+      background: rgba(0,0,0,0.4); 
+      border: 2px solid var(--neon-pink); 
+      color: var(--neon-pink); 
+      font-size: 1.5rem; 
+      padding: 1.2rem; 
+      border-radius: 12px; 
+      font-family: 'Share Tech Mono', monospace;
+      outline: none;
+      transition: all 0.3s ease;
+      box-shadow: 0 0 15px rgba(255, 0, 85, 0.1);
+    }
+    .giant-input:focus { box-shadow: 0 0 25px rgba(255, 0, 85, 0.3); background: rgba(255, 0, 85, 0.05); }
+    .label-text { color: var(--neon-pink); font-size: 0.9rem; margin-bottom: 0.8rem; display: block; letter-spacing: 2px; font-weight: bold; }
+    .query-preview { background: #05050d; padding: 1.5rem; border-radius: 8px; border-left: 4px solid var(--neon-pink); margin-bottom: 2rem; font-family: 'Share Tech Mono'; font-size: 1.1rem; color: #666; }
+    .btn-giant { width: 100%; padding: 1.5rem; font-size: 1.2rem; font-weight: 900; letter-spacing: 4px; background: var(--neon-pink); color: black; border: none; border-radius: 12px; cursor: pointer; transition: 0.3s; margin-top: 1rem; }
+    .btn-giant:hover { transform: translateY(-3px); box-shadow: 0 10px 30px rgba(255, 0, 85, 0.4); }
+    .terminal-output { background: #000; border: 1px solid #222; border-radius: 12px; padding: 1.5rem; margin-top: 3rem; min-height: 150px; font-family: 'Share Tech Mono'; color: #ff0055; font-size: 0.9rem; }
   </style>
 </head>
 <body>
@@ -32,53 +47,43 @@
   </nav>
 
   <main class="main-content">
-    <div class="lab-container">
-      <div class="page-header" style="text-align:center;">
-        <h1 style="color: var(--neon-pink); margin-bottom: 0.5rem;">SQLi AUTH BYPASS</h1>
-        <p class="text-mono">Bypass Authentication via Logic Manipulation</p>
+    <div class="exploit-container">
+      <div class="page-header" style="text-align:center; margin-bottom: 4rem;">
+        <h1 style="color: var(--neon-pink); font-size: 3rem; text-shadow: 0 0 20px rgba(255, 0, 85, 0.5);">SQLi AUTH BYPASS</h1>
+        <p class="text-mono" style="font-size: 1.2rem; color: #888;">BREAK THE AUTHENTICATED BARRIER</p>
       </div>
 
-      <!-- SQL PREVIEW -->
-      <div class="query-box">
-        <div class="text-xs text-dim mb-2 uppercase tracking-widest">Live Backend Query Preview:</div>
-        <div class="white">
-          <span class="text-dim">SELECT * FROM users WHERE username = '</span><span id="userPreview" style="color:var(--neon-pink);"></span><span class="text-dim">' AND password = '</span><span id="passPreview" style="color:var(--neon-pink);"></span><span class="text-dim">'</span>
-        </div>
+      <!-- SQL VISUALIZER -->
+      <div class="query-preview">
+        <span style="color: #444;">DATABASE QUERY:</span><br>
+        <code style="word-break: break-all;">SELECT * FROM users WHERE username = '<span id="userPreview" style="color:var(--neon-pink);">admin</span>' AND password = '<span id="passPreview" style="color:var(--neon-pink);"></span>'</code>
       </div>
 
-      <!-- MAIN FORM -->
-      <div class="card" style="padding: 2rem; border-color: var(--neon-pink);">
-        <div class="flex justify-between items-center mb-4">
-          <div class="text-xs uppercase text-dim">Secure Login Portal</div>
-          <div class="text-xs text-pink">PROTOCOL: VULNERABLE</div>
-        </div>
+      <!-- MAIN EXPLOIT AREA -->
+      <div class="card" style="padding: 3rem; border-width: 2px; border-color: rgba(255, 0, 85, 0.2);">
+        <form onsubmit="handleLogin(event)" class="flex flex-column gap-5">
+          <div class="form-group">
+            <label class="label-text">TARGET USERNAME</label>
+            <input type="text" id="usernameInput" class="giant-input" placeholder="admin" oninput="updatePreview()" autocomplete="off">
+          </div>
+          
+          <div class="form-group">
+            <label class="label-text">INJECT PASSWORD PAYLOAD</label>
+            <input type="text" id="passwordInput" class="giant-input" placeholder="' OR '1'='1" oninput="updatePreview()" autocomplete="off">
+          </div>
 
-        <form onsubmit="handleLogin(event)" class="flex flex-column gap-3">
-          <div class="form-group">
-            <label class="form-label">Username</label>
-            <input type="text" id="usernameInput" class="form-input" placeholder="admin" oninput="updatePreview()" required>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Password</label>
-            <input type="password" id="passwordInput" class="form-input" placeholder="••••••••" oninput="updatePreview()" required>
-          </div>
-          <button type="submit" id="loginBtn" class="btn btn-primary btn-block" style="background:var(--neon-pink); border-color:var(--neon-pink); color:black; font-weight:bold; padding: 12px;">
-            AUTHENTICATE
+          <button type="submit" id="loginBtn" class="btn-giant">
+            EXECUTE INJECTION
           </button>
         </form>
-        
-        <div id="loginResult" class="mt-4"></div>
+
+        <div id="loginResult" class="mt-5"></div>
       </div>
 
-      <!-- LOGS -->
-      <div class="terminal-window">
-        <div class="terminal-header">
-          <span>SYSTEM LOGS</span>
-          <span>● LOGGING</span>
-        </div>
-        <div class="terminal-body" id="trafficLog">
-          <div class="log-entry">Waiting for authentication attempt...</div>
-        </div>
+      <!-- SYSTEM LOGS -->
+      <div class="terminal-output" id="trafficLog">
+        <div style="color: #444; margin-bottom: 10px;">[ SYSTEM LOG MONITOR ]</div>
+        <div id="logContent">Waiting for payload execution...</div>
       </div>
     </div>
   </main>
@@ -87,15 +92,15 @@
 
   <script>
     function updatePreview() {
-      document.getElementById('userPreview').textContent = document.getElementById('usernameInput').value;
+      document.getElementById('userPreview').textContent = document.getElementById('usernameInput').value || 'admin';
       document.getElementById('passPreview').textContent = document.getElementById('passwordInput').value;
     }
 
     async function handleLogin(e) {
-      e.preventDefault();
-      const user = document.getElementById('usernameInput').value;
+      if (e) e.preventDefault();
+      const user = document.getElementById('usernameInput').value || 'admin';
       const pass = document.getElementById('passwordInput').value;
-      addLog('AUTH_REQ', `Attempting login: ${user}`);
+      addLog('ATTEMPT', `Payload sent: ${pass}`);
 
       try {
         const res = await fetch('/api/auth/login', {
@@ -105,31 +110,35 @@
         });
         const data = await res.json();
 
+        const resDiv = document.getElementById('loginResult');
         if (data.success) {
-          addLog('SUCCESS', `Login Bypass Successful!`);
-          document.getElementById('loginResult').innerHTML = `
-            <div class="p-3 rounded text-center" style="background:rgba(0,255,136,0.1); border:1px solid var(--neon-green); color:var(--neon-green); animation: pulse 1.5s infinite;">
-              <div class="text-sm font-bold uppercase mb-1">ACCESS GRANTED</div>
-              <div class="text-xs">FLAG: ${data.flag || 'Check Challenges'}</div>
+          addLog('SUCCESS', `Login Bypass Successful for ${user}!`);
+          resDiv.innerHTML = `
+            <div style="background:rgba(0,255,136,0.1); border:2px solid var(--neon-green); padding: 2rem; border-radius: 12px; text-align: center; animation: slideUp 0.5s ease;">
+              <h2 style="color: var(--neon-green); margin-bottom: 1rem; letter-spacing: 5px;">ACCESS GRANTED</h2>
+              <div style="background: black; padding: 1rem; border-radius: 8px;">
+                <span style="color: #666; font-size: 0.8rem;">SYSTEM FLAG:</span><br>
+                <span style="color: var(--neon-yellow); font-size: 1.5rem; font-weight: bold; font-family: 'Share Tech Mono';">${data.flag || 'ACT{sqli_bypass_master}'}</span>
+              </div>
             </div>
           `;
           showToast('SQL Injection Successful!', 'success');
-          if (data.flag) alert('SUCCESS! FLAG: ' + data.flag);
         } else {
-          addLog('FAILED', `Invalid credentials for ${user}`);
-          document.getElementById('loginResult').innerHTML = `<div class="text-center text-pink text-xs uppercase">[!] Authentication Failed</div>`;
+          addLog('FAILURE', `Invalid payload: ${data.error}`);
+          resDiv.innerHTML = `<div style="text-align: center; color: var(--neon-pink); font-weight: bold; letter-spacing: 2px;">[!] AUTHENTICATION FAILED</div>`;
         }
       } catch (err) {
-        addLog('ERROR', 'Connection to database lost');
+        addLog('ERROR', 'Backend server unreachable');
       }
     }
 
     function addLog(type, msg) {
-      const log = document.getElementById('trafficLog');
+      const log = document.getElementById('logContent');
       const time = new Date().toLocaleTimeString();
-      const entry = document.createElement('div');
-      entry.innerHTML = `<span class="text-dim">[${time}]</span> <span class="font-bold">[${type}]</span> ${msg}`;
-      log.prepend(entry);
+      const div = document.createElement('div');
+      div.style.marginBottom = '5px';
+      div.innerHTML = `<span style="color: #444;">[${time}]</span> <span style="font-weight: bold;">[${type}]</span> ${msg}`;
+      log.prepend(div);
     }
 
     function showToast(msg, type) {
@@ -145,21 +154,13 @@
       try {
         let res = await fetch('/api/auth/status');
         let data = await res.json();
-        if (!data.authenticated) {
-          const autoRes = await fetch('/api/auth/auto-login', { method: 'POST' });
-          data = await autoRes.json();
-        }
         if (data.success) {
-          document.getElementById('navUser').innerHTML = `
-            <span class="nav-user-badge">${data.user.username}</span>
-            <button class="nav-logout" onclick="logout()">Logout</button>
-          `;
+          document.getElementById('navUser').innerHTML = `<span class="nav-user-badge">${data.user.username}</span>`;
         }
       } catch (err) {}
     }
     initAuth();
     updatePreview();
-    function logout() { fetch('/api/auth/logout', { method: 'POST' }).then(() => window.location.href = '/'); }
   </script>
 </body>
 </html>

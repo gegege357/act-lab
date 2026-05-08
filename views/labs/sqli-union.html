@@ -5,6 +5,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SQLi UNION Extraction - ACT LAB</title>
   <link rel="stylesheet" href="/css/style.css">
+  <style>
+    .lab-container { max-width: 900px; margin: 0 auto; display: flex; flex-direction: column; gap: 1.5rem; }
+    .query-box { background: #05050d; border: 1px solid rgba(0, 255, 255, 0.3); padding: 15px; border-radius: 8px; font-family: 'Share Tech Mono', monospace; font-size: 13px; }
+    .results-table-container { overflow-x: auto; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; background: rgba(0, 0, 0, 0.4); }
+    table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    th { background: rgba(0, 255, 255, 0.1); color: var(--neon-cyan); text-align: left; padding: 10px; border-bottom: 1px solid rgba(0, 255, 255, 0.2); }
+    td { padding: 10px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); color: #ccc; }
+    .highlight-row { background: rgba(255, 255, 0, 0.05); }
+  </style>
 </head>
 <body>
   <div class="cyber-bg"></div>
@@ -14,7 +23,7 @@
       <div class="nav-logo-icon">ACT</div>
       <span class="nav-logo-text">ACT LAB</span>
     </a>
-    <ul class="nav-links" id="navLinks">
+    <ul class="nav-links">
       <li><a href="/dashboard">Dashboard</a></li>
       <li><a href="/challenges">Missions</a></li>
       <li><a href="/profile">Profile</a></li>
@@ -25,36 +34,33 @@
   </nav>
 
   <main class="main-content">
-    <div class="container" style="max-width: 1000px;">
-      <div class="page-header" style="text-align:center; margin-bottom: 2rem;">
-        <h1 style="color: var(--neon-cyan);">// DATA EXTRACTION LAB: UNION SELECT</h1>
-        <p class="text-mono">Target: Exfiltrate "secret_agent" credentials from the internal database</p>
+    <div class="lab-container">
+      <div class="page-header" style="text-align:center;">
+        <h1 style="color: var(--neon-cyan); margin-bottom: 0.5rem;">SQLi UNION EXTRACTION</h1>
+        <p class="text-mono">Exfiltrate Hidden Data via UNION SELECT Attacks</p>
       </div>
 
-      <div class="dashboard-grid" style="grid-template-columns: 1fr; gap: 2rem;">
-        <!-- SEARCH INTERFACE -->
-        <div class="card" style="border-color: var(--neon-cyan);">
-          <div class="card-title mb-3 text-xs uppercase tracking-widest text-dim">Search Database</div>
-          <form onsubmit="handleSearch(event)" class="flex gap-2">
-            <input type="text" id="searchInput" class="form-input" placeholder="Search mission titles..." required oninput="updateQueryPreview()">
-            <button type="submit" class="btn btn-primary" style="background:var(--neon-cyan); border-color:var(--neon-cyan); color:black; font-weight:bold;">
-              EXECUTE QUERY &rarr;
-            </button>
-          </form>
-
-          <!-- LIVE QUERY PREVIEW -->
-          <div class="mt-4">
-            <div class="text-xs text-dim uppercase mb-2">Backend SQL Reconstruction:</div>
-            <div class="terminal" style="font-size: 13px; min-height: 80px; background: rgba(0,0,0,0.4);">
-              <div class="terminal-body" style="word-break: break-all; line-height: 1.6;">
-                <span class="text-secondary">SELECT id, title, description, category, difficulty, hint, points, endpoint FROM challenges WHERE title LIKE '%</span><span id="sqlPreviewInput" style="color: #ffcc00; font-weight: bold; text-decoration: underline;"></span><span class="text-secondary">%'</span>
-              </div>
-            </div>
-          </div>
+      <!-- SQL PREVIEW -->
+      <div class="query-box">
+        <div class="text-xs text-dim mb-2 uppercase tracking-widest">Active Search Query:</div>
+        <div class="white">
+          <span class="text-dim">SELECT id, title, description, category FROM challenges WHERE title LIKE '%</span><span id="sqlPreview" style="color:var(--neon-yellow);"></span><span class="text-dim">%'</span>
         </div>
+      </div>
 
-        <!-- RESULTS AREA -->
-        <div id="searchResults"></div>
+      <!-- SEARCH FORM -->
+      <div class="card" style="padding: 1.5rem; border-color: var(--neon-cyan);">
+        <form onsubmit="handleSearch(event)" class="flex gap-3">
+          <input type="text" id="searchInput" class="form-input" placeholder="Search mission database..." oninput="updatePreview()" required>
+          <button type="submit" class="btn btn-primary" style="background:var(--neon-cyan); border-color:var(--neon-cyan); color:black; font-weight:bold; padding: 0 30px;">
+            QUERY
+          </button>
+        </form>
+      </div>
+
+      <!-- RESULTS AREA -->
+      <div id="resultsArea" class="flex flex-column gap-3">
+        <!-- Table will be injected here -->
       </div>
     </div>
   </main>
@@ -62,15 +68,14 @@
   <div class="toast-container" id="toastContainer"></div>
 
   <script>
-    function updateQueryPreview() {
-      const input = document.getElementById('searchInput').value;
-      document.getElementById('sqlPreviewInput').textContent = input;
+    function updatePreview() {
+      document.getElementById('sqlPreview').textContent = document.getElementById('searchInput').value;
     }
 
     async function handleSearch(e) {
       if (e) e.preventDefault();
       const q = document.getElementById('searchInput').value;
-      const resultsDiv = document.getElementById('searchResults');
+      const resultsDiv = document.getElementById('resultsArea');
       resultsDiv.innerHTML = '<div class="spinner"></div>';
 
       try {
@@ -79,31 +84,22 @@
 
         if (data.success) {
           if (data.results.length === 0) {
-            resultsDiv.innerHTML = `<div class="empty-state"><div class="empty-state-text">No data returned for "${escapeHtml(q)}"</div></div>`;
+            resultsDiv.innerHTML = `<div class="card text-center text-dim">No records found for your query.</div>`;
           } else {
             const keys = Object.keys(data.results[0]);
             let html = `
-              <div class="flex justify-between items-center mb-3">
-                <p class="text-dim text-sm">Query successful. Retrieved <strong>${data.count}</strong> records.</p>
-                ${data.results.some(r => r.username === 'secret_agent') ? '<span class="badge badge-success">TARGET ACQUIRED</span>' : ''}
-              </div>
-            `;
-            
-            html += `
-              <div class="card" style="overflow-x: auto; padding: 0; border-color: var(--neon-cyan); background: rgba(0,0,0,0.2);">
-                <table class="leaderboard-table" style="margin: 0; width: 100%; font-size: 0.85rem;">
+              <div class="results-table-container">
+                <table>
                   <thead>
-                    <tr>
-                      ${keys.map(k => `<th>${escapeHtml(k.toUpperCase())}</th>`).join('')}
-                    </tr>
+                    <tr>${keys.map(k => `<th>${k.toUpperCase()}</th>`).join('')}</tr>
                   </thead>
                   <tbody>
                     ${data.results.map(row => `
-                      <tr style="${row.username === 'secret_agent' ? 'background: rgba(0,255,255,0.05);' : ''}">
+                      <tr class="${JSON.stringify(row).includes('ACT{') ? 'highlight-row' : ''}">
                         ${keys.map(k => {
                           const val = row[k];
                           const isFlag = String(val).startsWith('ACT{');
-                          return `<td class="${isFlag ? 'text-yellow font-bold text-mono' : ''}" style="max-width: 250px; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(String(val || ''))}</td>`;
+                          return `<td class="${isFlag ? 'text-yellow font-bold' : ''}">${escapeHtml(String(val || ''))}</td>`;
                         }).join('')}
                       </tr>
                     `).join('')}
@@ -112,20 +108,18 @@
               </div>
             `;
             resultsDiv.innerHTML = html;
+            if (JSON.stringify(data.results).includes('ACT{')) showToast('SECRET DATA DETECTED!', 'success');
           }
         } else {
           resultsDiv.innerHTML = `
-            <div class="card" style="border-color:var(--neon-pink); background: rgba(255,0,85,0.03);">
-              <div class="flex items-center gap-2 mb-2">
-                <span style="color:var(--neon-pink); font-weight:bold;">[!] SQL EXCEPTION</span>
-              </div>
-              <pre style="background:rgba(0,0,0,0.5); padding:1.2rem; border-radius:8px; overflow-x:auto; color:#ff80ab; font-family:'Share Tech Mono', monospace; font-size:0.9rem; border: 1px solid rgba(255,0,85,0.2);">${data.error}</pre>
-              <p class="mt-3 text-xs text-dim">Tip: The error indicates a mismatch in the UNION structure or a syntax error in your injection payload.</p>
+            <div class="card" style="border-color:var(--neon-pink); background: rgba(255,0,85,0.05);">
+              <div class="text-xs text-pink font-bold mb-2 uppercase">SQL EXECUTION ERROR</div>
+              <pre style="font-family:'Share Tech Mono'; font-size:12px; color:#ff80ab; white-space: pre-wrap;">${data.error}</pre>
             </div>
           `;
         }
       } catch (err) {
-        resultsDiv.innerHTML = `<div class="text-pink">Transmission Error: ${err.message}</div>`;
+        showToast('System connection error', 'error');
       }
     }
 
@@ -135,37 +129,13 @@
       return div.innerHTML;
     }
 
-    async function initAuth() {
-      try {
-        let res = await fetch('/api/auth/status');
-        let data = await res.json();
-        if (!data.authenticated) {
-          const autoRes = await fetch('/api/auth/auto-login', { method: 'POST' });
-          data = await autoRes.json();
-        }
-        if (data.success) {
-          document.getElementById('navUser').innerHTML = `
-            <span class="nav-user-badge">${data.user.username}</span>
-            <a href="/dashboard" class="btn btn-primary btn-sm">Dashboard</a>
-            <button class="nav-logout" onclick="logout()">Logout</button>
-          `;
-        }
-      } catch (err) {}
-    }
-    initAuth();
-    
-    function logout() {
-      fetch('/api/auth/logout', { method: 'POST' }).then(() => window.location.href = '/');
-    }
-    
-    // Set initial preview
-    updateQueryPreview();
-  </script>
-
-    function escapeHtml(str) {
-      const div = document.createElement('div');
-      div.textContent = str;
-      return div.innerHTML;
+    function showToast(msg, type) {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      toast.className = `toast toast-${type}`;
+      toast.textContent = msg;
+      container.appendChild(toast);
+      setTimeout(() => toast.remove(), 3000);
     }
 
     async function initAuth() {
@@ -179,13 +149,14 @@
         if (data.success) {
           document.getElementById('navUser').innerHTML = `
             <span class="nav-user-badge">${data.user.username}</span>
-            <a href="/dashboard" class="btn btn-primary btn-sm">Dashboard</a>
             <button class="nav-logout" onclick="logout()">Logout</button>
           `;
         }
       } catch (err) {}
     }
     initAuth();
+    updatePreview();
+    function logout() { fetch('/api/auth/logout', { method: 'POST' }).then(() => window.location.href = '/'); }
   </script>
 </body>
 </html>

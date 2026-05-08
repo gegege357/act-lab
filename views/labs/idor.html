@@ -5,6 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>IDOR Lab - ACT LAB</title>
   <link rel="stylesheet" href="/css/style.css">
+  <style>
+    .lab-container { max-width: 800px; margin: 0 auto; display: flex; flex-direction: column; gap: 1.5rem; }
+    .api-panel { background: #05050d; border: 1px solid rgba(0, 255, 0, 0.3); padding: 15px; border-radius: 8px; font-family: 'Share Tech Mono', monospace; font-size: 14px; }
+    .terminal-window { background: rgba(0, 0, 0, 0.8); border: 1px solid var(--neon-green); border-radius: 8px; overflow: hidden; font-family: 'Share Tech Mono', monospace; }
+    .terminal-header { background: var(--neon-green); color: black; padding: 5px 15px; font-size: 12px; font-weight: bold; display: flex; justify-content: space-between; }
+    .terminal-body { padding: 15px; height: 120px; overflow-y: auto; font-size: 13px; color: var(--neon-green); }
+    .profile-card { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 25px; min-height: 200px; display: flex; flex-direction: column; justify-content: center; }
+  </style>
 </head>
 <body>
   <div class="cyber-bg"></div>
@@ -14,7 +22,7 @@
       <div class="nav-logo-icon">ACT</div>
       <span class="nav-logo-text">ACT LAB</span>
     </a>
-    <ul class="nav-links" id="navLinks">
+    <ul class="nav-links">
       <li><a href="/dashboard">Dashboard</a></li>
       <li><a href="/challenges">Missions</a></li>
       <li><a href="/profile">Profile</a></li>
@@ -25,87 +33,123 @@
   </nav>
 
   <main class="main-content">
-    <div class="container" style="max-width: 900px;">
-      <div class="page-header" style="text-align:center; margin-bottom: 2rem;">
-        <h1 style="color: var(--neon-green);">IDOR LAB</h1>
-        <p class="text-mono">Enumerate and access private data</p>
+    <div class="lab-container">
+      <div class="page-header" style="text-align:center;">
+        <h1 style="color: var(--neon-green); margin-bottom: 0.5rem;">IDOR ENUMERATION</h1>
+        <p class="text-mono">Insecure Direct Object Reference: Unauthorized Data Access</p>
       </div>
 
-      <div class="dashboard-grid" style="grid-template-columns: 1fr 1fr; gap: 1.5rem;">
-        <!-- VIEWER -->
-        <div class="card" style="padding: 1.5rem; border-color: var(--neon-green);">
-          <div class="text-xs uppercase text-dim mb-3">Retrieve Profile</div>
-          <div class="flex gap-2 mb-3">
-            <input type="number" id="userIdInput" class="form-input" value="1" min="1" style="padding: 8px;" oninput="updateUrlPreview()">
-            <button onclick="fetchProfile()" class="btn btn-primary" style="background:var(--neon-green); border-color:var(--neon-green); color:black; font-weight:bold; padding: 0 15px;">
-              FETCH
-            </button>
-          </div>
-          <div id="profileDisplay" style="min-height: 150px;">
-            <div class="spinner"></div>
-          </div>
-          <div class="mt-3 pt-2 border-top" style="border-top:1px solid #222;">
-            <code class="text-xs text-cyan">/api/profile?id=<span id="urlParamPreview" class="text-yellow">1</span></code>
-          </div>
+      <!-- API RECON -->
+      <div class="api-panel">
+        <div class="text-xs text-dim mb-2 uppercase tracking-widest">Active API Endpoint Recon:</div>
+        <div class="white">
+          <span class="text-dim">Request: </span><code class="text-green">GET /api/profile?id=</code><span id="urlParamPreview" style="color:var(--neon-yellow); font-weight:bold;">1</span><br>
+          <span class="text-dim">Authorization: </span><span class="text-xs" style="color:#aaa;">Session Cookie Only (No Ownership Verification)</span>
+        </div>
+      </div>
+
+      <!-- MAIN VIEWER -->
+      <div class="card" style="padding: 2rem; border-color: var(--neon-green);">
+        <div class="flex justify-between items-center mb-4">
+          <div class="text-xs uppercase text-dim">User Data Retrieval</div>
+          <div class="text-xs text-green">VULNERABILITY: UNPROTECTED REFERENCE</div>
         </div>
 
-        <!-- ANALYSIS -->
-        <div class="flex flex-column gap-3">
-          <div class="card" style="padding: 1rem; background: #05050d;">
-            <div class="text-xs text-dim mb-2 uppercase">Comparator</div>
-            <div class="flex flex-column gap-2">
-               <div class="flex justify-between p-2 bg-black rounded text-xs">
-                  <span class="text-dim">YOUR_ID:</span>
-                  <span class="text-green font-bold" id="sessionUidPreview">?</span>
-               </div>
-               <div class="flex justify-between p-2 bg-black rounded text-xs">
-                  <span class="text-dim">TARGET_ID:</span>
-                  <span class="text-yellow font-bold" id="requestedUidPreview">1</span>
-               </div>
-            </div>
-          </div>
+        <div class="flex gap-3 mb-5">
+          <input type="number" id="userIdInput" class="form-input" value="1" min="1" oninput="updatePreview()" style="font-size: 1.2rem; text-align: center; width: 100px;">
+          <button onclick="fetchProfile()" class="btn btn-primary" style="background:var(--neon-green); border-color:var(--neon-green); color:black; font-weight:bold; flex-grow: 1;">
+            FETCH PRIVATE DATA
+          </button>
+        </div>
 
-          <div class="card" style="padding: 1rem;">
-            <p class="text-secondary text-xs">Find <strong>Alice's</strong> ID to reveal her flag. The server doesn't verify if you own the ID.</p>
-          </div>
+        <div id="profileDisplay" class="profile-card">
+          <div class="spinner"></div>
+        </div>
+      </div>
+
+      <!-- LOGS -->
+      <div class="terminal-window">
+        <div class="terminal-header">
+          <span>TRAFFIC LOGS</span>
+          <span>● SNIFFING</span>
+        </div>
+        <div class="terminal-body" id="trafficLog">
+          <div class="log-entry">Waiting for API request...</div>
         </div>
       </div>
     </div>
   </main>
 
+  <div class="toast-container" id="toastContainer"></div>
+
   <script>
-    function updateUrlPreview() {
-      const id = document.getElementById('userIdInput').value;
-      document.getElementById('urlParamPreview').textContent = id;
-      document.getElementById('requestedUidPreview').textContent = id;
+    function updatePreview() {
+      document.getElementById('urlParamPreview').textContent = document.getElementById('userIdInput').value;
     }
 
     async function fetchProfile() {
       const id = document.getElementById('userIdInput').value;
+      addLog('GET', `/api/profile?id=${id}`);
+      
       const display = document.getElementById('profileDisplay');
       display.innerHTML = '<div class="spinner"></div>';
+
       try {
         const res = await fetch(`/api/profile?id=${id}`);
         const data = await res.json();
         if (data.success) {
           const u = data.user;
+          addLog('200 OK', `Extracted data for ${u.username}`);
+          
           const isAlice = u.username.toLowerCase() === 'alice';
+          
           display.innerHTML = `
-            <div class="p-3 border rounded mt-2" style="border-color:#333; background:rgba(255,255,255,0.02);">
-              <div class="text-xs text-dim uppercase">Username</div>
-              <div class="white font-bold mb-2">${u.username}</div>
-              <div class="text-xs text-dim uppercase">Bio</div>
-              <div class="text-sm text-secondary">${u.bio || 'None'}</div>
-              ${isAlice ? `<div class="mt-3 p-2 bg-green/10 border border-green rounded text-center">
-                <div class="text-xs text-green font-bold">FLAG CAPTURED:</div>
-                <div class="text-sm text-yellow font-bold">ACT{1d0r_us3r_3num}</div>
-              </div>` : ''}
+            <div class="flex items-center gap-4 mb-4">
+              <div class="avatar-placeholder" style="width: 50px; height: 50px; background:var(--neon-green); color:black;">${u.username[0].toUpperCase()}</div>
+              <div>
+                <div class="text-dim text-xs uppercase tracking-tighter">Username</div>
+                <div class="white font-bold text-lg">${u.username}</div>
+              </div>
             </div>
+            <div class="text-xs text-dim uppercase mb-1">Encrypted Bio / Secret Info</div>
+            <div class="text-sm text-secondary italic mb-4">"${u.bio || 'No public information available.'}"</div>
+            
+            ${isAlice ? `
+              <div style="background:rgba(0,255,136,0.1); border:1px solid var(--neon-green); color:var(--neon-green); padding:1rem; text-align:center; animation: pulse 1.5s infinite;">
+                <div class="text-xs font-bold uppercase mb-1">SENSITIVE DATA EXPOSED</div>
+                <div class="text-sm font-bold">FLAG: ACT{1d0r_us3r_3num}</div>
+              </div>
+            ` : ''}
           `;
+          
+          if (isAlice) {
+            showToast('Flag Captured!', 'success');
+            alert('SUCCESS! Alice\'s data has been compromised.\nFLAG: ACT{1d0r_us3r_3num}');
+          }
         } else {
-          display.innerHTML = '<div class="text-xs text-pink mt-4 text-center">User not found</div>';
+          addLog('404', `User ID ${id} not found`);
+          display.innerHTML = '<div class="text-center text-pink text-xs uppercase">[!] OBJECT REFERENCE NOT FOUND</div>';
         }
-      } catch (err) {}
+      } catch (err) {
+        addLog('ERROR', 'API connection failure');
+      }
+    }
+
+    function addLog(type, msg) {
+      const log = document.getElementById('trafficLog');
+      const time = new Date().toLocaleTimeString();
+      const entry = document.createElement('div');
+      entry.innerHTML = `<span class="text-dim">[${time}]</span> <span class="font-bold">[${type}]</span> ${msg}`;
+      log.prepend(entry);
+    }
+
+    function showToast(msg, type) {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      toast.className = `toast toast-${type}`;
+      toast.textContent = msg;
+      container.appendChild(toast);
+      setTimeout(() => toast.remove(), 3000);
     }
 
     async function initAuth() {
@@ -117,7 +161,6 @@
           data = await autoRes.json();
         }
         if (data.success) {
-          document.getElementById('sessionUidPreview').textContent = data.user.id;
           document.getElementById('navUser').innerHTML = `
             <span class="nav-user-badge">${data.user.username}</span>
             <button class="nav-logout" onclick="logout()">Logout</button>
@@ -127,6 +170,7 @@
       } catch (err) {}
     }
     initAuth();
+    updatePreview();
     function logout() { fetch('/api/auth/logout', { method: 'POST' }).then(() => window.location.href = '/'); }
   </script>
 </body>

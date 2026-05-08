@@ -5,6 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Stored XSS - ACT LAB</title>
   <link rel="stylesheet" href="/css/style.css">
+  <style>
+    .lab-container { max-width: 1000px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1.5fr; gap: 2rem; }
+    .entry-card { background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 8px; padding: 15px; margin-bottom: 1rem; position: relative; }
+    .entry-card:hover { border-color: var(--neon-cyan); background: rgba(0, 255, 255, 0.02); }
+    .terminal-window { background: rgba(0, 0, 0, 0.8); border: 1px solid var(--neon-cyan); border-radius: 8px; overflow: hidden; font-family: 'Share Tech Mono', monospace; }
+    .terminal-header { background: var(--neon-cyan); color: black; padding: 5px 15px; font-size: 12px; font-weight: bold; display: flex; justify-content: space-between; }
+    .terminal-body { padding: 15px; height: 150px; overflow-y: auto; font-size: 13px; color: var(--neon-cyan); }
+  </style>
 </head>
 <body>
   <div class="cyber-bg"></div>
@@ -14,7 +22,7 @@
       <div class="nav-logo-icon">ACT</div>
       <span class="nav-logo-text">ACT LAB</span>
     </a>
-    <ul class="nav-links" id="navLinks">
+    <ul class="nav-links">
       <li><a href="/dashboard">Dashboard</a></li>
       <li><a href="/challenges">Missions</a></li>
       <li><a href="/profile">Profile</a></li>
@@ -25,44 +33,50 @@
   </nav>
 
   <main class="main-content">
-    <div class="container" style="max-width: 1000px;">
-      <div class="page-header" style="text-align:center; margin-bottom: 2rem;">
-        <h1 style="color: var(--neon-cyan);">STORED XSS</h1>
-        <p class="text-mono">Permanent Script Injection Lab</p>
-      </div>
+    <div style="max-width: 1000px; margin: 0 auto; margin-bottom: 2rem; text-align: center;">
+      <h1 style="color: var(--neon-cyan); margin-bottom: 0.5rem;">STORED XSS</h1>
+      <p class="text-mono">Permanent Data Injection & Script Persistence</p>
+    </div>
 
-      <div class="dashboard-grid" style="grid-template-columns: 1fr 1.5fr; gap: 1.5rem;">
-        <!-- INPUT -->
-        <div class="flex flex-column gap-3">
-          <div class="card" style="padding: 1.5rem; border-color: var(--neon-cyan);">
-            <div class="text-xs uppercase text-dim mb-3">Post Entry</div>
-            <form onsubmit="postEntry(event)" class="flex flex-column gap-3">
-              <div class="form-group">
-                <label class="text-xs text-dim">Author</label>
-                <input type="text" id="author" class="form-input" style="padding: 8px;" required>
-              </div>
-              <div class="form-group">
-                <label class="text-xs text-dim">Message</label>
-                <textarea id="message" class="form-input" style="padding: 8px;" rows="3" required></textarea>
-              </div>
-              <button type="submit" class="btn btn-primary btn-block" style="background:var(--neon-cyan); border-color:var(--neon-cyan); color:black; font-weight:bold; padding: 10px;">
-                SAVE TO DATABASE
-              </button>
-            </form>
-          </div>
-
-          <div class="card" style="padding: 1rem;">
-            <div class="text-xs text-dim mb-2 uppercase">Lab Info</div>
-            <p class="text-secondary text-xs">Payloads are stored permanently. Every visitor will execute your script.</p>
-          </div>
+    <div class="lab-container">
+      <!-- INPUT SECTION -->
+      <div class="flex flex-column gap-3">
+        <div class="card" style="padding: 2rem; border-color: var(--neon-cyan);">
+          <div class="text-xs uppercase text-dim mb-4 tracking-widest">New Guestbook Entry</div>
+          <form onsubmit="postEntry(event)" class="flex flex-column gap-3">
+            <div class="form-group">
+              <label class="form-label">Author Name</label>
+              <input type="text" id="author" class="form-input" placeholder="Anonymous" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Message Content</label>
+              <textarea id="message" class="form-input" rows="4" placeholder="Your message here..." required></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary btn-block" style="background:var(--neon-cyan); border-color:var(--neon-cyan); color:black; font-weight:bold; padding: 12px;">
+              POST MESSAGE
+            </button>
+          </form>
         </div>
 
-        <!-- FEED -->
-        <div class="card" style="background: rgba(0,0,0,0.3); min-height: 400px; padding: 1.5rem;">
-          <div class="text-xs text-dim uppercase mb-3">Guestbook Feed</div>
-          <div id="entriesList" class="flex flex-column gap-3">
-            <div class="spinner"></div>
+        <div class="terminal-window">
+          <div class="terminal-header">
+            <span>STORAGE MONITOR</span>
+            <span>● PERSISTENT</span>
           </div>
+          <div class="terminal-body" id="trafficLog">
+            <div class="log-entry">Database ready. Watching for commits...</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- FEED SECTION -->
+      <div class="card" style="background: rgba(0,0,0,0.3); padding: 1.5rem; border-color: rgba(255,255,255,0.05);">
+        <div class="flex justify-between items-center mb-4">
+          <div class="text-xs uppercase text-dim tracking-widest">Global Feed</div>
+          <div class="text-xs text-cyan">SINK: .innerHTML</div>
+        </div>
+        <div id="entriesList" style="max-height: 500px; overflow-y: auto; padding-right: 10px;">
+          <div class="spinner"></div>
         </div>
       </div>
     </div>
@@ -77,20 +91,27 @@
         const data = await res.json();
         const list = document.getElementById('entriesList');
         if (data.success) {
+          if (data.entries.length === 0) {
+            list.innerHTML = `<div class="text-center text-dim mt-5">No messages yet.</div>`;
+            return;
+          }
+          
           list.innerHTML = data.entries.map(e => `
-            <div class="card" style="padding: 1rem; border-color: #222;">
+            <div class="entry-card">
               <div class="flex justify-between mb-2">
-                <span class="text-cyan text-xs font-bold">${escapeHtml(e.author)}</span>
+                <span class="text-cyan text-xs font-bold uppercase">${escapeHtml(e.author)}</span>
                 <span class="text-dim text-xs">${new Date(e.created_at).toLocaleTimeString()}</span>
               </div>
-              <div id="msg-${e.id}" class="text-sm"></div>
+              <div id="msg-${e.id}" class="white text-sm" style="word-break: break-all;"></div>
             </div>
           `).reverse().join('');
           
           data.entries.forEach(e => {
             const container = document.getElementById(`msg-${e.id}`);
             if (container) {
+              // THE VULNERABILITY:
               container.innerHTML = e.message;
+              
               const scripts = container.getElementsByTagName('script');
               for (let s of scripts) {
                 const ns = document.createElement('script');
@@ -100,13 +121,18 @@
             }
           });
         }
-      } catch (err) {}
+      } catch (err) {
+        addLog('ERROR', 'Failed to retrieve database entries');
+      }
     }
 
     async function postEntry(e) {
-      e.preventDefault();
+      if (e) e.preventDefault();
       const author = document.getElementById('author').value;
       const message = document.getElementById('message').value;
+      
+      addLog('COMMIT', `Saving entry by ${author}...`);
+
       try {
         const res = await fetch('/api/guestbook', {
           method: 'POST',
@@ -115,11 +141,22 @@
         });
         const data = await res.json();
         if (data.success) {
-          showToast('Posted!', 'success');
+          showToast('Message posted successfully!', 'success');
+          addLog('SUCCESS', `Entry ID ${data.id} stored in database.`);
           document.getElementById('message').value = '';
           loadEntries();
         }
-      } catch (err) {}
+      } catch (err) {
+        addLog('ERROR', 'Storage failure: Connection lost');
+      }
+    }
+
+    function addLog(type, msg) {
+      const log = document.getElementById('trafficLog');
+      const time = new Date().toLocaleTimeString();
+      const entry = document.createElement('div');
+      entry.innerHTML = `<span class="text-dim">[${time}]</span> <span class="font-bold">[${type}]</span> ${msg}`;
+      log.prepend(entry);
     }
 
     function escapeHtml(str) {
@@ -146,7 +183,8 @@
           data = await autoRes.json();
         }
         if (data.success) {
-          document.cookie = "admin_session=ACT{st0r3d_xss_p3rs1st3nt}; path=/lab/xss-stored; max-age=3600";
+          // Set a session cookie for XSS stealing demonstration
+          document.cookie = "admin_session=ACT{st0r3d_xss_p3rs1st3nt}; path=/; max-age=3600";
           document.getElementById('navUser').innerHTML = `
             <span class="nav-user-badge">${data.user.username}</span>
             <button class="nav-logout" onclick="logout()">Logout</button>

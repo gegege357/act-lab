@@ -5,6 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SQLi Login - ACT LAB</title>
   <link rel="stylesheet" href="/css/style.css">
+  <style>
+    .lab-container { max-width: 800px; margin: 0 auto; display: flex; flex-direction: column; gap: 1.5rem; }
+    .query-box { background: #05050d; border: 1px solid rgba(255, 0, 255, 0.3); padding: 15px; border-radius: 8px; font-family: 'Share Tech Mono', monospace; font-size: 14px; }
+    .terminal-window { background: rgba(0, 0, 0, 0.8); border: 1px solid var(--neon-pink); border-radius: 8px; overflow: hidden; font-family: 'Share Tech Mono', monospace; }
+    .terminal-header { background: var(--neon-pink); color: black; padding: 5px 15px; font-size: 12px; font-weight: bold; display: flex; justify-content: space-between; }
+    .terminal-body { padding: 15px; height: 120px; overflow-y: auto; font-size: 13px; color: var(--neon-pink); }
+  </style>
 </head>
 <body>
   <div class="cyber-bg"></div>
@@ -14,7 +21,7 @@
       <div class="nav-logo-icon">ACT</div>
       <span class="nav-logo-text">ACT LAB</span>
     </a>
-    <ul class="nav-links" id="navLinks">
+    <ul class="nav-links">
       <li><a href="/dashboard">Dashboard</a></li>
       <li><a href="/challenges">Missions</a></li>
       <li><a href="/profile">Profile</a></li>
@@ -25,93 +32,113 @@
   </nav>
 
   <main class="main-content">
-    <div class="container" style="max-width: 900px;">
-      <div class="page-header" style="text-align:center; margin-bottom: 2rem;">
-        <h1 style="color: var(--neon-pink);">SQLi LOGIN BYPASS</h1>
-        <p class="text-mono">Subvert authentication logic</p>
+    <div class="lab-container">
+      <div class="page-header" style="text-align:center;">
+        <h1 style="color: var(--neon-pink); margin-bottom: 0.5rem;">SQLi AUTH BYPASS</h1>
+        <p class="text-mono">Bypass Authentication via Logic Manipulation</p>
       </div>
 
-      <div class="dashboard-grid" style="grid-template-columns: 1fr 1fr; gap: 1.5rem;">
-        <!-- LOGIN -->
-        <div class="card" style="padding: 1.5rem; border-color: var(--neon-pink);">
-          <div style="text-align:center; margin-bottom: 1.5rem;">
-            <h2 class="text-xs uppercase text-dim tracking-widest">Secure Entry</h2>
-          </div>
+      <!-- SQL PREVIEW -->
+      <div class="query-box">
+        <div class="text-xs text-dim mb-2 uppercase tracking-widest">Live Backend Query Preview:</div>
+        <div class="white">
+          <span class="text-dim">SELECT * FROM users WHERE username = '</span><span id="userPreview" style="color:var(--neon-pink);"></span><span class="text-dim">' AND password = '</span><span id="passPreview" style="color:var(--neon-pink);"></span><span class="text-dim">'</span>
+        </div>
+      </div>
 
-          <form onsubmit="handleLogin(event)" class="flex flex-column gap-3">
-            <div class="form-group">
-              <label class="text-xs text-dim">Username</label>
-              <input type="text" id="usernameInput" name="username" class="form-input" style="padding: 8px;" oninput="updateQueryPreview()" required>
-            </div>
-            <div class="form-group">
-              <label class="text-xs text-dim">Password</label>
-              <input type="password" id="passwordInput" name="password" class="form-input" style="padding: 8px;" oninput="updateQueryPreview()" required>
-            </div>
-            <button type="submit" class="btn btn-primary btn-block" id="loginBtn" style="background:var(--neon-pink); border-color:var(--neon-pink); color:black; font-weight:bold; padding: 10px;">
-              LOGIN
-            </button>
-          </form>
-
-          <div id="loginResult" class="mt-3"></div>
+      <!-- MAIN FORM -->
+      <div class="card" style="padding: 2rem; border-color: var(--neon-pink);">
+        <div class="flex justify-between items-center mb-4">
+          <div class="text-xs uppercase text-dim">Secure Login Portal</div>
+          <div class="text-xs text-pink">PROTOCOL: VULNERABLE</div>
         </div>
 
-        <!-- ANALYSIS -->
-        <div class="flex flex-column gap-3">
-          <div class="card" style="padding: 1rem; background: #05050d;">
-            <div class="text-xs text-dim mb-2 uppercase">Backend Query:</div>
-            <div class="terminal" style="font-size: 11px; min-height: 60px; border: none; padding: 10px;">
-              <span class="text-secondary">SELECT * FROM users WHERE user='</span><span id="userPreview" style="color:var(--neon-yellow);"></span><span class="text-secondary">' AND pass='</span><span id="passPreview" style="color:var(--neon-yellow);"></span><span class="text-secondary">'</span>
-            </div>
+        <form onsubmit="handleLogin(event)" class="flex flex-column gap-3">
+          <div class="form-group">
+            <label class="form-label">Username</label>
+            <input type="text" id="usernameInput" class="form-input" placeholder="admin" oninput="updatePreview()" required>
           </div>
+          <div class="form-group">
+            <label class="form-label">Password</label>
+            <input type="password" id="passwordInput" class="form-input" placeholder="••••••••" oninput="updatePreview()" required>
+          </div>
+          <button type="submit" id="loginBtn" class="btn btn-primary btn-block" style="background:var(--neon-pink); border-color:var(--neon-pink); color:black; font-weight:bold; padding: 12px;">
+            AUTHENTICATE
+          </button>
+        </form>
+        
+        <div id="loginResult" class="mt-4"></div>
+      </div>
 
-          <div class="card" style="padding: 1rem; border-color: rgba(255,255,255,0.05);">
-            <div class="text-xs text-dim uppercase mb-2">Hints</div>
-            <p class="text-secondary text-xs">Try to force the WHERE condition to be TRUE.</p>
-            <code class="text-pink text-xs block mt-2" style="background:rgba(0,0,0,0.3); padding:5px;">' OR '1'='1</code>
-          </div>
+      <!-- LOGS -->
+      <div class="terminal-window">
+        <div class="terminal-header">
+          <span>SYSTEM LOGS</span>
+          <span>● LOGGING</span>
+        </div>
+        <div class="terminal-body" id="trafficLog">
+          <div class="log-entry">Waiting for authentication attempt...</div>
         </div>
       </div>
     </div>
   </main>
 
+  <div class="toast-container" id="toastContainer"></div>
+
   <script>
-    function updateQueryPreview() {
+    function updatePreview() {
       document.getElementById('userPreview').textContent = document.getElementById('usernameInput').value;
       document.getElementById('passPreview').textContent = document.getElementById('passwordInput').value;
     }
 
     async function handleLogin(e) {
       e.preventDefault();
-      const btn = document.getElementById('loginBtn');
-      const resDiv = document.getElementById('loginResult');
-      
-      btn.textContent = '...';
-      btn.disabled = true;
+      const user = document.getElementById('usernameInput').value;
+      const pass = document.getElementById('passwordInput').value;
+      addLog('AUTH_REQ', `Attempting login: ${user}`);
 
       try {
-        const formData = new URLSearchParams();
-        formData.append('username', document.getElementById('usernameInput').value);
-        formData.append('password', document.getElementById('passwordInput').value);
-
         const res = await fetch('/api/auth/login', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-          body: formData.toString()
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username: user, password: pass })
         });
         const data = await res.json();
 
         if (data.success) {
-          resDiv.innerHTML = `<div class="p-3 rounded text-center" style="background:rgba(0,255,136,0.1); border:1px solid var(--neon-green); color:var(--neon-green);">
-            <div class="text-xs mb-1">SUCCESS! FLAG:</div>
-            <div class="text-sm font-bold">${data.flag}</div>
-          </div>`;
-          btn.textContent = 'ACCESS GRANTED';
+          addLog('SUCCESS', `Login Bypass Successful!`);
+          document.getElementById('loginResult').innerHTML = `
+            <div class="p-3 rounded text-center" style="background:rgba(0,255,136,0.1); border:1px solid var(--neon-green); color:var(--neon-green); animation: pulse 1.5s infinite;">
+              <div class="text-sm font-bold uppercase mb-1">ACCESS GRANTED</div>
+              <div class="text-xs">FLAG: ${data.flag || 'Check Challenges'}</div>
+            </div>
+          `;
+          showToast('SQL Injection Successful!', 'success');
+          if (data.flag) alert('SUCCESS! FLAG: ' + data.flag);
         } else {
-          resDiv.innerHTML = `<div class="text-xs text-pink text-center">[!] ${data.error}</div>`;
-          btn.textContent = 'LOGIN';
-          btn.disabled = false;
+          addLog('FAILED', `Invalid credentials for ${user}`);
+          document.getElementById('loginResult').innerHTML = `<div class="text-center text-pink text-xs uppercase">[!] Authentication Failed</div>`;
         }
-      } catch (err) { btn.disabled = false; }
+      } catch (err) {
+        addLog('ERROR', 'Connection to database lost');
+      }
+    }
+
+    function addLog(type, msg) {
+      const log = document.getElementById('trafficLog');
+      const time = new Date().toLocaleTimeString();
+      const entry = document.createElement('div');
+      entry.innerHTML = `<span class="text-dim">[${time}]</span> <span class="font-bold">[${type}]</span> ${msg}`;
+      log.prepend(entry);
+    }
+
+    function showToast(msg, type) {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      toast.className = `toast toast-${type}`;
+      toast.textContent = msg;
+      container.appendChild(toast);
+      setTimeout(() => toast.remove(), 3000);
     }
 
     async function initAuth() {
@@ -131,7 +158,7 @@
       } catch (err) {}
     }
     initAuth();
-    updateQueryPreview();
+    updatePreview();
     function logout() { fetch('/api/auth/logout', { method: 'POST' }).then(() => window.location.href = '/'); }
   </script>
 </body>

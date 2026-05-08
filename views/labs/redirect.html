@@ -5,6 +5,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Redirect Lab - ACT LAB</title>
   <link rel="stylesheet" href="/css/style.css">
+  <style>
+    .lab-container { max-width: 800px; margin: 0 auto; display: flex; flex-direction: column; gap: 1.5rem; }
+    .url-recon-box { background: #05050d; border: 1px solid rgba(255, 0, 255, 0.3); padding: 15px; border-radius: 8px; font-family: 'Share Tech Mono', monospace; font-size: 14px; }
+    .terminal-window { background: rgba(0, 0, 0, 0.8); border: 1px solid var(--neon-pink); border-radius: 8px; overflow: hidden; font-family: 'Share Tech Mono', monospace; }
+    .terminal-header { background: var(--neon-pink); color: black; padding: 5px 15px; font-size: 12px; font-weight: bold; display: flex; justify-content: space-between; }
+    .terminal-body { padding: 15px; height: 120px; overflow-y: auto; font-size: 13px; color: var(--neon-pink); }
+    .flow-visualization { display: flex; align-items: center; justify-content: center; gap: 20px; padding: 20px; background: rgba(255, 255, 255, 0.02); border-radius: 8px; }
+    .flow-node { padding: 10px 15px; border: 1px solid rgba(255,255,255,0.1); border-radius: 4px; font-size: 12px; }
+    .flow-arrow { font-size: 20px; color: var(--neon-pink); }
+  </style>
 </head>
 <body>
   <div class="cyber-bg"></div>
@@ -14,7 +24,7 @@
       <div class="nav-logo-icon">ACT</div>
       <span class="nav-logo-text">ACT LAB</span>
     </a>
-    <ul class="nav-links" id="navLinks">
+    <ul class="nav-links">
       <li><a href="/dashboard">Dashboard</a></li>
       <li><a href="/challenges">Missions</a></li>
       <li><a href="/profile">Profile</a></li>
@@ -25,65 +35,94 @@
   </nav>
 
   <main class="main-content">
-    <div class="container" style="max-width: 900px;">
-      <div class="page-header" style="text-align:center; margin-bottom: 2rem;">
-        <h1 style="color: var(--neon-pink);">OPEN REDIRECT</h1>
-        <p class="text-mono">Redirect traffic to untrusted domains</p>
+    <div class="lab-container">
+      <div class="page-header" style="text-align:center;">
+        <h1 style="color: var(--neon-pink); margin-bottom: 0.5rem;">OPEN REDIRECT</h1>
+        <p class="text-mono">Manipulate Navigation Flow to Untrusted Destinations</p>
       </div>
 
-      <div class="dashboard-grid" style="grid-template-columns: 1fr 1fr; gap: 1.5rem;">
-        <!-- CONTROLS -->
-        <div class="flex flex-column gap-3">
-          <div class="card" style="padding: 1.5rem; border-color: var(--neon-pink);">
-            <div class="text-xs uppercase text-dim mb-3">Execute Redirect</div>
-            <div class="flex gap-2 mb-3">
-              <input type="text" id="targetUrl" class="form-input" value="https://google.com" style="padding: 8px;" oninput="updateRedirectView()">
-              <button onclick="testRedirect()" class="btn btn-primary" style="background:var(--neon-pink); border-color:var(--neon-pink); color:black; font-weight:bold; padding: 0 15px;">
-                GO
-              </button>
-            </div>
-            <div class="mt-2 pt-2 border-top" style="border-top:1px solid #222;">
-               <code class="text-xs text-pink" id="exploitUrlPreview">/api/redirect?url=...</code>
-            </div>
-          </div>
+      <!-- URL RECON -->
+      <div class="url-recon-box">
+        <div class="text-xs text-dim mb-2 uppercase tracking-widest">Redirect Request Reconstruction:</div>
+        <div class="white">
+          <span class="text-dim">Endpoint: </span><code class="text-pink">GET /api/redirect?url=</code><span id="urlPreview" style="color:var(--neon-yellow); font-weight:bold;"></span><br>
+          <span class="text-dim">Status: </span><span class="text-xs" style="color:#aaa;">UNFILTERED PARAMETER</span>
+        </div>
+      </div>
 
-          <a href="/api/redirect?url=/dashboard" class="card" style="text-decoration:none; padding: 1rem; border-color: var(--neon-cyan); text-align:center;">
-             <span class="text-xs text-cyan">SAFE REDIRECT: /dashboard</span>
-          </a>
+      <!-- MAIN PANEL -->
+      <div class="card" style="padding: 2rem; border-color: var(--neon-pink);">
+        <div class="flex justify-between items-center mb-6">
+          <div class="text-xs uppercase text-dim">Navigation Controller</div>
+          <div class="text-xs text-pink">THREAT: PHISHING ENABLED</div>
         </div>
 
-        <!-- ANALYSIS -->
-        <div class="flex flex-column gap-3">
-          <div class="card" style="padding: 1rem; background: #05050d;">
-            <div class="text-xs text-dim mb-2 uppercase">Traffic Flow</div>
-            <div class="flex flex-column items-center gap-1">
-               <div class="text-xs text-cyan">ACT-LAB.ID</div>
-               <div class="text-dim">↓</div>
-               <div id="destDomain" class="text-xs text-yellow font-bold">AWAITING</div>
-            </div>
-          </div>
+        <div class="flex gap-3 mb-6">
+          <input type="text" id="targetUrl" class="form-input" value="https://google.com" oninput="updatePreview()" style="font-size: 1.1rem; padding: 12px;">
+          <button onclick="testRedirect()" class="btn btn-primary" style="background:var(--neon-pink); border-color:var(--neon-pink); color:black; font-weight:bold; padding: 0 40px;">
+            EXECUTE
+          </button>
+        </div>
 
-          <div class="card" style="padding: 1rem;">
-             <p class="text-secondary text-xs">Attackers use this to mask malicious links behind a trusted domain. Highly effective for phishing.</p>
-          </div>
+        <div class="flow-visualization">
+          <div class="flow-node" style="border-color: var(--neon-cyan); color: var(--neon-cyan);">ACT LAB (Trusted)</div>
+          <div class="flow-arrow">➔</div>
+          <div class="flow-node" id="destDisplay" style="border-color: var(--neon-yellow); color: var(--neon-yellow);">AWAITING</div>
+        </div>
+      </div>
+
+      <!-- LOGS -->
+      <div class="terminal-window">
+        <div class="terminal-header">
+          <span>TRAFFIC INTERCEPTOR</span>
+          <span>● CAPTURING</span>
+        </div>
+        <div class="terminal-body" id="trafficLog">
+          <div class="log-entry">Navigation monitor active. Waiting for GET request...</div>
         </div>
       </div>
     </div>
   </main>
 
+  <div class="toast-container" id="toastContainer"></div>
+
   <script>
-    function updateRedirectView() {
+    function updatePreview() {
       const url = document.getElementById('targetUrl').value;
-      document.getElementById('exploitUrlPreview').textContent = `/api/redirect?url=${encodeURIComponent(url)}`;
+      document.getElementById('urlPreview').textContent = url;
       try {
         const domain = url.startsWith('http') ? new URL(url).hostname : url;
-        document.getElementById('destDomain').textContent = domain.toUpperCase();
-      } catch (e) { document.getElementById('destDomain').textContent = 'INVALID'; }
+        document.getElementById('destDisplay').textContent = domain.toUpperCase() || 'INVALID';
+      } catch (e) {
+        document.getElementById('destDisplay').textContent = 'INVALID';
+      }
     }
 
     function testRedirect() {
       const url = document.getElementById('targetUrl').value;
-      window.location.href = `/api/redirect?url=${encodeURIComponent(url)}`;
+      addLog('NAVIGATE', `Requesting redirection to: ${url}`);
+      showToast('Redirecting...', 'warning');
+      
+      setTimeout(() => {
+        window.location.href = `/api/redirect?url=${encodeURIComponent(url)}`;
+      }, 800);
+    }
+
+    function addLog(type, msg) {
+      const log = document.getElementById('trafficLog');
+      const time = new Date().toLocaleTimeString();
+      const entry = document.createElement('div');
+      entry.innerHTML = `<span class="text-dim">[${time}]</span> <span class="font-bold">[${type}]</span> ${msg}`;
+      log.prepend(entry);
+    }
+
+    function showToast(msg, type) {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      toast.className = `toast toast-${type}`;
+      toast.textContent = msg;
+      container.appendChild(toast);
+      setTimeout(() => toast.remove(), 3000);
     }
 
     async function initAuth() {
@@ -99,7 +138,7 @@
             <span class="nav-user-badge">${data.user.username}</span>
             <button class="nav-logout" onclick="logout()">Logout</button>
           `;
-          updateRedirectView();
+          updatePreview();
         }
       } catch (err) {}
     }

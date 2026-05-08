@@ -92,18 +92,21 @@
     initStatus();
     async function loadMissions() {
       try {
-        const res = await fetch('/api/challenges');
+        const res = await fetch('/api/challenges/progress/me');
         const data = await res.json();
         const container = document.getElementById('missionsContainer');
         if (data.success) {
-          const solvedCount = data.challenges.filter(c => c.solved).length;
-          document.getElementById('statSolved').textContent = `${solvedCount} / ${data.challenges.length}`;
-          container.innerHTML = data.challenges.map(c => `
-            <div class="mission-item">
-              <div class="mission-info"><div class="mission-title">${c.title}</div><div class="mission-meta">${c.category} | ${c.difficulty}</div></div>
-              <div class="mission-points">${c.points} PTS</div>
-              <div>${c.solved ? `<span class="solved-badge">✓ SOLVED</span>` : `<a href="${c.endpoint}" class="btn-pwn">Launch</a>`}</div>
-            </div>`).join('');
+          const solvedCount = data.solved;
+          document.getElementById('statSolved').textContent = `${solvedCount} / ${data.total}`;
+          container.innerHTML = data.challenges.map(c => {
+            const isSolved = c.solved_at !== null;
+            return `
+              <div class="mission-item">
+                <div class="mission-info"><div class="mission-title">${c.title}</div><div class="mission-meta">${c.category} | ${c.difficulty}</div></div>
+                <div class="mission-points" style="color:var(--neon-cyan);">${c.points} PTS</div>
+                <div>${isSolved ? `<span class="solved-badge">✓ SOLVED</span>` : `<a href="${c.endpoint}" class="btn-pwn">Launch</a>`}</div>
+              </div>`;
+          }).join('');
         }
       } catch (err) {}
     }

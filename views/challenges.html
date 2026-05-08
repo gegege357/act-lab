@@ -54,21 +54,24 @@
   <script>
     async function loadMissions() {
       try {
-        const res = await fetch('/api/challenges');
+        const res = await fetch('/api/challenges/progress/me');
         const data = await res.json();
         const grid = document.getElementById('missionsGrid');
         if (data.success) {
-          grid.innerHTML = data.challenges.map(c => `
-            <div class="mission-card ${c.solved ? 'solved' : ''}">
-              <div class="mission-title">${c.title}</div>
-              <div class="mission-desc">${c.description || 'Intercept and exploit vulnerabilities in this environment.'}</div>
-              <div class="mission-meta">
-                <span class="mission-difficulty diff-${c.difficulty.toLowerCase()}">${c.difficulty}</span>
-                <span style="color: var(--neon-cyan); font-family: 'Share Tech Mono'; font-weight: bold;">${c.points} PTS</span>
-                ${c.solved ? '<span></span>' : `<a href="${c.endpoint}" class="btn-launch">Launch</a>`}
+          grid.innerHTML = data.challenges.map(c => {
+            const isSolved = c.solved_at !== null;
+            return `
+              <div class="mission-card ${isSolved ? 'solved' : ''}">
+                <div class="mission-title">${c.title}</div>
+                <div class="mission-desc">${c.description || 'Intercept and exploit vulnerabilities in this environment.'}</div>
+                <div class="mission-meta">
+                  <span class="mission-difficulty diff-${c.difficulty.toLowerCase()}">${c.difficulty}</span>
+                  <span style="color: var(--neon-cyan); font-family: 'Share Tech Mono'; font-weight: bold;">${c.points} PTS</span>
+                  ${isSolved ? '<span style="color:var(--neon-cyan); font-size:11px; font-weight:bold;">COMPLETED</span>' : `<a href="${c.endpoint}" class="btn-launch">Launch</a>`}
+                </div>
               </div>
-            </div>
-          `).join('');
+            `;
+          }).join('');
         }
       } catch (err) {}
     }

@@ -46,8 +46,16 @@ router.post('/login', async (req, res) => {
       if (isInjection) {
         responseData.flag = 'ACT{sQl_1nj3ct10n_byp4ss}';
         responseData.message = 'CRITICAL: SQL Injection Detected! Access Granted. Flag: ' + responseData.flag;
+        // FLAG ONLY: We do NOT set cookies for the bypassed user to keep current session safe
+        return res.json(responseData);
       }
 
+      // If legitimate login (or we want to actually log in)
+      const options = { path: '/', maxAge: 86400000, sameSite: 'none', secure: true };
+      res.cookie('userId', String(user.id), options);
+      res.cookie('username', user.username, options);
+      res.cookie('role', user.role, options);
+      
       return res.json(responseData);
     } else {
       return res.status(401).json({ success: false, error: 'Invalid username or password' });

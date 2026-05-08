@@ -54,7 +54,7 @@
 
   <nav class="navbar">
     <a href="/" class="nav-logo">
-      <div class="nav-logo-icon">ACT</div>
+      <img src="/img/act.png" alt="Logo" style="height: 32px; border-radius: 4px; margin-right: 10px;" onerror="this.style.display='none'">
       <span class="nav-logo-text">ACT LAB</span>
     </a>
     <ul class="nav-links">
@@ -99,12 +99,39 @@
 
       <!-- RESULTS AREA -->
       <div id="resultsArea"></div>
+
+      <!-- SUBMIT FLAG SECTION -->
+      <section class="htb-card" style="margin-top: 4rem; border-color: var(--neon-green);">
+        <h2 class="htb-card-title" style="color: #fff;">Submit Flag</h2>
+        <div style="display: flex; gap: 1rem;">
+          <input type="text" id="flagInput" class="htb-input" placeholder="ACT{flag_here}" style="flex: 1;">
+          <button onclick="submitFlag(2)" class="htb-btn" style="width: auto; padding: 0 2rem;">Submit</button>
+        </div>
+      </section>
     </div>
   </main>
 
   <div class="toast-container" id="toastContainer"></div>
 
   <script>
+    async function submitFlag(id) {
+      const flag = document.getElementById('flagInput').value;
+      if (!flag) return showToast('Please enter a flag', 'error');
+      try {
+        const res = await fetch('/api/challenges/submit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ challengeId: id, flag: flag })
+        });
+        const data = await res.json();
+        if (data.correct) {
+          showToast('Correct flag! Points awarded.', 'success');
+          document.getElementById('flagInput').value = '';
+          setTimeout(() => window.location.href = '/dashboard', 2000);
+        } else { showToast(data.message || 'Incorrect flag', 'error'); }
+      } catch (err) { showToast('Submission failed', 'error'); }
+    }
+
     function updatePreview() {
       document.getElementById('sqlPreview').textContent = document.getElementById('searchInput').value;
     }
@@ -118,7 +145,6 @@
       try {
         const res = await fetch(`/api/search?q=${q}`);
         const data = await res.json();
-
         if (data.success) {
           if (data.results.length === 0) {
             resultsDiv.innerHTML = `<div class="htb-card" style="text-align:center; color:#626e84; font-size:13px;">[ NO_MATCHES_FOUND ]</div>`;
@@ -152,12 +178,8 @@
         } else {
           resultsDiv.innerHTML = `
             <div class="htb-terminal" style="border-color: #ff0066;">
-              <div class="htb-terminal-header" style="background: rgba(255,0,102,0.1); color: #ff0066;">
-                <span>SQL EXECUTION ERROR</span>
-              </div>
-              <div class="htb-terminal-body" style="color: #ff0066;">
-                ${data.error}
-              </div>
+              <div class="htb-terminal-header" style="background: rgba(255,0,102,0.1); color: #ff0066;"><span>SQL ERROR</span></div>
+              <div class="htb-terminal-body" style="color: #ff0066;">${data.error}</div>
             </div>
           `;
         }
@@ -184,7 +206,7 @@
         const res = await fetch('/api/auth/status');
         const data = await res.json();
         if (data.success) {
-          document.getElementById('navUser').innerHTML = `<span class="nav-user-badge">${data.user.username}</span>`;
+          document.getElementById('navUser').innerHTML = `<span class="nav-user-badge">${data.user.username} (Score: ${data.user.score || 0})</span>`;
         }
       } catch (err) {}
     }

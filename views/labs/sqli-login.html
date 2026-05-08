@@ -12,7 +12,7 @@
     .machine-title { font-family: 'Orbitron', sans-serif; font-size: 2rem; color: #fff; letter-spacing: 1px; }
     .machine-info { color: var(--text-secondary); font-size: 0.9rem; margin-top: 0.5rem; }
     
-    .htb-card { background: #15191d; border: 1px solid #23282f; border-radius: 4px; padding: 2.5rem; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+    .htb-card { background: #15191d; border: 1px solid #23282f; border-radius: 4px; padding: 2.5rem; box-shadow: 0 10px 30px rgba(0,0,0,0.5); margin-bottom: 2rem; }
     .htb-card-title { font-size: 1.1rem; color: var(--neon-green); font-weight: bold; margin-bottom: 2rem; text-transform: uppercase; letter-spacing: 2px; border-bottom: 1px solid #23282f; padding-bottom: 1rem; }
     
     .htb-input { 
@@ -52,7 +52,7 @@
 
   <nav class="navbar">
     <a href="/" class="nav-logo">
-      <div class="nav-logo-icon">ACT</div>
+      <img src="/img/act.png" alt="Logo" style="height: 32px; border-radius: 4px; margin-right: 10px;" onerror="this.style.display='none'">
       <span class="nav-logo-text">ACT LAB</span>
     </a>
     <ul class="nav-links">
@@ -76,21 +76,17 @@
       <!-- EXPLOIT CARD -->
       <section class="htb-card">
         <h2 class="htb-card-title">Login Request</h2>
-        
         <form onsubmit="handleLogin(event)">
           <div class="form-group" style="margin-bottom: 2rem;">
             <label class="form-label">Username</label>
             <input type="text" id="usernameInput" class="htb-input" placeholder="admin" oninput="updatePreview()" autocomplete="off">
           </div>
-          
           <div class="form-group" style="margin-bottom: 2.5rem;">
             <label class="form-label">Password Payload</label>
             <input type="text" id="passwordInput" class="htb-input" placeholder="' OR '1'='1" oninput="updatePreview()" autocomplete="off">
           </div>
-          
           <button type="submit" class="htb-btn">Execute Exploit</button>
         </form>
-
         <div id="loginResult" style="margin-top: 2rem;"></div>
       </section>
 
@@ -104,14 +100,40 @@
           <div style="color: #626e84;">Waiting for incoming authentication request...</div>
         </div>
       </div>
+
+      <!-- SUBMIT FLAG SECTION -->
+      <section class="htb-card" style="margin-top: 4rem; border-color: var(--neon-green);">
+        <h2 class="htb-card-title" style="color: #fff;">Submit Flag</h2>
+        <div style="display: flex; gap: 1rem;">
+          <input type="text" id="flagInput" class="htb-input" placeholder="ACT{flag_here}" style="flex: 1; margin-top: 0;">
+          <button onclick="submitFlag(1)" class="htb-btn" style="width: auto; padding: 0 2rem;">Submit</button>
+        </div>
+      </section>
     </div>
   </main>
 
   <div class="toast-container" id="toastContainer"></div>
 
   <script>
-    function updatePreview() {
-      // Backend query simulation for education
+    async function submitFlag(id) {
+      const flag = document.getElementById('flagInput').value;
+      if (!flag) return showToast('Please enter a flag', 'error');
+      
+      try {
+        const res = await fetch('/api/challenges/submit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ challengeId: id, flag: flag })
+        });
+        const data = await res.json();
+        if (data.correct) {
+          showToast('Correct flag! Points awarded.', 'success');
+          document.getElementById('flagInput').value = '';
+          setTimeout(() => window.location.href = '/dashboard', 2000);
+        } else {
+          showToast(data.message || 'Incorrect flag', 'error');
+        }
+      } catch (err) { showToast('Submission failed', 'error'); }
     }
 
     async function handleLogin(e) {
@@ -142,7 +164,7 @@
           addLog('DENIED', `Invalid authentication payload.`);
           resDiv.innerHTML = `<div style="text-align: center; color: var(--neon-pink); font-size: 12px; font-weight: bold; letter-spacing: 1px;">AUTHENTICATION FAILED :: INVALID CREDENTIALS</div>`;
         }
-      } catch (err) { addLog('ERROR', 'Connection to backend failed.'); }
+      } catch (err) { addLog('ERROR', 'Connection failed.'); }
     }
 
     function addLog(type, msg) {
@@ -168,7 +190,7 @@
         let res = await fetch('/api/auth/status');
         let data = await res.json();
         if (data.success) {
-          document.getElementById('navUser').innerHTML = `<span class="nav-user-badge">${data.user.username}</span>`;
+          document.getElementById('navUser').innerHTML = `<span class="nav-user-badge">${data.user.username} (Score: ${data.user.score || 0})</span>`;
         }
       } catch (err) {}
     }

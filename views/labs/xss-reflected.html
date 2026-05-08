@@ -36,7 +36,6 @@
       text-transform: uppercase; 
       letter-spacing: 2px; 
       width: 100%;
-      margin-top: 1.5rem;
     }
 
     .htb-terminal { background: #050505; border: 1px solid #1c2126; border-radius: 4px; font-family: 'Share Tech Mono', monospace; margin-bottom: 2rem; overflow: hidden; }
@@ -51,7 +50,7 @@
 
   <nav class="navbar">
     <a href="/" class="nav-logo">
-      <div class="nav-logo-icon">ACT</div>
+      <img src="/img/act.png" alt="Logo" style="height: 32px; border-radius: 4px; margin-right: 10px;" onerror="this.style.display='none'">
       <span class="nav-logo-text">ACT LAB</span>
     </a>
     <ul class="nav-links">
@@ -90,7 +89,7 @@
           <div class="form-group">
             <input type="text" id="searchInput" class="htb-input" placeholder="<script>getFlag()</script>" oninput="updatePreview()" autocomplete="off" required>
           </div>
-          <button type="submit" class="htb-btn">Fire Exploit</button>
+          <button type="submit" class="htb-btn" style="margin-top: 1.5rem;">Fire Exploit</button>
         </form>
       </section>
 
@@ -101,12 +100,39 @@
           <div style="color: #626e84; font-size: 13px;">[ AWAITING REFLECTION ]</div>
         </div>
       </div>
+
+      <!-- SUBMIT FLAG SECTION -->
+      <section class="htb-card" style="margin-top: 4rem; border-color: var(--neon-green);">
+        <h2 class="htb-card-title" style="color: #fff;">Submit Flag</h2>
+        <div style="display: flex; gap: 1rem;">
+          <input type="text" id="flagInput" class="htb-input" placeholder="ACT{flag_here}" style="flex: 1;">
+          <button onclick="submitFlag(3)" class="htb-btn" style="width: auto; padding: 0 2rem;">Submit</button>
+        </div>
+      </section>
     </div>
   </main>
 
   <div class="toast-container" id="toastContainer"></div>
 
   <script>
+    async function submitFlag(id) {
+      const flag = document.getElementById('flagInput').value;
+      if (!flag) return showToast('Please enter a flag', 'error');
+      try {
+        const res = await fetch('/api/challenges/submit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ challengeId: id, flag: flag })
+        });
+        const data = await res.json();
+        if (data.correct) {
+          showToast('Correct flag!', 'success');
+          document.getElementById('flagInput').value = '';
+          setTimeout(() => window.location.href = '/dashboard', 2000);
+        } else { showToast(data.message || 'Incorrect flag', 'error'); }
+      } catch (err) { showToast('Submission failed', 'error'); }
+    }
+
     function updatePreview() {
       document.getElementById('sourcePreview').textContent = document.getElementById('searchInput').value;
     }
@@ -115,18 +141,9 @@
       if (e) e.preventDefault();
       const q = document.getElementById('searchInput').value;
       const resDiv = document.getElementById('searchResults');
-      
-      resDiv.innerHTML = `
-        <div style="width: 100%;">
-          <div style="color: #626e84; font-size: 10px; margin-bottom: 1rem; text-transform: uppercase;">DOM Output:</div>
-          <div id="target" style="color: #fff; font-size: 1.1rem;"></div>
-        </div>
-      `;
-      
+      resDiv.innerHTML = `<div style="width: 100%;"><div id="target" style="color: #fff; font-size: 1.1rem;"></div></div>`;
       const target = document.getElementById('target');
-      // THE VULNERABILITY
       target.innerHTML = q;
-
       const scripts = target.getElementsByTagName('script');
       for (let s of scripts) {
         try {
@@ -139,13 +156,7 @@
 
     window.getFlag = function() {
       showToast('XSS Success!', 'success');
-      document.getElementById('searchResults').innerHTML = `
-        <div style="border: 1px solid var(--neon-green); background: rgba(159,239,0,0.05); padding: 2rem; border-radius: 4px; text-align: center; width: 100%;">
-          <div style="color: var(--neon-green); font-weight: bold; margin-bottom: 1rem; font-size: 12px; letter-spacing: 2px;">[ CROSS-SITE SCRIPTING TRIGGERED ]</div>
-          <div style="font-family: 'Share Tech Mono'; color: var(--neon-yellow); font-size: 1.5rem; font-weight: bold;">ACT{r3fl3ct3d_xss_f0und}</div>
-        </div>
-      `;
-      alert('SUCCESS! FLAG: ACT{r3fl3ct3d_xss_f0und}');
+      document.getElementById('searchResults').innerHTML = `<div style="border: 1px solid var(--neon-green); background: rgba(159,239,0,0.05); padding: 2rem; border-radius: 4px; text-align: center; width: 100%;"><div style="color: var(--neon-green); font-weight: bold; margin-bottom: 1rem; font-size: 12px; letter-spacing: 2px;">[ CROSS-SITE SCRIPTING TRIGGERED ]</div><div style="font-family: 'Share Tech Mono'; color: var(--neon-yellow); font-size: 1.5rem; font-weight: bold;">ACT{r3fl3ct3d_xss_f0und}</div></div>`;
     };
 
     function showToast(msg, type) {
@@ -162,7 +173,7 @@
         const res = await fetch('/api/auth/status');
         const data = await res.json();
         if (data.success) {
-          document.getElementById('navUser').innerHTML = `<span class="nav-user-badge">${data.user.username}</span>`;
+          document.getElementById('navUser').innerHTML = `<span class="nav-user-badge">${data.user.username} (Score: ${data.user.score || 0})</span>`;
         }
       } catch (err) {}
     }

@@ -36,7 +36,6 @@
       text-transform: uppercase; 
       letter-spacing: 2px; 
       width: 100%;
-      margin-top: 1.5rem;
     }
 
     .htb-terminal { background: #050505; border: 1px solid #1c2126; border-radius: 4px; font-family: 'Share Tech Mono', monospace; margin-bottom: 2rem; overflow: hidden; }
@@ -51,7 +50,7 @@
 
   <nav class="navbar">
     <a href="/" class="nav-logo">
-      <div class="nav-logo-icon">ACT</div>
+      <img src="/img/act.png" alt="Logo" style="height: 32px; border-radius: 4px; margin-right: 10px;" onerror="this.style.display='none'">
       <span class="nav-logo-text">ACT LAB</span>
     </a>
     <ul class="nav-links">
@@ -74,10 +73,7 @@
 
       <!-- RECON -->
       <div class="htb-terminal">
-        <div class="htb-terminal-header">
-          <span>HTTP REDIRECT ANALYSIS</span>
-          <span>SINK: WINDOW.LOCATION</span>
-        </div>
+        <div class="htb-terminal-header"><span>HTTP REDIRECT ANALYSIS</span></div>
         <div class="htb-terminal-body">
           <span style="color: #626e84;">ENDPOINT: </span><code style="color: #fff;">GET /api/redirect?url=</code><span id="urlPreview" style="color:var(--neon-yellow);">https://google.com</span>
         </div>
@@ -87,16 +83,18 @@
       <section class="htb-card">
         <h2 class="htb-card-title">Craft Target Destination</h2>
         <form onsubmit="testRedirect(event)">
-          <div class="form-group">
-            <input type="text" id="targetUrl" class="htb-input" value="https://google.com" oninput="updatePreview()" autocomplete="off">
-          </div>
-          <button type="submit" class="htb-btn">Execute Redirection</button>
+          <div class="form-group"><input type="text" id="targetUrl" class="htb-input" value="https://google.com" oninput="updatePreview()" autocomplete="off"></div>
+          <button type="submit" class="htb-btn" style="margin-top: 1.5rem;">Execute Redirection</button>
         </form>
+        <div class="flow-viz"><div style="font-size: 13px; font-weight: bold; color: var(--neon-cyan);">ACT-LAB.ID</div><div style="font-size: 20px; color: var(--neon-pink);">➔</div><div id="destDisplay" style="font-size: 13px; font-weight: bold; color: var(--neon-yellow);">GOOGLE.COM</div></div>
+      </section>
 
-        <div class="flow-viz">
-          <div style="font-size: 13px; font-weight: bold; color: var(--neon-cyan);">ACT-LAB.ID</div>
-          <div style="font-size: 20px; color: var(--neon-pink);">➔</div>
-          <div id="destDisplay" style="font-size: 13px; font-weight: bold; color: var(--neon-yellow);">GOOGLE.COM</div>
+      <!-- SUBMIT FLAG SECTION -->
+      <section class="htb-card" style="margin-top: 4rem; border-color: var(--neon-green);">
+        <h2 class="htb-card-title" style="color: #fff;">Submit Flag</h2>
+        <div style="display: flex; gap: 1rem;">
+          <input type="text" id="flagInput" class="htb-input" placeholder="ACT{flag_here}" style="flex: 1; margin-top: 0;">
+          <button onclick="submitFlag(6)" class="htb-btn" style="width: auto; padding: 0 2rem; margin-top: 0;">Submit</button>
         </div>
       </section>
     </div>
@@ -105,39 +103,27 @@
   <div class="toast-container" id="toastContainer"></div>
 
   <script>
-    function updatePreview() {
-      const url = document.getElementById('targetUrl').value;
-      document.getElementById('urlPreview').textContent = url;
+    async function submitFlag(id) {
+      const flag = document.getElementById('flagInput').value;
+      if (!flag) return showToast('Please enter a flag', 'error');
       try {
-        const domain = url.startsWith('http') ? new URL(url).hostname : url;
-        document.getElementById('destDisplay').textContent = domain.toUpperCase() || 'INVALID';
-      } catch (e) { document.getElementById('destDisplay').textContent = 'INVALID'; }
+        const res = await fetch('/api/challenges/submit', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ challengeId: id, flag: flag }) });
+        const data = await res.json();
+        if (data.correct) {
+          showToast('Correct flag!', 'success');
+          setTimeout(() => window.location.href = '/dashboard', 2000);
+        } else { showToast(data.message || 'Incorrect flag', 'error'); }
+      } catch (err) {}
     }
-
-    function testRedirect(e) {
-      if (e) e.preventDefault();
-      const url = document.getElementById('targetUrl').value;
-      showToast('Machine navigating...', 'warning');
-      setTimeout(() => {
-        window.location.href = `/api/redirect?url=${encodeURIComponent(url)}`;
-      }, 800);
-    }
-
-    function showToast(msg, type) {
-      const container = document.getElementById('toastContainer');
-      const toast = document.createElement('div');
-      toast.className = `toast toast-${type}`;
-      toast.textContent = msg;
-      container.appendChild(toast);
-      setTimeout(() => toast.remove(), 3000);
-    }
-
+    function updatePreview() { const url = document.getElementById('targetUrl').value; document.getElementById('urlPreview').textContent = url; try { const domain = url.startsWith('http') ? new URL(url).hostname : url; document.getElementById('destDisplay').textContent = domain.toUpperCase() || 'INVALID'; } catch (e) { document.getElementById('destDisplay').textContent = 'INVALID'; } }
+    function testRedirect(e) { if (e) e.preventDefault(); const url = document.getElementById('targetUrl').value; setTimeout(() => { window.location.href = `/api/redirect?url=${encodeURIComponent(url)}`; }, 800); }
+    function showToast(msg, type) { const container = document.getElementById('toastContainer'); const toast = document.createElement('div'); toast.className = `toast toast-${type}`; toast.textContent = msg; container.appendChild(toast); setTimeout(() => toast.remove(), 3000); }
     async function initAuth() {
       try {
         const res = await fetch('/api/auth/status');
         const data = await res.json();
         if (data.success) {
-          document.getElementById('navUser').innerHTML = `<span class="nav-user-badge">${data.user.username}</span>`;
+          document.getElementById('navUser').innerHTML = `<span class="nav-user-badge">${data.user.username} (Score: ${data.user.score || 0})</span>`;
           updatePreview();
         }
       } catch (err) {}

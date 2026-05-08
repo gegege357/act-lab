@@ -5,156 +5,144 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Dashboard - ACT LAB</title>
   <link rel="stylesheet" href="/css/style.css">
+  <style>
+    body { background: #0b0e11; }
+    .htb-dashboard { max-width: 1200px; margin: 4rem auto; display: grid; grid-template-columns: 1fr 3fr; gap: 2rem; }
+    
+    .profile-card { background: #15191d; border: 1px solid #23282f; border-radius: 4px; padding: 2rem; text-align: center; }
+    .profile-avatar { width: 100px; height: 100px; background: #0b0e11; border: 2px solid var(--neon-green); border-radius: 4px; margin: 0 auto 1.5rem auto; display: flex; align-items: center; justify-content: center; font-size: 2.5rem; font-weight: bold; color: var(--neon-green); }
+    .profile-name { color: #fff; font-size: 1.5rem; font-weight: bold; margin-bottom: 0.5rem; }
+    .profile-score { color: var(--neon-green); font-family: 'Share Tech Mono'; font-size: 1.2rem; letter-spacing: 2px; }
+    
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
+    .stat-card { background: #15191d; border: 1px solid #23282f; border-radius: 4px; padding: 1.5rem; border-left: 4px solid var(--neon-green); }
+    .stat-label { color: #626e84; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.5rem; }
+    .stat-value { color: #fff; font-size: 1.8rem; font-weight: bold; font-family: 'Share Tech Mono'; }
+
+    .missions-list { background: #15191d; border: 1px solid #23282f; border-radius: 4px; overflow: hidden; }
+    .missions-header { background: #1c2126; padding: 1rem 1.5rem; border-bottom: 1px solid #23282f; color: #fff; font-weight: bold; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px; }
+    .mission-item { padding: 1.2rem 1.5rem; border-bottom: 1px solid #1c2126; display: flex; justify-content: space-between; align-items: center; transition: 0.3s; }
+    .mission-item:hover { background: rgba(159,239,0,0.02); }
+    .mission-info { flex: 1; }
+    .mission-title { color: #fff; font-weight: bold; margin-bottom: 4px; }
+    .mission-meta { color: #626e84; font-size: 11px; text-transform: uppercase; }
+    .mission-points { font-family: 'Share Tech Mono'; color: var(--neon-green); font-weight: bold; margin: 0 2rem; }
+    
+    .btn-pwn { background: #0b0e11; border: 1px solid var(--neon-green); color: var(--neon-green); padding: 0.5rem 1rem; border-radius: 4px; text-decoration: none; font-size: 12px; font-weight: bold; text-transform: uppercase; transition: 0.3s; }
+    .btn-pwn:hover { background: var(--neon-green); color: #000; }
+    .solved-badge { color: var(--neon-green); font-size: 12px; font-weight: bold; display: flex; align-items: center; gap: 5px; }
+
+    @media (max-width: 900px) { .htb-dashboard { grid-template-columns: 1fr; } }
+  </style>
 </head>
 <body>
-  <div class="cyber-bg"></div>
-
   <nav class="navbar">
     <a href="/" class="nav-logo">
-      <div class="nav-logo-icon">ACT</div>
+      <img src="/img/act.png" alt="Logo" style="height: 32px; border-radius: 4px; margin-right: 10px;" onerror="this.style.display='none'">
       <span class="nav-logo-text">ACT LAB</span>
     </a>
-    <ul class="nav-links" id="navLinks">
-      <li><a href="/dashboard" class="active">Dashboard</a></li>
+    <ul class="nav-links">
+      <li><a href="/dashboard">Dashboard</a></li>
       <li><a href="/challenges">Missions</a></li>
       <li><a href="/profile">Profile</a></li>
     </ul>
-    <div class="nav-user" id="navUser">
-      <span class="nav-user-badge">Loading...</span>
-    </div>
+    <div class="nav-user" id="navUser"><span class="nav-user-badge">Connecting...</span></div>
   </nav>
 
   <main class="main-content">
-    <div class="container" style="max-width: 1000px;">
-      <div class="page-header" style="margin-bottom: 2rem;">
-        <h1 style="font-size: 2rem;">DASHBOARD</h1>
-        <p class="text-mono">User: <span class="text-cyan" id="welcomeUser">...</span></p>
-      </div>
-
-      <div class="dashboard-grid" style="gap: 1rem; margin-bottom: 2rem;">
-        <div class="stat-card" style="padding: 1.5rem;">
-          <div class="stat-card-value" id="statScore" style="font-size: 2rem;">0</div>
-          <div class="stat-card-label text-dim uppercase" style="font-size: 10px;">Points</div>
-        </div>
-        <div class="stat-card" style="padding: 1.5rem;">
-          <div class="stat-card-value" id="statSolved" style="font-size: 2rem;">0</div>
-          <div class="stat-card-label text-dim uppercase" style="font-size: 10px;">Solved</div>
-        </div>
-        <div class="stat-card" style="padding: 1.5rem;">
-          <div class="stat-card-value" id="statTotal" style="font-size: 2rem;">9</div>
-          <div class="stat-card-label text-dim uppercase" style="font-size: 10px;">Challenges</div>
-        </div>
-        <div class="stat-card" style="padding: 1.5rem; border-color: var(--neon-cyan);">
-          <div class="stat-card-value text-cyan" id="statPercent" style="font-size: 2rem;">0%</div>
-          <div class="stat-card-label text-dim uppercase" style="font-size: 10px;">Progress</div>
-        </div>
-      </div>
-
-      <div class="card mb-4" style="padding: 1.2rem;">
-        <div class="flex justify-between items-center mb-2">
-           <div class="text-xs uppercase text-dim">Total Progress</div>
-        </div>
-        <div class="progress-bar-container" style="height: 8px;">
-          <div class="progress-bar-fill" id="progressBar" style="width: 0%;"></div>
-        </div>
-      </div>
-
-      <div class="tabs mb-3">
-        <button class="tab-btn active" onclick="switchTab('activity', this)">LOGS</button>
-        <button class="tab-btn" onclick="switchTab('leaderboard', this)">RANKING</button>
-        <button class="tab-btn" onclick="switchTab('quick', this)">QUICK ACCESS</button>
-      </div>
-
-      <div class="tab-content active" id="tab-activity">
-        <div class="card" style="min-height: 200px;">
-          <div id="activityList" class="p-3">
-            <div class="text-dim text-center mt-4">No recent activity.</div>
+    <div class="htb-dashboard">
+      <!-- SIDEBAR -->
+      <aside>
+        <div class="profile-card">
+          <div class="profile-avatar" id="avatarChar">?</div>
+          <div class="profile-name" id="profileName">Loading...</div>
+          <div class="profile-score" id="profileScore">0 PTS</div>
+          <div style="margin-top: 2rem; border-top: 1px solid #23282f; padding-top: 1.5rem;">
+            <a href="/profile" class="btn btn-secondary btn-block" style="font-size: 12px;">Edit Profile</a>
+            <button onclick="logout()" class="btn btn-primary btn-block" style="margin-top: 1rem; font-size: 12px; background: transparent; border: 1px solid var(--neon-pink); color: var(--neon-pink);">Terminate Session</button>
           </div>
         </div>
-      </div>
+      </aside>
 
-      <div class="tab-content" id="tab-leaderboard">
-        <div class="card" style="padding: 0; overflow: hidden;">
-          <div id="leaderboardContent"></div>
+      <!-- CONTENT -->
+      <section>
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-label">Missions Solved</div>
+            <div class="stat-value" id="statSolved">0 / 8</div>
+          </div>
+          <div class="stat-card" style="border-left-color: var(--neon-cyan);">
+            <div class="stat-label">Global Rank</div>
+            <div class="stat-value" id="statRank">#--</div>
+          </div>
+          <div class="stat-card" style="border-left-color: var(--neon-yellow);">
+            <div class="stat-label">Account Type</div>
+            <div class="stat-value" id="statRole">USER</div>
+          </div>
         </div>
-      </div>
 
-      <div class="tab-content" id="tab-quick">
-        <div class="dashboard-grid" style="grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem;">
-          <a href="/challenges" class="card" style="text-decoration:none; padding: 1rem;">
-            <div class="card-title" style="font-size: 13px;">Missions</div>
-          </a>
-          <a href="/search" class="card" style="text-decoration:none; padding: 1rem;">
-            <div class="card-title" style="font-size: 13px;">Search Lab</div>
-          </a>
-          <a href="/guestbook" class="card" style="text-decoration:none; padding: 1rem;">
-            <div class="card-title" style="font-size: 13px;">Guestbook</div>
-          </a>
-          <a href="/admin" class="card" style="text-decoration:none; padding: 1rem; border-color: var(--neon-pink);">
-            <div class="card-title" style="font-size: 13px; color: var(--neon-pink);">Admin Panel</div>
-          </a>
+        <div class="missions-list">
+          <div class="missions-header">Available Missions</div>
+          <div id="missionsContainer">
+            <div class="spinner" style="margin: 3rem auto;"></div>
+          </div>
         </div>
-      </div>
+      </section>
     </div>
   </main>
 
   <script>
-    async function init() {
+    async function initDashboard() {
       try {
-        let res = await fetch('/api/auth/status');
-        let data = await res.json();
-        if (!data.authenticated) {
-          const autoRes = await fetch('/api/auth/auto-login', { method: 'POST' });
-          data = await autoRes.json();
-        }
-        document.getElementById('welcomeUser').textContent = data.user.username;
-        document.getElementById('navUser').innerHTML = `
-          <span class="nav-user-badge">${data.user.username}</span>
-          <button class="nav-logout" onclick="logout()">Logout</button>
-        `;
-        loadProgress();
-        loadLeaderboard();
-      } catch (err) { window.location.href = '/'; }
+        const res = await fetch('/api/auth/status');
+        const data = await res.json();
+        if (!data.success) return window.location.href = '/login';
+
+        const u = data.user;
+        document.getElementById('profileName').textContent = u.username;
+        document.getElementById('profileScore').textContent = `${u.score || 0} PTS`;
+        document.getElementById('avatarChar').textContent = u.username[0].toUpperCase();
+        document.getElementById('statRole').textContent = u.role.toUpperCase();
+        document.getElementById('navUser').innerHTML = `<span class="nav-user-badge">${u.username} (Score: ${u.score || 0})</span>`;
+
+        loadMissions();
+      } catch (err) {}
     }
 
-    async function loadProgress() {
+    async function loadMissions() {
       try {
-        const res = await fetch('/api/challenges/progress/me');
+        const res = await fetch('/api/challenges');
         const data = await res.json();
+        const container = document.getElementById('missionsContainer');
+        
         if (data.success) {
-          const percent = Math.round((data.solved / data.total) * 100);
-          document.getElementById('statScore').textContent = data.earnedPoints;
-          document.getElementById('statSolved').textContent = data.solved;
-          document.getElementById('statPercent').textContent = percent + '%';
-          document.getElementById('progressBar').style.width = percent + '%';
+          const solvedCount = data.challenges.filter(c => c.solved).length;
+          document.getElementById('statSolved').textContent = `${solvedCount} / ${data.challenges.length}`;
+          
+          container.innerHTML = data.challenges.map(c => `
+            <div class="mission-item">
+              <div class="mission-info">
+                <div class="mission-title">${c.title}</div>
+                <div class="mission-meta">${c.category} | ${c.difficulty}</div>
+              </div>
+              <div class="mission-points">${c.points} PTS</div>
+              <div>
+                ${c.solved 
+                  ? `<span class="solved-badge">✓ SOLVED</span>` 
+                  : `<a href="${c.endpoint}" class="btn-pwn">Launch Mission</a>`}
+              </div>
+            </div>
+          `).join('');
         }
       } catch (err) {}
     }
 
-    async function loadLeaderboard() {
-      try {
-        const res = await fetch('/api/challenges/leaderboard/all');
-        const data = await res.json();
-        if (data.success) {
-          let html = '<table class="leaderboard-table"><thead><tr><th>User</th><th>Score</th></tr></thead><tbody>';
-          data.leaderboard.slice(0, 10).forEach(u => {
-            html += `<tr><td>${u.username}</td><td>${u.score}</td></tr>`;
-          });
-          html += '</tbody></table>';
-          document.getElementById('leaderboardContent').innerHTML = html;
-        }
-      } catch (err) {}
+    async function logout() {
+      await fetch('/api/auth/logout', { method: 'POST' });
+      window.location.href = '/login';
     }
 
-    function switchTab(name, btn) {
-      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-      document.getElementById('tab-' + name).classList.add('active');
-      btn.classList.add('active');
-    }
-
-    function logout() { fetch('/api/auth/logout', { method: 'POST' }).then(() => window.location.href = '/'); }
-    init();
+    initDashboard();
   </script>
 </body>
 </html>

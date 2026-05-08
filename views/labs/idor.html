@@ -51,7 +51,7 @@
 
   <nav class="navbar">
     <a href="/" class="nav-logo">
-      <div class="nav-logo-icon">ACT</div>
+      <img src="/img/act.png" alt="Logo" style="height: 32px; border-radius: 4px; margin-right: 10px;" onerror="this.style.display='none'">
       <span class="nav-logo-text">ACT LAB</span>
     </a>
     <ul class="nav-links">
@@ -99,12 +99,38 @@
           <div style="color: #626e84; font-size: 13px;">[ AWAITING_REQUEST ]</div>
         </div>
       </div>
+
+      <!-- SUBMIT FLAG SECTION -->
+      <section class="htb-card" style="margin-top: 4rem; border-color: var(--neon-green);">
+        <h2 class="htb-card-title" style="color: #fff;">Submit Flag</h2>
+        <div style="display: flex; gap: 1rem;">
+          <input type="text" id="flagInput" class="htb-input" placeholder="ACT{flag_here}" style="flex: 1; margin-top: 0; width: 100%;">
+          <button onclick="submitFlag(7)" class="htb-btn" style="width: auto; padding: 0 2rem; margin-top: 0; flex: 0;">Submit</button>
+        </div>
+      </section>
     </div>
   </main>
 
   <div class="toast-container" id="toastContainer"></div>
 
   <script>
+    async function submitFlag(id) {
+      const flag = document.getElementById('flagInput').value;
+      if (!flag) return showToast('Please enter a flag', 'error');
+      try {
+        const res = await fetch('/api/challenges/submit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ challengeId: id, flag: flag })
+        });
+        const data = await res.json();
+        if (data.correct) {
+          showToast('Correct flag!', 'success');
+          setTimeout(() => window.location.href = '/dashboard', 2000);
+        } else { showToast(data.message || 'Incorrect flag', 'error'); }
+      } catch (err) {}
+    }
+
     function updatePreview() {
       document.getElementById('urlParamPreview').textContent = document.getElementById('userIdInput').value;
     }
@@ -113,42 +139,27 @@
       const id = document.getElementById('userIdInput').value;
       const display = document.getElementById('profileDisplay');
       display.innerHTML = '<div class="spinner"></div>';
-
       try {
         const res = await fetch(`/api/profile?id=${id}`);
         const data = await res.json();
         if (data.success) {
           const u = data.user;
           const isAlice = u.username.toLowerCase() === 'alice';
-          
           display.innerHTML = `
             <div style="text-align: center; width: 100%;">
               <div class="nav-logo-icon" style="width: 60px; height: 60px; font-size: 24px; margin: 0 auto 1.5rem auto;">${u.username[0].toUpperCase()}</div>
               <div style="color: var(--neon-green); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 0.5rem;">User Found: #${u.id}</div>
               <div style="color: #fff; font-size: 1.8rem; font-weight: bold; margin-bottom: 1rem;">${u.username}</div>
               <div style="color: var(--text-secondary); font-style: italic; max-width: 400px; margin: 0 auto;">"${u.bio || 'No public information available.'}"</div>
-              
-              ${isAlice ? `
-                <div style="border: 1px solid var(--neon-green); background: rgba(159,239,0,0.05); padding: 1.5rem; border-radius: 4px; margin-top: 2rem; animation: pulse 1.5s infinite;">
-                  <div style="color: var(--neon-green); font-weight: bold; font-size: 11px; letter-spacing: 2px; margin-bottom: 0.5rem;">[ PRIVATE DATA ACCESSED ]</div>
-                  <div style="font-family: 'Share Tech Mono'; color: var(--neon-yellow); font-size: 1.3rem;">ACT{1d0r_us3r_3num}</div>
-                </div>
-              ` : ''}
-            </div>
-          `;
-          if (isAlice) showToast('Unauthorized Access Detected!', 'success');
-        } else {
-          display.innerHTML = '<div style="color: var(--neon-pink); font-weight: bold; font-size: 12px;">[!] 404: RESOURCE NOT FOUND</div>';
-        }
-      } catch (err) { showToast('API connection error', 'error'); }
+              ${isAlice ? `<div style="border: 1px solid var(--neon-green); background: rgba(159,239,0,0.05); padding: 1.5rem; border-radius: 4px; margin-top: 2rem;"><div style="color: var(--neon-green); font-weight: bold; font-size: 11px; letter-spacing: 2px;">[ PRIVATE DATA ACCESSED ]</div><div style="font-family: 'Share Tech Mono'; color: var(--neon-yellow); font-size: 1.3rem;">ACT{1d0r_us3r_3num}</div></div>` : ''}
+            </div>`;
+        } else { display.innerHTML = '<div style="color: var(--neon-pink); font-weight: bold; font-size: 12px;">[!] 404: NOT FOUND</div>'; }
+      } catch (err) {}
     }
 
     function showToast(msg, type) {
       const container = document.getElementById('toastContainer');
-      const toast = document.createElement('div');
-      toast.className = `toast toast-${type}`;
-      toast.textContent = msg;
-      container.appendChild(toast);
+      const toast = document.createElement('div'); toast.className = `toast toast-${type}`; toast.textContent = msg; container.appendChild(toast);
       setTimeout(() => toast.remove(), 3000);
     }
 
@@ -157,8 +168,7 @@
         const res = await fetch('/api/auth/status');
         const data = await res.json();
         if (data.success) {
-          document.getElementById('navUser').innerHTML = `<span class="nav-user-badge">${data.user.username}</span>`;
-          fetchProfile();
+          document.getElementById('navUser').innerHTML = `<span class="nav-user-badge">${data.user.username} (Score: ${data.user.score || 0})</span>`;
         }
       } catch (err) {}
     }

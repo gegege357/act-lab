@@ -37,7 +37,6 @@
       text-transform: uppercase; 
       letter-spacing: 2px; 
       width: 100%;
-      margin-top: 1rem;
     }
 
     .htb-terminal { background: #050505; border: 1px solid #1c2126; border-radius: 4px; font-family: 'Share Tech Mono', monospace; margin-bottom: 2rem; overflow: hidden; }
@@ -50,7 +49,7 @@
 
   <nav class="navbar">
     <a href="/" class="nav-logo">
-      <div class="nav-logo-icon">ACT</div>
+      <img src="/img/act.png" alt="Logo" style="height: 32px; border-radius: 4px; margin-right: 10px;" onerror="this.style.display='none'">
       <span class="nav-logo-text">ACT LAB</span>
     </a>
     <ul class="nav-links">
@@ -73,23 +72,14 @@
 
       <!-- TRAFFIC MONITOR -->
       <div class="htb-terminal">
-        <div class="htb-terminal-header">
-          <span>HTTP TRAFFIC MONITORING :: SNIFFER ACTIVE</span>
-          <span>root@act-sniff:~#</span>
-        </div>
-        <div class="htb-terminal-body" id="trafficLog">
-          <div>Listening for cross-origin POST requests...</div>
-        </div>
+        <div class="htb-terminal-header"><span>HTTP TRAFFIC MONITORING :: SNIFFER ACTIVE</span></div>
+        <div class="htb-terminal-body" id="trafficLog"><div>Listening for cross-origin POST requests...</div></div>
       </div>
 
       <!-- TARGET CARD -->
       <section class="htb-card">
         <h2 class="htb-card-title">Target: Account Management</h2>
-        
-        <div id="profileView" style="margin-bottom: 2rem; background: #0b0e11; padding: 1.5rem; border-radius: 4px; border-left: 3px solid var(--neon-green);">
-          <div class="spinner"></div>
-        </div>
-
+        <div id="profileView" style="margin-bottom: 2rem; background: #0b0e11; padding: 1.5rem; border-radius: 4px; border-left: 3px solid var(--neon-green);"><div class="spinner"></div></div>
         <form onsubmit="updateProfile(event)">
           <div class="form-group" style="margin-bottom: 1.5rem;">
             <label class="form-label">New Email Address</label>
@@ -102,27 +92,45 @@
           <button type="submit" class="htb-btn">Update Profile</button>
         </form>
       </section>
+
+      <!-- SUBMIT FLAG SECTION -->
+      <section class="htb-card" style="margin-top: 4rem; border-color: var(--neon-green);">
+        <h2 class="htb-card-title" style="color: #fff;">Submit Flag</h2>
+        <div style="display: flex; gap: 1rem;">
+          <input type="text" id="flagInput" class="htb-input" placeholder="ACT{flag_here}" style="flex: 1; margin-top: 0;">
+          <button onclick="submitFlag(5)" class="htb-btn" style="width: auto; padding: 0 2rem; margin-top: 0;">Submit</button>
+        </div>
+      </section>
     </div>
   </main>
 
   <div class="toast-container" id="toastContainer"></div>
 
   <script>
+    async function submitFlag(id) {
+      const flag = document.getElementById('flagInput').value;
+      if (!flag) return showToast('Please enter a flag', 'error');
+      try {
+        const res = await fetch('/api/challenges/submit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ challengeId: id, flag: flag })
+        });
+        const data = await res.json();
+        if (data.correct) {
+          showToast('Correct flag!', 'success');
+          setTimeout(() => window.location.href = '/dashboard', 2000);
+        } else { showToast(data.message || 'Incorrect flag', 'error'); }
+      } catch (err) {}
+    }
+
     async function loadProfile() {
       try {
         const res = await fetch('/api/profile/me');
         const data = await res.json();
         if (data.success) {
           const u = data.user;
-          document.getElementById('profileView').innerHTML = `
-            <div style="display: flex; align-items: center; gap: 1rem;">
-              <div class="nav-logo-icon" style="width: 40px; height: 40px; font-size: 16px;">${u.username[0].toUpperCase()}</div>
-              <div>
-                <div style="font-weight: bold; color: #fff;">${u.username}</div>
-                <div style="font-size: 11px; color: #626e84; text-transform: uppercase;">${u.role} | ${u.email || 'NO_EMAIL'}</div>
-              </div>
-            </div>
-          `;
+          document.getElementById('profileView').innerHTML = `<div style="display: flex; align-items: center; gap: 1rem;"><div class="nav-logo-icon" style="width: 40px; height: 40px;">${u.username[0].toUpperCase()}</div><div><div style="font-weight: bold; color: #fff;">${u.username}</div><div style="font-size: 11px; color: #626e84;">${u.role} | ${u.email || 'NO_EMAIL'}</div></div></div>`;
           document.getElementById('emailInput').value = u.email || '';
           document.getElementById('bioInput').value = u.bio || '';
         }
@@ -133,62 +141,29 @@
       if (e) e.preventDefault();
       const email = document.getElementById('emailInput').value;
       const bio = document.getElementById('bioInput').value;
-      addLog('INBOUND', `POST /api/profile | Source: ${window.location.origin}`);
-
       try {
-        const res = await fetch('/api/profile', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, bio })
-        });
+        const res = await fetch('/api/profile', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, bio }) });
         const data = await res.json();
         if (data.success) {
           showToast('Updated!', 'success');
-          addLog('SUCCESS', `DB updated. New Email: ${email}`);
-          if (data.message && data.message.includes('ACT{')) showFlag(data.message);
+          if (data.message && data.message.includes('ACT{')) alert('SUCCESS! FLAG: ' + data.message.split('Flag: ')[1]);
           loadProfile();
-        } else {
-          showToast(data.error || 'Failed', 'error');
-          addLog('REJECTED', `Origin check blocked request: ${data.error}`);
         }
-      } catch (err) { addLog('ERROR', 'Network error'); }
-    }
-
-    function addLog(type, msg) {
-      const log = document.getElementById('trafficLog');
-      const time = new Date().toLocaleTimeString();
-      const div = document.createElement('div');
-      div.style.marginBottom = '4px';
-      div.innerHTML = `<span style="color: #626e84;">[${time}]</span> <span style="font-weight: bold;">[${type}]</span> ${msg}`;
-      log.prepend(div);
-    }
-
-    function showFlag(msg) {
-      const flag = msg.split('Flag: ')[1];
-      showToast('Machine Compromised!', 'success');
-      addLog('EXPLOIT', `CSRF Triggered. Captured Flag: ${flag}`);
-      alert('SUCCESS! FLAG CAPTURED: ' + flag);
+      } catch (err) {}
     }
 
     function showToast(msg, type) {
       const container = document.getElementById('toastContainer');
-      const toast = document.createElement('div');
-      toast.className = `toast toast-${type}`;
-      toast.textContent = msg;
-      container.appendChild(toast);
+      const toast = document.createElement('div'); toast.className = `toast toast-${type}`; toast.textContent = msg; container.appendChild(toast);
       setTimeout(() => toast.remove(), 3000);
     }
 
     async function initAuth() {
       try {
-        let res = await fetch('/api/auth/status');
-        let data = await res.json();
-        if (!data.authenticated) {
-          const autoRes = await fetch('/api/auth/auto-login', { method: 'POST' });
-          data = await autoRes.json();
-        }
+        const res = await fetch('/api/auth/status');
+        const data = await res.json();
         if (data.success) {
-          document.getElementById('navUser').innerHTML = `<span class="nav-user-badge">${data.user.username}</span>`;
+          document.getElementById('navUser').innerHTML = `<span class="nav-user-badge">${data.user.username} (Score: ${data.user.score || 0})</span>`;
           loadProfile();
         }
       } catch (err) {}

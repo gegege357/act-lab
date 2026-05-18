@@ -3,83 +3,153 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Blind SQLi - ACT LAB</title>
+  <title>Blind SQLi - ACT LAB (HTB Edition)</title>
   <link rel="stylesheet" href="/css/style.css">
+  <style>
+    body { background: #0b0e11; }
+    .htb-container { max-width: 1000px; margin: 4rem auto; display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; }
+    .machine-header { border-left: 4px solid var(--neon-cyan); padding-left: 1.5rem; margin-bottom: 3rem; grid-column: span 2; }
+    .machine-title { font-family: 'Orbitron', sans-serif; font-size: 2rem; color: #fff; }
+    
+    .htb-card { background: #15191d; border: 1px solid #23282f; border-radius: 4px; padding: 2rem; margin-bottom: 2rem; }
+    .htb-card-title { font-size: 1rem; color: var(--neon-cyan); font-weight: bold; margin-bottom: 1.5rem; text-transform: uppercase; letter-spacing: 2px; border-bottom: 1px solid #23282f; padding-bottom: 0.75rem; }
+    
+    .htb-input { 
+      background: #0b0e11; 
+      border: 1px solid #23282f; 
+      color: #fff; 
+      font-size: 0.95rem; 
+      padding: 0.8rem; 
+      width: 100%; 
+      border-radius: 4px; 
+      font-family: 'Share Tech Mono', monospace; 
+    }
+    .htb-input:focus { border-color: var(--neon-green); outline: none; }
+    .htb-btn { 
+      background: var(--neon-cyan); 
+      color: #000; 
+      font-weight: bold; 
+      padding: 0.8rem; 
+      border: none; 
+      border-radius: 4px; 
+      cursor: pointer; 
+      text-transform: uppercase; 
+      letter-spacing: 2px; 
+      width: 100%;
+    }
+    
+    .htb-terminal { background: #050505; border: 1px solid #1c2126; border-radius: 4px; font-family: 'Share Tech Mono', monospace; margin-bottom: 2rem; overflow: hidden; }
+    .htb-terminal-header { background: #15191d; padding: 6px 12px; color: #626e84; font-size: 10px; display: flex; justify-content: space-between; border-bottom: 1px solid #1c2126; }
+    .htb-terminal-body { padding: 1rem; color: var(--neon-cyan); font-size: 12px; line-height: 1.5; }
+
+    .status-indicator { width: 40px; height: 40px; border-radius: 50%; background: #222; margin: 0 auto 1rem auto; transition: all 0.3s ease; }
+    .status-true { background: var(--neon-green); box-shadow: 0 0 20px rgba(0,212,255,0.4); }
+    .status-false { background: var(--neon-pink); box-shadow: 0 0 20px rgba(255,0,102,0.4); }
+
+    @media (max-width: 900px) { .htb-container { grid-template-columns: 1fr; } .machine-header { grid-column: span 1; } }
+  </style>
 </head>
 <body>
-  <div class="cyber-bg"></div>
-
   <nav class="navbar">
     <a href="/" class="nav-logo">
-      <div class="nav-logo-icon">ACT</div>
+      <img src="/img/act.png" alt="Logo" style="height: 32px; border-radius: 4px; margin-right: 10px;" onerror="this.style.display='none'">
       <span class="nav-logo-text">ACT LAB</span>
     </a>
-    <ul class="nav-links" id="navLinks">
+    <ul class="nav-links">
       <li><a href="/dashboard">Dashboard</a></li>
       <li><a href="/challenges">Missions</a></li>
       <li><a href="/profile">Profile</a></li>
     </ul>
-    <div class="nav-user" id="navUser">
-      <span class="nav-user-badge">Connecting...</span>
-    </div>
+    <div class="nav-user" id="navUser"><span class="nav-user-badge">Connecting...</span></div>
   </nav>
 
   <main class="main-content">
-    <div class="container" style="max-width: 900px;">
-      <div class="page-header" style="text-align:center; margin-bottom: 2rem;">
-        <h1 style="color: var(--neon-cyan);">BLIND SQLi</h1>
-        <p class="text-mono">Extract data character-by-character</p>
+    <div class="htb-container">
+      <header class="machine-header">
+        <h1 class="machine-title">BLIND SQL INJECTION :: BOOLEAN-BASED</h1>
+        <p style="color: var(--text-secondary); margin-top: 0.5rem; font-size: 0.9rem;">PHASE: CHARACTER-BY-CHARACTER DATA EXTRACTION</p>
+      </header>
+
+      <!-- TARGET ANALYSIS -->
+      <div class="htb-terminal" style="border-color: var(--neon-cyan); grid-column: span 2; margin-bottom: 1rem;">
+        <div class="htb-terminal-header" style="background: rgba(0,212,255,0.1);">
+          <span style="color: var(--neon-cyan);">[!] VULNERABILITY_TARGET_ANALYSIS</span>
+        </div>
+        <div class="htb-terminal-body" style="padding: 1rem;">
+          <div style="color: #626e84; margin-bottom: 5px;">ENDPOINT: <code style="color: #fff;">GET /api/search</code></div>
+          <div style="color: #626e84;">TECHNIQUE: Boolean-based inference via <code style="color: var(--neon-yellow);">AND</code> / <code style="color: var(--neon-yellow);">OR</code> conditions</div>
+          <div style="color: #626e84; margin-top: 3px;">TARGET TABLE: <code style="color: var(--neon-yellow);">secret_vault</code> — Extract flag character by character</div>
+        </div>
       </div>
 
-      <div class="dashboard-grid" style="grid-template-columns: 1fr 1fr; gap: 1.5rem;">
-        <!-- SEARCH -->
-        <div class="card" style="padding: 1.5rem; border-color: var(--neon-cyan);">
-          <div class="card-title mb-3 text-xs uppercase text-dim">Boolean Engine</div>
-          
-          <form onsubmit="handleSearch(event)" class="flex gap-2 mb-4">
-            <input type="text" id="searchInput" class="form-input" placeholder="Condition..." required oninput="updateQueryPreview()" style="padding: 8px;">
-            <button type="submit" class="btn btn-primary" style="background:var(--neon-cyan); border-color:var(--neon-cyan); color:black; font-weight:bold; padding: 0 15px;">
-              TEST
-            </button>
+      <!-- BOOLEAN ENGINE -->
+      <section>
+        <div class="htb-card">
+          <h2 class="htb-card-title">Boolean Inference Engine</h2>
+          <form onsubmit="handleSearch(event)">
+            <div class="form-group" style="margin-bottom: 1.5rem;">
+              <label class="form-label">SQL Condition Payload</label>
+              <input type="text" id="searchInput" class="htb-input" placeholder="' AND (1=1)--" oninput="updatePreview()" autocomplete="off" required>
+            </div>
+            <button type="submit" class="htb-btn">Test Condition</button>
           </form>
 
-          <div class="card" style="background: rgba(0,0,0,0.2); border-style: dashed; text-align: center; padding: 2rem; margin-bottom: 1.5rem;">
-            <div style="width: 30px; height: 30px; border-radius: 50%; background: #222; margin: 0 auto 0.5rem;" id="statusLight"></div>
-            <div class="text-xs text-dim uppercase" id="statusText">WAITING...</div>
-          </div>
-
-          <div class="text-xs text-dim uppercase mb-1">Backend View:</div>
-          <div class="terminal" style="font-size: 11px; min-height: 60px; background: rgba(0,0,0,0.4); border: none; padding: 10px;">
-            <span class="text-secondary">SELECT id FROM challenges WHERE title LIKE '%</span><span id="sqlPreviewInput" style="color: #ffcc00;"></span><span class="text-secondary">%'</span>
-          </div>
-        </div>
-
-        <!-- ANALYSIS -->
-        <div class="flex flex-column gap-3">
-          <div class="card" style="padding: 1.2rem; border-color: rgba(255,255,255,0.05);">
-            <div class="text-xs text-dim uppercase mb-2">Guide</div>
-            <p class="text-secondary text-xs" style="line-height: 1.6;">
-              Observe the light. <span class="text-green">Green</span> means TRUE, <span class="text-pink">Pink</span> means FALSE.
-            </p>
-            <div class="mt-3">
-               <code class="text-cyan text-xs block mb-1" style="background:rgba(0,0,0,0.3); padding:5px;">' AND (1=1)--</code>
-               <code class="text-yellow text-xs block" style="background:rgba(0,0,0,0.3); padding:5px; font-size: 9px;">' AND (SELECT SUBSTR(secret_value,1,1) FROM secret_vault)='A'--</code>
+          <div class="htb-terminal" style="margin-top: 1.5rem;">
+            <div class="htb-terminal-header"><span>BOOLEAN RESULT</span></div>
+            <div class="htb-terminal-body" style="height: 100px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+              <div class="status-indicator" id="statusLight"></div>
+              <div style="font-size: 14px; font-weight: bold; letter-spacing: 2px;" id="statusText">WAITING...</div>
             </div>
           </div>
-          
-          <div class="card" style="background: rgba(0,240,255,0.02); border-color: rgba(0,240,255,0.1); padding: 1rem;">
-             <p class="text-xs text-cyan" style="margin:0;">
-               Use the boolean logic to extract the flag from the <code>secret_vault</code> table.
-             </p>
+        </div>
+      </section>
+
+      <!-- SUBMIT FLAG SECTION -->
+      <section class="htb-card" style="border: 1px solid var(--neon-cyan); background: rgba(0,212,255,0.02); grid-column: span 2; margin-bottom: 0;">
+        <h2 class="htb-card-title" style="margin-bottom: 1.2rem; font-size: 0.9rem;">Submit Flag Found</h2>
+        <div style="display: flex; gap: 1rem;">
+          <input type="text" id="flagInput" class="htb-input" placeholder="ACT{flag_here}" style="flex: 1; height: 45px;">
+          <button onclick="submitFlag(8)" class="htb-btn" style="width: auto; padding: 0 1.5rem; height: 45px; font-size: 12px;">Submit Flag</button>
+        </div>
+      </section>
+
+      <!-- ANALYSIS PANEL -->
+      <section>
+        <div class="htb-card">
+          <h2 class="htb-card-title">SQL Query Monitor</h2>
+          <div class="htb-terminal" style="margin-bottom: 1.5rem;">
+            <div class="htb-terminal-header"><span>BACKEND SQL ANALYZER</span></div>
+            <div class="htb-terminal-body" style="min-height: 80px;">
+              <span style="color: #626e84;">SELECT id, title, description, category FROM challenges WHERE title LIKE '%</span><span id="sqlPreviewInput" style="color:var(--neon-yellow);"></span><span style="color: #626e84;">%'</span>
+            </div>
+          </div>
+
+          <div class="htb-card" style="border-color: rgba(0,240,255,0.1); background: rgba(0,240,255,0.02); padding: 1.5rem;">
+            <h3 class="htb-card-title" style="font-size: 0.85rem; margin-bottom: 1rem;">Exploitation Guide</h3>
+            <div style="font-size: 12px; color: #626e84; line-height: 1.8;">
+              <p style="margin-bottom: 0.8rem;">Observe the indicator: <span style="color: var(--neon-green); font-weight: bold;">GREEN</span> = TRUE, <span style="color: var(--neon-pink); font-weight: bold;">PINK</span> = FALSE</p>
+              <div style="background: rgba(0,0,0,0.3); padding: 0.8rem; border-radius: 4px; font-family: 'Share Tech Mono'; font-size: 11px; margin-bottom: 0.5rem;">
+                <div style="color: var(--neon-cyan); margin-bottom: 4px;">// Basic boolean test:</div>
+                <div style="color: var(--neon-yellow);">' AND (1=1)--  → TRUE</div>
+                <div style="color: var(--neon-pink);">' AND (1=2)--  → FALSE</div>
+              </div>
+              <div style="background: rgba(0,0,0,0.3); padding: 0.8rem; border-radius: 4px; font-family: 'Share Tech Mono'; font-size: 11px;">
+                <div style="color: var(--neon-cyan); margin-bottom: 4px;">// Extract flag character by character:</div>
+                <div style="color: var(--neon-yellow);">' AND (SELECT SUBSTR(secret_value,1,1) FROM secret_vault)='A'--</div>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
+      </section>
     </div>
   </main>
 
+  <div class="toast-container" id="toastContainer"></div>
+
   <script>
-    function updateQueryPreview() {
-      document.getElementById('sqlPreviewInput').textContent = document.getElementById('searchInput').value;
+    function updatePreview() {
+      const val = document.getElementById('searchInput').value;
+      document.getElementById('sqlPreviewInput').textContent = val;
     }
 
     async function handleSearch(e) {
@@ -88,42 +158,56 @@
       const light = document.getElementById('statusLight');
       const text = document.getElementById('statusText');
       
+      light.className = 'status-indicator';
       text.textContent = '...';
-      light.style.background = '#333';
+      text.style.color = '#626e84';
 
       try {
         const res = await fetch(`/api/search?q=${q}`);
         const data = await res.json();
 
         if (data.success && data.results && data.results.length > 0) {
-          light.style.background = 'var(--neon-green)';
-          text.innerHTML = '<span class="text-green">TRUE</span>';
+          light.className = 'status-indicator status-true';
+          text.innerHTML = '<span style="color: var(--neon-green);">TRUE</span>';
         } else {
-          light.style.background = 'var(--neon-pink)';
-          text.innerHTML = '<span class="text-pink">FALSE</span>';
+          light.className = 'status-indicator status-false';
+          text.innerHTML = '<span style="color: var(--neon-pink);">FALSE</span>';
         }
-      } catch (err) { text.textContent = 'ERR'; }
+      } catch (err) {
+        text.textContent = 'CONNECTION ERROR';
+        text.style.color = 'var(--neon-pink)';
+      }
     }
 
-    async function initAuth() {
+    async function submitFlag(id) {
+      const flag = document.getElementById('flagInput').value;
+      if (!flag) return showToast('Please enter a flag', 'error');
       try {
-        let res = await fetch('/api/auth/status');
-        let data = await res.json();
-        if (!data.authenticated) {
-          const autoRes = await fetch('/api/auth/auto-login', { method: 'POST' });
-          data = await autoRes.json();
-        }
-        if (data.success) {
-          document.getElementById('navUser').innerHTML = `
-            <span class="nav-user-badge">${data.user.username}</span>
-            <button class="nav-logout" onclick="logout()">Logout</button>
-          `;
-        }
+        const res = await fetch('/api/challenges/submit', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ challengeId: id, flag: flag }) });
+        const data = await res.json();
+        if (data.correct) { showToast('Correct flag!', 'success'); } else { showToast(data.message || 'Incorrect flag', 'error'); }
       } catch (err) {}
     }
-    initAuth();
-    updateQueryPreview();
-    function logout() { fetch('/api/auth/logout', { method: 'POST' }).then(() => window.location.href = '/'); }
+
+    function showToast(msg, type) { 
+      const container = document.getElementById('toastContainer'); 
+      container.innerHTML = '';
+      const toast = document.createElement('div'); toast.className = `toast toast-${type}`; toast.textContent = msg; container.appendChild(toast); setTimeout(() => toast.remove(), 3000); 
+    }
+
+    async function initStatus() {
+      try {
+        const res = await fetch('/api/auth/status');
+        const data = await res.json();
+        const u = data.user || { username: 'Guest', score: 0, role: 'user' };
+        const isAdmin = u.role === 'admin' || document.cookie.includes('role=admin');
+        let navHtml = `<span class=\"nav-user-badge\">Status: ${u.username} (${u.score} PTS)</span>`;
+        if (isAdmin) { navHtml = `<a href="/admin" class="nav-user-badge" style="border-color:var(--neon-pink); color:var(--neon-pink); text-decoration:none; animation: pulse 1s infinite;">⚠️ ADMIN_ACCESS_GRANTED</a> ` + navHtml; }
+        document.getElementById('navUser').innerHTML = navHtml;
+      } catch (err) {}
+    }
+    initStatus();
+    updatePreview();
   </script>
 </body>
 </html>

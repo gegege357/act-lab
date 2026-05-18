@@ -3,30 +3,330 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>IDOR :: INTERNAL_USER_DATA - ACT LAB</title>
+  <title>IDOR :: BROKEN ACCESS CONTROL - ACT LAB</title>
   <link rel="stylesheet" href="/css/style.css">
   <style>
-    body { background: #0b0e11; }
-    .htb-container { max-width: 900px; margin: 4rem auto; }
-    .machine-header { border-left: 4px solid var(--neon-cyan); padding-left: 1.5rem; margin-bottom: 3rem; }
-    .machine-title { font-family: 'Orbitron', sans-serif; font-size: 2rem; color: #fff; }
-    
-    .htb-card { background: #15191d; border: 1px solid #23282f; border-radius: 4px; padding: 2.5rem; margin-bottom: 2rem; position: relative; }
-    .htb-card-title { font-size: 1rem; color: var(--neon-cyan); font-weight: bold; margin-bottom: 1.5rem; text-transform: uppercase; letter-spacing: 2px; border-bottom: 1px solid #23282f; padding-bottom: 0.75rem; }
-    
-    .data-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #1c2126; font-family: 'Share Tech Mono', monospace; }
-    .data-label { color: #626e84; text-transform: uppercase; font-size: 11px; }
-    .data-value { color: #fff; }
+    :root { --neon-red: #ff004d; }
 
-    .htb-terminal { background: #050505; border: 1px solid #1c2126; border-radius: 4px; font-family: 'Share Tech Mono', monospace; margin-top: 2rem; overflow: hidden; }
-    .htb-terminal-header { background: #15191d; padding: 6px 12px; color: #626e84; font-size: 10px; display: flex; justify-content: space-between; }
-    .htb-terminal-body { padding: 1rem; color: var(--neon-cyan); font-size: 12px; }
+    * { box-sizing: border-box; }
+    body { background: #0b0e11; font-family: 'Inter', 'Segoe UI', sans-serif; }
 
-    .btn-action { background: transparent; border: 1px solid var(--neon-cyan); color: var(--neon-cyan); padding: 0.5rem 1rem; border-radius: 4px; text-decoration: none; font-size: 11px; font-weight: bold; text-transform: uppercase; transition: 0.3s; cursor: pointer; }
-    .btn-action:hover { background: var(--neon-cyan); color: #000; }
+    .htb-container { max-width: 960px; margin: 4rem auto; padding: 0 1.5rem; }
+
+    .machine-header { 
+      border-left: 4px solid var(--neon-cyan); 
+      padding-left: 1.5rem; 
+      margin-bottom: 3rem; 
+      position: relative;
+    }
+    .machine-header::after {
+      content: '';
+      position: absolute;
+      bottom: -1rem;
+      left: 1.5rem;
+      right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, var(--neon-cyan), transparent);
+    }
+    .machine-title { 
+      font-family: 'Orbitron', sans-serif; 
+      font-size: 2.2rem; 
+      color: #fff; 
+      letter-spacing: 2px;
+      text-shadow: 0 0 40px rgba(0,212,255,0.15);
+    }
+    .machine-sub { 
+      color: var(--text-secondary); 
+      font-size: 0.85rem; 
+      margin-top: 0.4rem;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+    }
+
+    .htb-card { 
+      background: #15191d; 
+      border: 1px solid #23282f; 
+      border-radius: 6px; 
+      padding: 2rem; 
+      margin-bottom: 2rem; 
+      transition: all 0.3s;
+    }
+    .htb-card:hover { border-color: #2f3640; }
+    .htb-card-title { 
+      font-size: 0.85rem; 
+      color: var(--neon-cyan); 
+      font-weight: bold; 
+      margin-bottom: 1.5rem; 
+      text-transform: uppercase; 
+      letter-spacing: 2px; 
+      border-bottom: 1px solid #23282f; 
+      padding-bottom: 0.75rem; 
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .htb-card-title.warning { color: var(--neon-red); }
+    .htb-card-title.success { color: var(--neon-green); }
+
+    .htb-input { 
+      background: #0b0e11; 
+      border: 1px solid #23282f; 
+      color: #fff; 
+      font-size: 0.95rem; 
+      padding: 0.9rem 1.2rem; 
+      width: 100%; 
+      border-radius: 6px; 
+      font-family: 'Share Tech Mono', monospace; 
+      transition: all 0.2s;
+      text-align: center;
+    }
+    .htb-input:focus { 
+      border-color: var(--neon-cyan); 
+      outline: none; 
+      box-shadow: 0 0 20px rgba(0,212,255,0.12);
+    }
+
+    .htb-btn { 
+      background: var(--neon-cyan); 
+      color: #000; 
+      font-weight: bold; 
+      padding: 0.8rem 1.5rem; 
+      border: none; 
+      border-radius: 6px; 
+      cursor: pointer; 
+      text-transform: uppercase; 
+      letter-spacing: 2px; 
+      font-size: 0.75rem;
+      transition: all 0.25s;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      white-space: nowrap;
+    }
+    .htb-btn:hover { 
+      opacity: 0.85; 
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(0,212,255,0.2);
+    }
+    .htb-btn:active { transform: translateY(0); }
+    .htb-btn-outline { 
+      background: transparent; 
+      border: 1px solid var(--neon-cyan); 
+      color: var(--neon-cyan); 
+    }
+    .htb-btn-outline:hover { 
+      background: rgba(0,212,255,0.1); 
+      box-shadow: none;
+    }
+    .htb-btn-danger { background: var(--neon-red); }
+    .htb-btn-danger:hover { box-shadow: 0 6px 20px rgba(255,0,77,0.2); }
+    .htb-btn-success { background: var(--neon-green); }
+    .htb-btn-success:hover { box-shadow: 0 6px 20px rgba(159,239,0,0.2); }
+
+    .htb-terminal { 
+      background: #050505; 
+      border: 1px solid #1c2126; 
+      border-radius: 6px; 
+      font-family: 'Share Tech Mono', monospace; 
+      margin-bottom: 2rem; 
+      overflow: hidden; 
+    }
+    .htb-terminal-header { 
+      background: #15191d; 
+      padding: 8px 14px; 
+      color: #626e84; 
+      font-size: 10px; 
+      display: flex; 
+      justify-content: space-between; 
+      align-items: center;
+      border-bottom: 1px solid #1c2126; 
+    }
+    .htb-terminal-body { 
+      padding: 1.2rem; 
+      line-height: 1.7; 
+      font-size: 12px; 
+      max-height: 250px; 
+      overflow-y: auto; 
+    }
+
+    /* Profile Card */
+    .profile-card {
+      position: relative;
+      overflow: hidden;
+      border-radius: 8px;
+      background: linear-gradient(145deg, #0b0e11 0%, #13181d 100%);
+      border: 1px solid #23282f;
+      padding: 2rem;
+      transition: all 0.4s;
+    }
+    .profile-card.loading { opacity: 0.5; }
+    .profile-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--neon-cyan), transparent);
+    }
+    .profile-card.admin::before { background: linear-gradient(90deg, transparent, var(--neon-red), transparent); }
+
+    .profile-avatar {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      border: 2px solid var(--neon-cyan);
+      margin-bottom: 1.5rem;
+    }
+    .profile-card.admin .profile-avatar { border-color: var(--neon-red); }
+
+    .profile-username { font-size: 1.3rem; font-weight: bold; color: #fff; }
+    .profile-card.admin .profile-username { color: var(--neon-red); }
+
+    .profile-role {
+      display: inline-block;
+      padding: 3px 12px;
+      border-radius: 4px;
+      font-size: 10px;
+      font-weight: bold;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin: 0.5rem 0 1rem 0;
+    }
+    .profile-role.user { background: rgba(0,212,255,0.1); color: var(--neon-cyan); border: 1px solid rgba(0,212,255,0.2); }
+    .profile-role.admin { background: rgba(255,0,77,0.1); color: var(--neon-red); border: 1px solid rgba(255,0,77,0.2); }
+
+    .profile-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+    .profile-field {
+      padding: 0.75rem;
+      background: rgba(255,255,255,0.02);
+      border-radius: 4px;
+      border: 1px solid #1c2126;
+    }
+    .profile-field.full { grid-column: 1 / -1; }
+    .profile-field-label { font-size: 9px; color: #626e84; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
+    .profile-field-value { font-size: 12px; color: #fff; word-break: break-all; font-family: 'Share Tech Mono', monospace; }
+    .profile-field-value.flag {
+      color: var(--neon-green);
+      font-weight: bold;
+      animation: flagPulse 2s infinite;
+    }
+    @keyframes flagPulse {
+      0%, 100% { text-shadow: 0 0 5px rgba(159,239,0,0.3); }
+      50% { text-shadow: 0 0 20px rgba(159,239,0,0.6); }
+    }
+
+    /* ID Navigator */
+    .id-navigator {
+      display: flex;
+      gap: 0.75rem;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 1.5rem;
+    }
+    .nav-btn {
+      width: 44px;
+      height: 44px;
+      border-radius: 8px;
+      border: 1px solid #23282f;
+      background: #0b0e11;
+      color: #fff;
+      font-size: 18px;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .nav-btn:hover { border-color: var(--neon-cyan); background: rgba(0,212,255,0.05); }
+    .nav-btn:active { transform: scale(0.95); }
+    .nav-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+    .id-display {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 1.5rem;
+      color: #fff;
+      min-width: 80px;
+      text-align: center;
+    }
+
+    /* Auto Enumeration */
+    .enum-progress {
+      width: 100%;
+      height: 6px;
+      background: #1c2126;
+      border-radius: 3px;
+      overflow: hidden;
+      margin: 0.5rem 0;
+    }
+    .enum-progress-bar {
+      height: 100%;
+      background: linear-gradient(90deg, var(--neon-cyan), var(--neon-pink));
+      border-radius: 3px;
+      transition: width 0.3s;
+      width: 0%;
+    }
+    .enum-results {
+      max-height: 200px;
+      overflow-y: auto;
+      margin-top: 1rem;
+    }
+    .enum-entry {
+      display: flex;
+      justify-content: space-between;
+      padding: 6px 10px;
+      font-size: 11px;
+      border-bottom: 1px solid #1c2126;
+      transition: background 0.2s;
+      cursor: default;
+    }
+    .enum-entry:hover { background: rgba(255,255,255,0.02); }
+    .enum-entry .enum-id { color: #626e84; font-weight: bold; }
+    .enum-entry .enum-user { color: #fff; }
+    .enum-entry .enum-role { font-size: 9px; text-transform: uppercase; letter-spacing: 1px; padding: 1px 6px; border-radius: 3px; }
+    .enum-entry .enum-role.admin { color: var(--neon-red); }
+    .enum-entry .enum-role.user { color: var(--neon-cyan); }
+    .enum-entry .enum-flag { color: var(--neon-green); }
+
+    .request-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 12px;
+      border-bottom: 1px solid #1c2126;
+      font-size: 11px;
+    }
+    .request-row:last-child { border-bottom: none; }
+    .request-label { color: #626e84; }
+    .request-value { color: #fff; word-break: break-all; max-width: 65%; text-align: right; }
+
+    .spinner {
+      width: 36px;
+      height: 36px;
+      border: 2px solid #23282f;
+      border-top-color: var(--neon-cyan);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 2rem auto;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Responsive */
+    @media (max-width: 640px) {
+      .profile-grid { grid-template-columns: 1fr; }
+      .id-navigator { flex-wrap: wrap; }
+      .machine-title { font-size: 1.5rem; }
+    }
   </style>
 </head>
 <body>
+  <!-- NAVBAR -->
   <nav class="navbar">
     <a href="/" class="nav-logo">
       <img src="/img/act.png" alt="Logo" style="height: 32px; border-radius: 4px; margin-right: 10px;" onerror="this.style.display='none'">
@@ -42,43 +342,156 @@
 
   <main class="main-content">
     <div class="htb-container">
+      <!-- HEADER -->
       <header class="machine-header">
-        <h1 class="machine-title">INSECURE DIRECT OBJECT REFERENCE</h1>
-        <p style="color: var(--text-secondary); margin-top: 0.5rem; font-size: 0.9rem;">PHASE: BROKEN ACCESS CONTROL & DATA EXFILTRATION</p>
+        <h1 class="machine-title">◈ INSECURE DIRECT OBJECT REFERENCE</h1>
+        <p class="machine-sub">PHASE: BROKEN ACCESS CONTROL &bull; ATTACK VECTOR: ID ENUMERATION</p>
       </header>
 
-      <!-- TARGET ANALYSIS -->
-      <div class="htb-terminal" style="border-color: var(--neon-cyan); margin-bottom: 2rem;">
-        <div class="htb-terminal-header" style="background: rgba(0,212,255,0.1);">
-          <span style="color: var(--neon-cyan);">[!] VULNERABILITY_TARGET_ANALYSIS</span>
+      <!-- VULNERABILITY ANALYSIS -->
+      <div class="htb-terminal" style="border-color: var(--neon-cyan);">
+        <div class="htb-terminal-header" style="background: rgba(0,212,255,0.08);">
+          <span style="color:var(--neon-cyan);font-weight:bold;">◈ VULNERABILITY_TARGET</span>
+          <span style="color:#626e84;">CWE-639: Insecure Direct Object Reference</span>
         </div>
-        <div class="htb-terminal-body" style="padding: 1rem;">
-          <div style="color: #626e84; margin-bottom: 5px;">ENDPOINT: <code style="color: #fff;">GET /api/profile</code></div>
-          <div style="color: #626e84;">PARAMETER: <code style="color: var(--neon-yellow);">id</code> (Direct Object Reference)</div>
+        <div class="htb-terminal-body" style="max-height:none;">
+          <div class="request-row">
+            <span class="request-label">ENDPOINT</span>
+            <span class="request-value"><code style="color:var(--neon-cyan);">GET /api/profile?id={user_id}</code></span>
+          </div>
+          <div class="request-row">
+            <span class="request-label">ROOT_CAUSE</span>
+            <span class="request-value" style="color:var(--neon-red);font-size:10px;">
+              Endpoint profile tidak memverifikasi kepemilikan data!<br>
+              User A bisa mengakses data User B hanya dengan mengganti parameter <code>id</code>.
+            </span>
+          </div>
+          <div class="request-row" style="border-bottom:none;">
+            <span class="request-label">ATTACK_VECTOR</span>
+            <span class="request-value" style="color:var(--neon-amber);font-size:10px;">
+              Iterasi ID: 1, 2, 3, ... hingga menemukan data user lain (termasuk Admin!)
+            </span>
+          </div>
         </div>
       </div>
 
-      <div class="htb-terminal">
-        <div class="htb-terminal-header"><span>NETWORK_ANALYSIS_TOOL</span></div>
-        <div class="htb-terminal-body">
-          <div style="color: #626e84;">[INFO] Profile data is fetched via internal API endpoint:</div>
-          <div style="color: var(--neon-yellow); margin-top: 5px;">GET /api/profile?id=<span id="urlId" style="background: rgba(255,255,255,0.1); padding: 2px 5px;">...</span></div>
+      <!-- LIVE API REQUEST -->
+      <div class="htb-terminal" style="margin-bottom:2rem;">
+        <div class="htb-terminal-header">
+          <span>📡 LIVE API_REQUEST</span>
+          <span id="reqStatus" style="color:#626e84;">idle</span>
+        </div>
+        <div class="htb-terminal-body" id="liveRequest" style="max-height:80px;color:#626e84;text-align:center;">
+          GET <span id="apiUrlDisplay" style="color:var(--neon-cyan);">/api/profile?id=...</span>
         </div>
       </div>
 
-      <div class="htb-card" id="profileCard">
-        <h2 class="htb-card-title">User Profile Details</h2>
-        <div id="profileData">
+      <!-- ID NAVIGATOR -->
+      <section class="htb-card">
+        <h2 class="htb-card-title">
+          <span>🔍 User ID Browser</span>
+          <span style="font-size:9px;color:#626e84;font-weight:normal;">
+            Navigate through user IDs to find hidden data
+          </span>
+        </h2>
+
+        <div class="id-navigator">
+          <button class="nav-btn" id="prevBtn" onclick="navigateId(-1)" title="Previous ID">◀</button>
+          
+          <div style="display:flex;align-items:center;gap:0.5rem;">
+            <span style="color:#626e84;font-size:11px;">ID</span>
+            <input type="number" id="userIdInput" class="htb-input" value="1" min="1" onchange="jumpToId()" style="width:100px;padding:0.6rem;font-size:1.2rem;">
+          </div>
+          
+          <button class="nav-btn" id="nextBtn" onclick="navigateId(1)" title="Next ID">▶</button>
+
+          <button onclick="loadProfile()" class="htb-btn" style="margin-left:0.5rem;">
+            🔍 Fetch
+          </button>
+        </div>
+
+        <div style="display:flex;gap:0.5rem;justify-content:center;flex-wrap:wrap;">
+          <button onclick="quickJump(-10)" class="htb-btn htb-btn-outline" style="padding:0.4rem 0.8rem;font-size:10px;">-10</button>
+          <button onclick="quickJump(-1)" class="htb-btn htb-btn-outline" style="padding:0.4rem 0.8rem;font-size:10px;">-1</button>
+          <button onclick="quickJump(1)" class="htb-btn htb-btn-outline" style="padding:0.4rem 0.8rem;font-size:10px;">+1</button>
+          <button onclick="quickJump(10)" class="htb-btn htb-btn-outline" style="padding:0.4rem 0.8rem;font-size:10px;">+10</button>
+          <button onclick="quickJump(100)" class="htb-btn htb-btn-outline" style="padding:0.4rem 0.8rem;font-size:10px;">+100</button>
+        </div>
+      </section>
+
+      <!-- PROFILE DISPLAY -->
+      <section class="htb-card" id="profileSection">
+        <h2 class="htb-card-title" id="profileTitle">
+          <span>👤 Profile Data</span>
+          <span id="profileBadge" style="font-size:9px;color:#626e84;font-weight:normal;">Fetching...</span>
+        </h2>
+
+        <div id="profileContent">
           <div class="spinner"></div>
         </div>
-      </div>
+      </section>
 
-      <div class="htb-card" style="border-color: var(--neon-cyan);">
-        <h2 class="htb-card-title" style="color: var(--neon-cyan);">Exfiltrate Admin Flag</h2>
-        <p style="color: #626e84; font-size: 13px; margin-bottom: 1.5rem;">Use the API endpoint displayed above to iterate through user IDs. Can you find the <b>Admin</b> profile (ID: 1)?</p>
-        <div style="display: flex; gap: 1rem;">
-          <input type="text" id="flagInput" class="htb-input" placeholder="ACT{flag_here}" style="flex: 1; margin: 0; height: 40px;">
-          <button onclick="submitFlag(7)" class="btn-action" style="height: 40px; padding: 0 1.5rem;">Submit</button>
+      <!-- FLAG SUBMIT -->
+      <section class="htb-card" style="border:1px solid var(--neon-green);background:rgba(159,239,0,0.015);">
+        <h2 class="htb-card-title success" style="border-bottom:none;margin-bottom:1rem;">
+          🚩 SUBMIT FLAG
+        </h2>
+        <p style="color:#626e84;font-size:13px;margin-bottom:1.5rem;line-height:1.6;">
+          Flag tersembunyi di <strong style="color:var(--neon-amber);">bio</strong> pengguna dengan role 
+          <strong style="color:var(--neon-red);">admin</strong>. Gunakan ID browser di atas untuk 
+          menemukan akun admin, atau coba otomatisasi enumerasi di bawah!
+        </p>
+        <div style="display:flex;gap:1rem;">
+          <input type="text" id="flagInput" class="htb-input" placeholder="ACT{flag_here}" style="flex:1;height:48px;">
+          <button onclick="submitFlag(7)" class="htb-btn htb-btn-success" style="padding:0 2rem;height:48px;flex-shrink:0;">
+            Submit
+          </button>
+        </div>
+      </section>
+
+      <!-- AUTO ENUMERATION TOOL -->
+      <section class="htb-card" style="border-color:var(--neon-red);background:rgba(255,0,77,0.01);">
+        <h2 class="htb-card-title warning">
+          <span>⚡ Auto-Enumeration (Attack Simulation)</span>
+          <span style="font-size:9px;color:#626e84;font-weight:normal;">Simulasi serangan IDOR otomatis</span>
+        </h2>
+
+        <p style="color:#626e84;font-size:12px;margin-bottom:1rem;line-height:1.6;">
+          Dalam serangan nyata, attacker akan mengotomatisasi enumerasi ID untuk menemukan 
+          semua user. Klik tombol di bawah untuk simulasi — tool akan mengiterasi ID dari 1 hingga 50 
+          dan mengumpulkan data semua user yang ditemukan.
+        </p>
+
+        <div style="display:flex;gap:1rem;align-items:center;margin-bottom:1rem;flex-wrap:wrap;">
+          <div style="display:flex;gap:0.5rem;align-items:center;">
+            <label style="color:#626e84;font-size:11px;">Range:</label>
+            <input type="number" id="enumStart" class="htb-input" value="1" style="width:70px;padding:0.5rem;font-size:0.9rem;">
+            <span style="color:#626e84;">to</span>
+            <input type="number" id="enumEnd" class="htb-input" value="50" style="width:70px;padding:0.5rem;font-size:0.9rem;">
+          </div>
+          <button id="enumBtn" onclick="startEnumeration()" class="htb-btn htb-btn-danger">
+            🚀 Start Enumeration
+          </button>
+          <button onclick="clearEnumResults()" class="htb-btn htb-btn-outline" style="padding:0.5rem 1rem;font-size:10px;">
+            Clear Results
+          </button>
+        </div>
+
+        <div class="enum-progress" id="enumProgressTrack" style="display:none;">
+          <div class="enum-progress-bar" id="enumProgressBar"></div>
+        </div>
+        <div style="text-align:center;font-size:11px;color:#626e84;" id="enumStatus">&nbsp;</div>
+        <div class="enum-results" id="enumResults"></div>
+      </section>
+
+      <!-- REQUEST LOG -->
+      <div class="htb-terminal">
+        <div class="htb-terminal-header">
+          <span>📋 IDOR QUERY LOG</span>
+          <button onclick="clearLog()" style="background:none;border:1px solid #23282f;color:#626e84;padding:2px 10px;border-radius:3px;cursor:pointer;font-size:9px;">CLEAR</button>
+        </div>
+        <div class="htb-terminal-body" id="trafficLog">
+          <div style="color:#626e84;">[SYSTEM] IDOR enumeration ready. Navigate IDs or start auto-enumeration.</div>
         </div>
       </div>
     </div>
@@ -87,46 +500,263 @@
   <div class="toast-container" id="toastContainer"></div>
 
   <script>
-    async function loadProfileData() {
-      const urlParams = new URLSearchParams(window.location.search);
-      const id = urlParams.get('id') || '999'; // Default to a random guest-like ID
-      document.getElementById('urlId').textContent = id;
+    let isEnumRunning = false;
+    let enumAbort = false;
+
+    async function loadProfile() {
+      const id = document.getElementById('userIdInput').value;
+      const container = document.getElementById('profileContent');
+      const title = document.getElementById('profileTitle');
+      const badge = document.getElementById('profileBadge');
+
+      document.getElementById('apiUrlDisplay').textContent = `/api/profile?id=${id}`;
+      badge.textContent = '⏳ Loading...';
+      container.innerHTML = '<div class="spinner"></div>';
 
       try {
         const res = await fetch(`/api/profile?id=${id}`);
         const data = await res.json();
-        const container = document.getElementById('profileData');
         
-        if (data.success) {
+        if (data.success && data.user) {
           const u = data.user;
+          const isAdmin = u.role === 'admin';
+          
+          // Check for flag in bio
+          const flagMatch = u.bio ? u.bio.match(/ACT\{[^}]+\}/) : null;
+          const hasFlag = !!flagMatch;
+          
+          let bioDisplay = u.bio || '(empty)';
+          let bioClass = '';
+          if (hasFlag) {
+            bioDisplay = flagMatch[0];
+            bioClass = 'flag';
+          }
+
           container.innerHTML = `
-            <div class="data-row"><span class="data-label">Internal ID</span><span class="data-value">${u.id}</span></div>
-            <div class="data-row"><span class="data-label">Username</span><span class="data-value">${u.username}</span></div>
-            <div class="data-row"><span class="data-label">Account Role</span><span class="data-value" style="color: ${u.role === 'admin' ? 'var(--neon-pink)' : 'var(--neon-cyan)'}">${u.role.toUpperCase()}</span></div>
-            <div class="data-row"><span class="data-label">Email Source</span><span class="data-value">${u.email}</span></div>
-            <div class="data-row" style="border-bottom: none;"><span class="data-label">Biodata / Notes</span><span class="data-value" style="color: var(--neon-yellow);">${u.bio}</span></div>
+            <div class="profile-card ${isAdmin ? 'admin' : ''}">
+              <div class="profile-avatar">${isAdmin ? '🔴' : '👤'}</div>
+              <div class="profile-username">${u.username}</div>
+              <div class="profile-role ${isAdmin ? 'admin' : 'user'}">${isAdmin ? '⚠️ ADMIN' : 'User'}</div>
+              
+              <div class="profile-grid">
+                <div class="profile-field">
+                  <div class="profile-field-label">Internal ID</div>
+                  <div class="profile-field-value">${u.id}</div>
+                </div>
+                <div class="profile-field">
+                  <div class="profile-field-label">Role</div>
+                  <div class="profile-field-value" style="color:${isAdmin ? 'var(--neon-red)' : 'var(--neon-cyan)'}">${u.role}</div>
+                </div>
+                <div class="profile-field">
+                  <div class="profile-field-label">Email</div>
+                  <div class="profile-field-value">${u.email || '(hidden)'}</div>
+                </div>
+                <div class="profile-field">
+                  <div class="profile-field-label">Score</div>
+                  <div class="profile-field-value">${u.score || 0}</div>
+                </div>
+                <div class="profile-field full">
+                  <div class="profile-field-label">Bio / Notes</div>
+                  <div class="profile-field-value ${bioClass}">${bioDisplay}</div>
+                </div>
+              </div>
+            </div>
           `;
+
+          if (isAdmin) { title.querySelector('span').textContent = '👤 Admin Profile Found!'; }
+          else { title.querySelector('span').textContent = '👤 Profile Data'; }
+
+          if (hasFlag) {
+            badge.innerHTML = '🚩 <span style="color:var(--neon-green);font-weight:bold;">FLAG FOUND!</span>';
+            showToast('🎯 Flag ditemukan di bio admin!', 'success');
+          } else if (isAdmin) {
+            badge.innerHTML = '🔴 <span style="color:var(--neon-red);font-weight:bold;">ADMIN ACCESS</span>';
+          } else {
+            badge.textContent = `✅ ID ${u.id} - ${u.username}`;
+          }
+
+          addLog(id, `FOUND: ${u.username} (${u.role})${hasFlag ? ' 🚩 FLAG!' : ''}`, isAdmin ? 'admin' : 'user');
         } else {
-          container.innerHTML = `<div style="color: var(--neon-pink); text-align: center; padding: 2rem;">[ ERROR ] Access Denied or User Not Found</div>`;
+          container.innerHTML = `
+            <div style="text-align:center;padding:2rem;">
+              <div style="font-size:40px;margin-bottom:1rem;">🚫</div>
+              <div style="color:var(--neon-red);font-weight:bold;">User Not Found</div>
+              <div style="color:#626e84;font-size:12px;margin-top:0.5rem;">ID ${id} tidak ditemukan di database.</div>
+            </div>
+          `;
+          badge.textContent = '❌ Not Found';
+          addLog(id, 'NOT FOUND', 'error');
         }
-      } catch (err) {}
+      } catch (err) {
+        container.innerHTML = '<div style="color:var(--neon-red);text-align:center;padding:2rem;">[ ERROR ] Network Error</div>';
+        badge.textContent = '❌ Error';
+        addLog(id, 'ERROR: ' + err.message, 'error');
+      }
     }
 
+    function navigateId(delta) {
+      const input = document.getElementById('userIdInput');
+      let val = parseInt(input.value) || 1;
+      val = Math.max(1, val + delta);
+      input.value = val;
+      loadProfile();
+    }
+
+    function jumpToId() {
+      const input = document.getElementById('userIdInput');
+      let val = parseInt(input.value) || 1;
+      if (val < 1) val = 1;
+      input.value = val;
+      loadProfile();
+    }
+
+    function quickJump(delta) {
+      navigateId(delta);
+    }
+
+    // Keyboard nav
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowLeft') { navigateId(-1); e.preventDefault(); }
+      if (e.key === 'ArrowRight') { navigateId(1); e.preventDefault(); }
+    });
+
+    // ENUMERATION
+    async function startEnumeration() {
+      if (isEnumRunning) {
+        enumAbort = true;
+        return;
+      }
+
+      const start = parseInt(document.getElementById('enumStart').value) || 1;
+      const end = parseInt(document.getElementById('enumEnd').value) || 50;
+      
+      if (start > end || end - start > 200) {
+        return showToast('Range maksimal 200 ID untuk performa', 'error');
+      }
+
+      isEnumRunning = true;
+      enumAbort = false;
+      const btn = document.getElementById('enumBtn');
+      btn.textContent = '⏹ Stop';
+      btn.style.background = '#626e84';
+      
+      document.getElementById('enumProgressTrack').style.display = 'block';
+      const progressBar = document.getElementById('enumProgressBar');
+      const statusDiv = document.getElementById('enumStatus');
+      const resultsDiv = document.getElementById('enumResults');
+      resultsDiv.innerHTML = '<div style="color:#626e84;text-align:center;">⏳ Enumerating...</div>';
+
+      let foundUsers = [];
+      const total = end - start + 1;
+
+      for (let id = start; id <= end; id++) {
+        if (enumAbort) break;
+
+        const progress = ((id - start + 1) / total * 100);
+        progressBar.style.width = progress + '%';
+        statusDiv.textContent = `Scanning ID ${id}... (${Math.round(progress)}%)`;
+
+        try {
+          const res = await fetch(`/api/profile?id=${id}`);
+          const data = await res.json();
+          if (data.success && data.user) {
+            const u = data.user;
+            const flagMatch = u.bio ? u.bio.match(/ACT\{[^}]+\}/) : null;
+            foundUsers.push({ id: u.id, username: u.username, role: u.role, flag: flagMatch ? flagMatch[0] : null });
+            addLog(id, `[ENUM] ${u.username} (${u.role})${flagMatch ? ' 🚩'+flagMatch[0] : ''}`, u.role === 'admin' ? 'admin' : 'user');
+          }
+        } catch (err) {
+          // skip errors
+        }
+
+        // Small delay to not overwhelm the server
+        await new Promise(r => setTimeout(r, 50));
+      }
+
+      isEnumRunning = false;
+      btn.textContent = '🚀 Start Enumeration';
+      btn.style.background = '';
+
+      if (enumAbort) {
+        statusDiv.textContent = `⏹ Stopped. Found ${foundUsers.length} users.`;
+        resultsDiv.innerHTML = `<div style="color:#626e84;text-align:center;">⏹ Enumeration stopped by user.</div>`;
+      } else {
+        statusDiv.textContent = `✅ Done! Found ${foundUsers.length} users in range ${start}-${end}.`;
+      }
+
+      // Render results
+      if (foundUsers.length > 0) {
+        let html = foundUsers.map(u => `
+          <div class="enum-entry" onclick="document.getElementById('userIdInput').value=${u.id};loadProfile();" style="cursor:pointer;">
+            <div>
+              <span class="enum-id">#${u.id}</span>
+              <span class="enum-user">${u.username}</span>
+            </div>
+            <div>
+              <span class="enum-role ${u.role}">${u.role}</span>
+              ${u.flag ? `<span class="enum-flag">🚩 ${u.flag}</span>` : ''}
+            </div>
+          </div>
+        `).join('');
+        resultsDiv.innerHTML = html;
+
+        // Auto-navigate to admin if found
+        const adminUser = foundUsers.find(u => u.role === 'admin');
+        if (adminUser) {
+          document.getElementById('userIdInput').value = adminUser.id;
+          loadProfile();
+        }
+      } else if (!enumAbort) {
+        resultsDiv.innerHTML = '<div style="color:#626e84;text-align:center;">No users found in this range.</div>';
+      }
+    }
+
+    function clearEnumResults() {
+      document.getElementById('enumResults').innerHTML = '';
+      document.getElementById('enumStatus').textContent = '';
+      document.getElementById('enumProgressTrack').style.display = 'none';
+    }
+
+    // === UTILITIES ===
     async function submitFlag(id) {
       const flag = document.getElementById('flagInput').value;
       if (!flag) return showToast('Please enter a flag', 'error');
       try {
-        const res = await fetch('/api/challenges/submit', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ challengeId: id, flag: flag }) });
+        const res = await fetch('/api/challenges/submit', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ challengeId: id, flag: flag })
+        });
         const data = await res.json();
-        if (data.correct) { showToast('Correct flag!', 'success'); } 
-        else { showToast(data.message || 'Incorrect flag', 'error'); }
+        if (data.correct) { showToast('✅ Correct flag!', 'success'); }
+        else { showToast(data.message || '❌ Incorrect flag', 'error'); }
       } catch (err) {}
     }
 
-    function showToast(msg, type) { 
-      const container = document.getElementById('toastContainer'); 
-      container.innerHTML = ''; 
-      const toast = document.createElement('div'); toast.className = `toast toast-${type}`; toast.textContent = msg; container.appendChild(toast); setTimeout(() => toast.remove(), 3000); 
+    function addLog(id, msg, type) {
+      const log = document.getElementById('trafficLog');
+      const time = new Date().toLocaleTimeString();
+      const colors = { admin: 'var(--neon-red)', user: 'var(--neon-cyan)', error: 'var(--neon-pink)' };
+      const color = colors[type] || '#626e84';
+      
+      log.innerHTML = `<div style="margin-bottom:3px;color:${color};">
+        <span style="color:#626e84;">[${time}]</span>
+        <span style="font-weight:bold;">[ID:${id}]</span>
+        ${msg}
+      </div>` + log.innerHTML;
+    }
+
+    function clearLog() {
+      document.getElementById('trafficLog').innerHTML = '<div style="color:#626e84;">[SYSTEM] Log cleared.</div>';
+    }
+
+    function showToast(msg, type) {
+      const container = document.getElementById('toastContainer');
+      container.innerHTML = '';
+      const toast = document.createElement('div');
+      toast.className = `toast toast-${type}`;
+      toast.textContent = msg;
+      container.appendChild(toast);
+      setTimeout(() => toast.remove(), 3000);
     }
 
     async function initStatus() {
@@ -136,9 +766,16 @@
         const u = data.user || { username: 'Guest', score: 0, role: 'user' };
         const isAdmin = u.role === 'admin' || document.cookie.includes('role=admin');
         let navHtml = `<span class="nav-user-badge">Status: ${u.username} (${u.score} PTS)</span>`;
-        if (isAdmin) { navHtml = `<a href="/admin" class="nav-user-badge" style="border-color:var(--neon-pink); color:var(--neon-pink); text-decoration:none; animation: pulse 1s infinite;">⚠️ ADMIN_ACCESS_GRANTED</a> ` + navHtml; }
+        if (isAdmin) { navHtml = `<a href="/admin" class="nav-user-badge" style="border-color:var(--neon-pink);color:var(--neon-pink);text-decoration:none;animation:pulse 1s infinite;">⚠️ ADMIN_ACCESS_GRANTED</a> ` + navHtml; }
         document.getElementById('navUser').innerHTML = navHtml;
-        loadProfileData();
+
+        // Auto-load from URL parameter
+        const urlParams = new URLSearchParams(window.location.search);
+        const prefillId = urlParams.get('id');
+        if (prefillId) {
+          document.getElementById('userIdInput').value = prefillId;
+        }
+        loadProfile();
       } catch (err) {}
     }
     initStatus();

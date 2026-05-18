@@ -933,6 +933,8 @@ tr:hover {
   z-index: 10000;
   box-shadow: 0 10px 40px rgba(0,0,0,0.5);
   backdrop-filter: blur(10px);
+}
+
 .toast-success {
   background: rgba(0,255,136,0.15);
   border: 1px solid rgba(0,255,136,0.4);

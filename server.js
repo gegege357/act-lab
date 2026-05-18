@@ -6,6 +6,19 @@ const path = require('path');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const { rateLimiters } = require('./middleware/ratelimit');
+
+// ============================================
+// RAILWAY OPTIMASI: Deteksi environment
+// ============================================
+const IS_RAILWAY = !!process.env.RAILWAY_SERVICE_ID;
+const IS_VERCEL = process.env.VERCEL === '1';
+const IS_PRODUCTION = IS_RAILWAY || IS_VERCEL || process.env.NODE_ENV === 'production';
+
+if (IS_RAILWAY) {
+  console.log('🚆 Running on Railway — Production mode');
+  console.log('📊 Port:', PORT);
+}
 
 process.on('uncaughtException', (err) => {
   console.error('UNCAUGHT EXCEPTION:', err);
@@ -64,6 +77,27 @@ app.use(async (req, res, next) => {
   next();
 });
 
+// ============================================
+// RATE LIMITING — Terapkan per endpoint
+// ============================================
+app.use('/api/auth/login', rateLimiters.auth);
+app.use('/api/auth/register', rateLimiters.auth);
+app.use('/api/guestbook', rateLimiters.guestbook);
+app.use('/api/search', rateLimiters.read);
+app.use('/api/profile', rateLimiters.read);
+app.use('/api/admin/stats', rateLimiters.admin);
+app.use('/api/admin/users', rateLimiters.admin);
+app.use('/api/admin/reset', rateLimiters.admin);
+app.use('/api/admin/reseed', rateLimiters.admin);
+app.use('/api/flag/submit', rateLimiters.flag);
+app.use('/api/csrf-challenge', rateLimiters.read);
+
+if (IS_PRODUCTION) {
+  // Di production, batasi juga halaman lab
+  app.use('/lab/', rateLimiters.read);
+  app.use('/api/challenges', rateLimiters.read);
+}
+
 // API routes
 app.use('/api/auth', require('./api/auth'));
 app.use('/api/challenges', require('./api/challenges'));
@@ -72,6 +106,21 @@ app.use('/api/profile', require('./api/profile'));
 app.use('/api/guestbook', require('./api/guestbook'));
 app.use('/api/redirect', require('./api/redirect'));
 app.use('/api/admin', require('./api/admin'));
+app.use('/api/flag', require('./api/flag'));
+app.use('/api/csrf-challenge', require('./api/csrf-challenge'));
+
+// ============================================
+// HEALTH CHECK — Untuk Railway monitoring
+// ============================================
+app.get('/api/health', (req, res) => {
+  res.json({
+    success: true,
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    environment: IS_RAILWAY ? 'railway' : IS_VERCEL ? 'vercel' : 'local',
+    uptime: process.uptime()
+  });
+});
 
 const pageRoutes = {
   '/': 'index.html',
@@ -119,4 +168,97 @@ app.use((err, req, res, next) => {
   res.status(500).json({ success: false, error: 'Internal server error', detail: err.message });
 });
 
-app.listen(PORT, () => console.log(`Server running on: http://localhost:${PORT}`));
+// ============================================
+// SEED DATABASE FIRST (before accepting requests)
+// This avoids race conditions where requests hit
+// auto-auth middleware before tables exist.
+// ============================================
+const seedDB = async () => {
+  try {
+    const fs = require('fs');
+    const path = require('path');
+    const seedPath = path.join(__dirname, 'config', 'seed_sqlite.sql');
+    if (!fs.existsSync(seedPath)) {
+      console.warn('Seed file not found at:', seedPath);
+      return;
+    }
+    
+    const db = require('./config/database');
+    
+    // Check if challenges table exists
+    let needsSeed = false;
+    try {
+      const checkResult = await db.query("SELECT name FROM sqlite_master WHERE type='table' AND name='challenges'");
+      const tableExists = checkResult.rows && checkResult.rows.length > 0;
+      if (tableExists) {
+        const countResult = await db.query('SELECT COUNT(*) as cnt FROM challenges');
+        const count = countResult.rows && countResult.rows[0] ? countResult.rows[0].cnt : 0;
+        needsSeed = count === 0;
+        if (needsSeed) console.log('Tables exist but empty, re-seeding...');
+        else console.log('Database already seeded, skipping auto-seed');
+      } else {
+        console.log('Tables not found, running initial seed...');
+        needsSeed = true;
+      }
+    } catch (checkErr) {
+      console.log('Cannot check tables, running initial seed...');
+      needsSeed = true;
+    }
+    
+    if (needsSeed) {
+      const seedSQL = fs.readFileSync(seedPath, 'utf8');
+      // Remove comment lines FIRST, then split by semicolon.
+      // This prevents multi-line SQL starting with -- comments from being filtered out.
+      const noComments = seedSQL.split('\n').filter(l => !l.trim().startsWith('--')).join('\n');
+      const statements = noComments.split(';').map(s => s.trim()).filter(s => s.length > 0);
+      for (const stmt of statements) {
+        try {
+          await db.query(stmt);
+        } catch (e) {
+          // Ignore per-statement errors (e.g. "table already exists" on re-seed)
+        }
+      }
+      console.log('Database seeded successfully from seed_sqlite.sql');
+    }
+  } catch (err) {
+    console.warn('Auto-seed error:', err.message);
+  }
+};
+
+// First seed, then listen (prevents race condition)
+(async () => {
+  await seedDB();
+  
+  // ============================================
+  // CLEANUP OTOMATIS — Hapus guest lama & XSS di startup
+  // ============================================
+  try {
+    const db = require('./config/database');
+    await db.cleanupOldGuests();
+    console.log('🧹 Auto-cleanup completed on startup');
+  } catch (e) {
+    // Non-fatal if cleanup fails
+  }
+  
+  // ============================================
+  // CLEANUP BERKALA — Setiap 6 jam (untuk Railway)
+  // ============================================
+  if (IS_PRODUCTION) {
+    setInterval(async () => {
+      try {
+        const db = require('./config/database');
+        await db.cleanupOldGuests();
+        console.log('🧹 Periodic cleanup completed');
+      } catch (e) {
+        console.warn('Periodic cleanup failed:', e.message);
+      }
+    }, 6 * 60 * 60 * 1000); // 6 jam
+  }
+
+  app.listen(PORT, () => {
+    console.log(`Server running on: http://localhost:${PORT}`);
+    if (IS_RAILWAY) {
+      console.log('🌐 Public URL: https://' + (process.env.RAILWAY_PUBLIC_DOMAIN || 'assigned-by-railway') + '/');
+    }
+  });
+})();

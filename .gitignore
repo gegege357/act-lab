@@ -3,3 +3,8 @@ node_modules
 .vercel
 *.log
 .env*.local
+
+# SQLite database — jangan di-commit (auto-generated)
+*.db
+*.db-*
+*.db-journal

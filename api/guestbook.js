@@ -60,13 +60,12 @@ router.post('/', async (req, res) => {
   try {
     // *** NO SANITIZATION - Input stored as-is via parameterized query ***
     // HTML/script tags are NOT filtered or encoded
-    const query = `INSERT INTO guestbook_entries (author, message) VALUES ($1, $2) RETURNING *`;
+    const query = `INSERT INTO guestbook_entries (author, message) VALUES ($1, $2)`;
     const result = await db.query(query, [author, message]);
 
     return res.json({
       success: true,
-      message: 'Entry added successfully',
-      entry: result.rows[0]
+      message: 'Entry added successfully'
     });
   } catch (err) {
     return res.status(500).json({

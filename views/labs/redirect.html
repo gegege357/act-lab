@@ -3,49 +3,333 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Redirect Lab - ACT LAB (HTB Edition)</title>
+  <title>Redirect Lab :: NAVIGATION ABUSE - ACT LAB</title>
   <link rel="stylesheet" href="/css/style.css">
   <style>
-    body { background: #0b0e11; }
-    .htb-container { max-width: 800px; margin: 4rem auto; }
-    .machine-header { border-left: 4px solid var(--neon-cyan); padding-left: 1.5rem; margin-bottom: 3rem; }
-    .machine-title { font-family: 'Orbitron', sans-serif; font-size: 2rem; color: #fff; }
-    
-    .htb-card { background: #15191d; border: 1px solid #23282f; border-radius: 4px; padding: 2.5rem; margin-bottom: 2rem; }
-    .htb-card-title { font-size: 1rem; color: var(--neon-green); font-weight: bold; margin-bottom: 1.5rem; text-transform: uppercase; letter-spacing: 2px; border-bottom: 1px solid #23282f; padding-bottom: 0.75rem; }
-    
+    :root {
+      --neon-green: #9fef00;
+      --neon-red: #ff004d;
+      --neon-amber: #ffa500;
+    }
+
+    * { box-sizing: border-box; }
+    body { background: #0b0e11; font-family: 'Inter', 'Segoe UI', sans-serif; }
+
+    .htb-container { max-width: 960px; margin: 4rem auto; padding: 0 1.5rem; }
+
+    .machine-header { 
+      border-left: 4px solid var(--neon-cyan); 
+      padding-left: 1.5rem; 
+      margin-bottom: 3rem; 
+      position: relative;
+    }
+    .machine-header::after {
+      content: '';
+      position: absolute;
+      bottom: -1rem;
+      left: 1.5rem;
+      right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, var(--neon-cyan), transparent);
+    }
+    .machine-title { 
+      font-family: 'Orbitron', sans-serif; 
+      font-size: 2.2rem; 
+      color: #fff; 
+      letter-spacing: 2px;
+      text-shadow: 0 0 40px rgba(0,212,255,0.15);
+    }
+    .machine-sub { 
+      color: var(--text-secondary); 
+      font-size: 0.85rem; 
+      margin-top: 0.4rem;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+    }
+
+    .htb-card { 
+      background: #15191d; 
+      border: 1px solid #23282f; 
+      border-radius: 6px; 
+      padding: 2rem; 
+      margin-bottom: 2rem; 
+      transition: border-color 0.3s;
+    }
+    .htb-card:hover { border-color: #2f3640; }
+    .htb-card-title { 
+      font-size: 0.85rem; 
+      color: var(--neon-cyan); 
+      font-weight: bold; 
+      margin-bottom: 1.5rem; 
+      text-transform: uppercase; 
+      letter-spacing: 2px; 
+      border-bottom: 1px solid #23282f; 
+      padding-bottom: 0.75rem; 
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
     .htb-input { 
       background: #0b0e11; 
       border: 1px solid #23282f; 
       color: #fff; 
-      font-size: 1rem; 
-      padding: 1rem; 
+      font-size: 0.95rem; 
+      padding: 1rem 1.2rem; 
       width: 100%; 
-      border-radius: 4px; 
+      border-radius: 6px; 
       font-family: 'Share Tech Mono', monospace; 
+      transition: all 0.2s;
     }
-    .htb-input:focus { border-color: var(--neon-green); outline: none; }
+    .htb-input:focus { 
+      border-color: var(--neon-amber); 
+      outline: none; 
+      box-shadow: 0 0 20px rgba(255,165,0,0.12);
+    }
+    .htb-input::placeholder { color: #3a4050; }
+
     .htb-btn { 
-      background: var(--neon-green); 
+      background: var(--neon-amber); 
       color: #000; 
       font-weight: bold; 
-      padding: 1rem; 
+      padding: 1rem 2.5rem; 
       border: none; 
-      border-radius: 4px; 
+      border-radius: 6px; 
       cursor: pointer; 
       text-transform: uppercase; 
       letter-spacing: 2px; 
-      width: 100%;
+      font-size: 0.8rem;
+      transition: all 0.25s;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .htb-btn:hover { 
+      opacity: 0.85; 
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(255,165,0,0.2);
+    }
+    .htb-btn:active { transform: translateY(0); }
+
+    .htb-btn-danger { background: var(--neon-red); }
+    .htb-btn-danger:hover { box-shadow: 0 8px 25px rgba(255,0,77,0.2); }
+
+    .htb-terminal { 
+      background: #050505; 
+      border: 1px solid #1c2126; 
+      border-radius: 6px; 
+      font-family: 'Share Tech Mono', monospace; 
+      margin-bottom: 2rem; 
+      overflow: hidden; 
+    }
+    .htb-terminal-header { 
+      background: #15191d; 
+      padding: 8px 14px; 
+      color: #626e84; 
+      font-size: 10px; 
+      display: flex; 
+      justify-content: space-between; 
+      align-items: center;
+      border-bottom: 1px solid #1c2126; 
+    }
+    .htb-terminal-body { 
+      padding: 1.2rem; 
+      line-height: 1.7; 
+      font-size: 12px; 
+      max-height: 250px; 
+      overflow-y: auto; 
     }
 
-    .htb-terminal { background: #050505; border: 1px solid #1c2126; border-radius: 4px; font-family: 'Share Tech Mono', monospace; margin-bottom: 2rem; overflow: hidden; }
-    .htb-terminal-header { background: #15191d; padding: 6px 12px; color: #626e84; font-size: 10px; display: flex; justify-content: space-between; }
-    .htb-terminal-body { padding: 1.2rem; color: var(--neon-yellow); font-size: 13px; line-height: 1.5; text-align: center; }
+    /* Redirect Flow Visualization */
+    .redirect-flow {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 1.5rem;
+      padding: 2.5rem 1.5rem;
+      background: linear-gradient(135deg, #0b0e11 0%, #11161b 100%);
+      border: 1px solid #23282f;
+      border-radius: 8px;
+      margin: 1.5rem 0;
+      position: relative;
+      overflow: hidden;
+    }
+    .redirect-flow::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--neon-amber), transparent);
+    }
+    .flow-node {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.5rem;
+      z-index: 1;
+    }
+    .flow-icon {
+      width: 64px;
+      height: 64px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      transition: all 0.3s;
+    }
+    .flow-icon.source { background: rgba(0,212,255,0.1); border: 2px solid var(--neon-cyan); }
+    .flow-icon.target { background: rgba(255,165,0,0.1); border: 2px solid var(--neon-amber); }
+    .flow-icon.danger { background: rgba(255,0,77,0.1); border: 2px solid var(--neon-red); }
+    .flow-label {
+      font-size: 11px;
+      color: #626e84;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      text-align: center;
+    }
+    .flow-arrow {
+      font-size: 28px;
+      color: var(--neon-amber);
+      animation: arrowPulse 1.5s ease-in-out infinite;
+      z-index: 1;
+    }
+    @keyframes arrowPulse {
+      0%, 100% { opacity: 0.5; transform: translateX(0); }
+      50% { opacity: 1; transform: translateX(6px); }
+    }
+    .flow-domain {
+      font-size: 12px;
+      color: #fff;
+      font-family: 'Share Tech Mono', monospace;
+      margin-top: 4px;
+      word-break: break-all;
+      max-width: 180px;
+      text-align: center;
+    }
 
-    .flow-viz { display: flex; align-items: center; justify-content: center; gap: 2rem; padding: 2rem; background: #0b0e11; border-radius: 4px; border: 1px solid #23282f; margin-top: 2rem; }
+    /* Warning Banner */
+    .warning-banner {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 1rem 1.5rem;
+      background: rgba(255,165,0,0.06);
+      border: 1px solid rgba(255,165,0,0.2);
+      border-radius: 6px;
+      margin: 1rem 0 2rem 0;
+    }
+    .warning-banner.warning { border-color: rgba(255,165,0,0.3); }
+    .warning-banner.danger { border-color: rgba(255,0,77,0.3); background: rgba(255,0,77,0.06); }
+    .warning-icon { font-size: 20px; flex-shrink: 0; }
+    .warning-text { font-size: 12px; color: #a0a8b8; line-height: 1.6; }
+
+    /* Phishing Simulator */
+    .phishing-preview {
+      border: 2px dashed rgba(255,0,77,0.3);
+      border-radius: 8px;
+      padding: 2rem;
+      background: rgba(255,0,77,0.02);
+      margin-top: 1.5rem;
+      display: none;
+      animation: fadeSlideIn 0.5s ease-out;
+    }
+    .phishing-preview.visible { display: block; }
+    @keyframes fadeSlideIn {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .phishing-frame {
+      background: #0b0e11;
+      border: 1px solid #23282f;
+      border-radius: 4px;
+      padding: 1.5rem;
+      text-align: center;
+      position: relative;
+    }
+    .phishing-frame::before {
+      content: '⚠️ PHISHING PAGE PREVIEW';
+      position: absolute;
+      top: -10px;
+      left: 12px;
+      background: #15191d;
+      padding: 0 8px;
+      font-size: 9px;
+      color: var(--neon-red);
+      font-weight: bold;
+      letter-spacing: 1px;
+    }
+    .phishing-domain {
+      font-size: 13px;
+      color: #626e84;
+      font-family: 'Share Tech Mono', monospace;
+      margin-bottom: 1rem;
+    }
+    .phishing-domain .highlight { color: var(--neon-red); }
+
+    .request-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 12px;
+      border-bottom: 1px solid #1c2126;
+      font-size: 11px;
+    }
+    .request-row:last-child { border-bottom: none; }
+    .request-label { color: #626e84; }
+    .request-value { color: #fff; word-break: break-all; max-width: 65%; text-align: right; }
+
+    /* Flag Reveal */
+    .flag-reveal {
+      border: 2px solid var(--neon-green);
+      background: rgba(159,239,0,0.06);
+      border-radius: 8px;
+      padding: 1.5rem 2rem;
+      text-align: center;
+      display: none;
+      animation: glowPulse 2s infinite;
+    }
+    .flag-reveal.visible { display: block; }
+    @keyframes glowPulse {
+      0%, 100% { box-shadow: 0 0 20px rgba(159,239,0,0.1); }
+      50% { box-shadow: 0 0 40px rgba(159,239,0,0.2); }
+    }
+    .flag-reveal .flag-text {
+      font-family: 'Share Tech Mono', monospace;
+      color: var(--neon-green);
+      font-size: 1.6rem;
+      font-weight: bold;
+      letter-spacing: 2px;
+      margin-top: 0.5rem;
+    }
+
+    .spinner {
+      width: 32px;
+      height: 32px;
+      border: 2px solid #23282f;
+      border-top-color: var(--neon-cyan);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 2rem auto;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Responsive */
+    @media (max-width: 640px) {
+      .redirect-flow { flex-direction: column; gap: 1rem; padding: 1.5rem; }
+      .flow-arrow { transform: rotate(90deg); }
+      @keyframes arrowPulse {
+        0%, 100% { opacity: 0.5; transform: rotate(90deg) translateY(0); }
+        50% { opacity: 1; transform: rotate(90deg) translateY(6px); }
+      }
+      .machine-title { font-size: 1.5rem; }
+    }
   </style>
 </head>
 <body>
+  <!-- NAVBAR -->
   <nav class="navbar">
     <a href="/" class="nav-logo">
       <img src="/img/act.png" alt="Logo" style="height: 32px; border-radius: 4px; margin-right: 10px;" onerror="this.style.display='none'">
@@ -61,45 +345,167 @@
 
   <main class="main-content">
     <div class="htb-container">
+      <!-- HEADER -->
       <header class="machine-header">
-        <h1 class="machine-title">OPEN REDIRECT :: NAVIGATION ABUSE</h1>
-        <p style="color: var(--text-secondary); margin-top: 0.5rem; font-size: 0.9rem;">PHASE: TRUST BOUNDARY VIOLATION & PHISHING GATEWAY</p>
+        <h1 class="machine-title">◈ OPEN REDIRECT</h1>
+        <p class="machine-sub">PHASE: TRUST VIOLATION &bull; ATTACK VECTOR: URL MANIPULATION</p>
       </header>
 
-      <!-- TARGET ANALYSIS -->
-      <div class="htb-terminal" style="border-color: var(--neon-cyan); margin-bottom: 2rem;">
-        <div class="htb-terminal-header" style="background: rgba(0,212,255,0.1);">
-          <span style="color: var(--neon-cyan);">[!] VULNERABILITY_TARGET_ANALYSIS</span>
+      <!-- VULNERABILITY ANALYSIS -->
+      <div class="htb-terminal" style="border-color: var(--neon-cyan);">
+        <div class="htb-terminal-header" style="background: rgba(0,212,255,0.08);">
+          <span style="color: var(--neon-cyan);font-weight:bold;">◈ TARGET_RECON</span>
+          <span style="color:#626e84;">Vulnerability: Unvalidated Redirect</span>
         </div>
-        <div class="htb-terminal-body" style="padding: 1rem;">
-          <div style="color: #626e84; margin-bottom: 5px;">ENDPOINT: <code style="color: #fff;">GET /api/redirect</code></div>
-          <div style="color: #626e84;">PARAMETER: <code style="color: var(--neon-yellow);">url</code> (Unvalidated Redirect)</div>
+        <div class="htb-terminal-body" style="max-height:none;">
+          <div class="request-row">
+            <span class="request-label">ENDPOINT</span>
+            <span class="request-value"><code style="color:var(--neon-amber);">GET /api/redirect?url=</code></span>
+          </div>
+          <div class="request-row">
+            <span class="request-label">ROOT_CAUSE</span>
+            <span class="request-value" style="color:var(--neon-red);font-size:10px;">
+              Tidak ada validasi URL tujuan — hanya basic cek <code>startsWith('http')</code>.<br>
+              Attacker bisa redirect korban ke situs phishing tanpa batasan!
+            </span>
+          </div>
+          <div class="request-row" style="border-bottom:none;">
+            <span class="request-label">IMPACT</span>
+            <span class="request-value" style="color:var(--neon-amber);font-size:10px;">
+              Phishing &bull; Malware Distribution &bull; Trust Abuse &bull; Credential Theft
+            </span>
+          </div>
         </div>
       </div>
 
-      <div class="htb-terminal">
-        <div class="htb-terminal-header"><span>HTTP REDIRECT ANALYSIS</span></div>
-        <div class="htb-terminal-body">
-          <span style="color: #626e84;">ENDPOINT: </span><code style="color: #fff;">GET /api/redirect?url=</code><span id="urlPreview" style="color:var(--neon-yellow);">https://google.com</span>
+      <!-- REDIRECT FLOW VISUALIZATION -->
+      <div class="redirect-flow" id="redirectFlow">
+        <div class="flow-node">
+          <div class="flow-icon source">🔐</div>
+          <span class="flow-label">Trusted Origin</span>
+          <span class="flow-domain" id="sourceDomain">act-lab.id</span>
+        </div>
+        
+        <div class="flow-arrow">➡</div>
+
+        <div class="flow-node">
+          <div class="flow-icon source" style="border-color:var(--neon-amber);background:rgba(255,165,0,0.08);">
+            <span style="font-size:20px;">🔄</span>
+          </div>
+          <span class="flow-label">Redirect Server</span>
+          <span class="flow-domain" style="color:var(--neon-amber);">/api/redirect?url=</span>
+        </div>
+
+        <div class="flow-arrow">➡</div>
+
+        <div class="flow-node" id="targetNode">
+          <div class="flow-icon target" id="targetIcon">
+            <span style="font-size:20px;">🌐</span>
+          </div>
+          <span class="flow-label" id="targetLabel">External Target</span>
+          <span class="flow-domain" id="targetDomain">google.com</span>
         </div>
       </div>
 
-      <!-- SUBMIT FLAG SECTION (MOVED UP) -->
-      <section class="htb-card" style="border: 1px solid var(--neon-green); background: rgba(159,239,0,0.02); margin-bottom: 3rem;">
-        <h2 class="htb-card-title" style="margin-bottom: 1.2rem; font-size: 0.9rem;">Submit Flag Found</h2>
-        <div style="display: flex; gap: 1rem;">
-          <input type="text" id="flagInput" class="htb-input" placeholder="ACT{flag_here}" style="flex: 1; height: 45px; margin-top: 0;">
-          <button onclick="submitFlag(6)" class="htb-btn" style="width: auto; padding: 0 1.5rem; height: 45px; font-size: 12px; margin-top: 0;">Submit Flag</button>
+      <!-- WARNING -->
+      <div class="warning-banner" id="warningBanner">
+        <span class="warning-icon">⚠️</span>
+        <span class="warning-text">
+          <strong style="color:#fff;">Unvalidated Redirect:</strong> 
+          Server akan mengarahkan browser ke URL mana pun tanpa verifikasi. 
+          Ini bisa digunakan untuk <strong style="color:var(--neon-amber);">phishing</strong> — 
+          korban dikirim ke <code>evil.com</code> padahal mengira menuju ACT LAB.
+        </span>
+      </div>
+
+      <!-- ATTACK PANEL -->
+      <section class="htb-card">
+        <h2 class="htb-card-title">
+          <span>🎯 Craft Redirect URL</span>
+          <span style="font-size:9px;color:#626e84;font-weight:normal;">
+            <span id="attackCounter">0</span> redirects simulated
+          </span>
+        </h2>
+
+        <div style="display:flex;gap:1rem;flex-wrap:wrap;">
+          <div style="flex:1;min-width:250px;">
+            <label style="display:block;color:#626e84;font-size:10px;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">
+              Destination URL
+            </label>
+            <div style="display:flex;gap:0.5rem;">
+              <input type="text" id="targetUrl" class="htb-input" value="https://google.com" oninput="updateFlow()" autocomplete="off" style="flex:1;">
+            </div>
+            <div style="margin-top:0.5rem;font-size:11px;color:#626e84;font-family:'Share Tech Mono',monospace;">
+              GET /api/redirect?url=<span id="livePreview" style="color:var(--neon-amber);">https://google.com</span>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:0.5rem;justify-content:flex-end;">
+            <button onclick="fireRedirect()" class="htb-btn">
+              🚀 Execute Redirect
+            </button>
+            <button onclick="resetRedirect()" class="htb-btn" style="background:transparent;border:1px solid #23282f;color:#626e84;font-size:10px;padding:0.6rem 1.5rem;">
+              ↺ Reset
+            </button>
+          </div>
+        </div>
+
+        <!-- Phishing Simulation -->
+        <div class="phishing-preview" id="phishingPreview">
+          <div class="warning-banner danger" style="margin:0 0 1rem 0;">
+            <span class="warning-icon">🚨</span>
+            <span class="warning-text">
+              <strong style="color:#fff;">Redirect Simulation:</strong> Anda akan diarahkan ke 
+              <span id="phishingDomainDisplay" style="color:var(--neon-amber);font-family:'Share Tech Mono',monospace;">situs eksternal</span>.
+              <br>Dalam skenario nyata, ini adalah halaman phishing yang menyerupai halaman login ACT LAB!
+            </span>
+          </div>
+          <div class="phishing-frame">
+            <div class="phishing-domain">
+              🔗 Redirecting to: <span class="highlight" id="phishingUrl">https://google.com</span>
+            </div>
+            <div style="width:100%;height:4px;background:#1c2126;border-radius:2px;overflow:hidden;margin:1rem 0;">
+              <div id="progressBar" style="width:0%;height:100%;background:var(--neon-red);border-radius:2px;transition:width 0.1s;"></div>
+            </div>
+            <div style="font-size:11px;color:#626e84;">
+              Redirecting in <span id="countdownDisplay" style="color:var(--neon-amber);font-weight:bold;">3</span> seconds...
+            </div>
+            <div style="margin-top:1rem;display:flex;gap:0.5rem;justify-content:center;">
+              <button onclick="cancelRedirect()" class="htb-btn" style="background:var(--neon-cyan);padding:0.5rem 1.5rem;font-size:10px;">
+                ✋ Cancel Redirect
+              </button>
+              <button onclick="proceedRedirect()" class="htb-btn htb-btn-danger" style="padding:0.5rem 1.5rem;font-size:10px;">
+                Proceed Anyway
+              </button>
+            </div>
+          </div>
         </div>
       </section>
 
-      <section class="htb-card">
-        <h2 class="htb-card-title">Craft Target Destination</h2>
-        <form onsubmit="testRedirect(event)">
-          <div class="form-group"><input type="text" id="targetUrl" class="htb-input" value="https://google.com" oninput="updatePreview()" autocomplete="off"></div>
-          <button type="submit" class="htb-btn" style="margin-top: 1.5rem;">Execute Redirection</button>
-        </form>
-        <div class="flow-viz"><div style="font-size: 13px; font-weight: bold; color: var(--neon-cyan);">ACT-LAB.ID</div><div style="font-size: 20px; color: var(--neon-pink);">➔</div><div id="destDisplay" style="font-size: 13px; font-weight: bold; color: var(--neon-yellow);">GOOGLE.COM</div></div>
+      <!-- REQUEST LOG -->
+      <div class="htb-terminal">
+        <div class="htb-terminal-header">
+          <span>📋 REDIRECT LOG</span>
+          <button onclick="clearLog()" style="background:none;border:1px solid #23282f;color:#626e84;padding:2px 10px;border-radius:3px;cursor:pointer;font-size:9px;">CLEAR</button>
+        </div>
+        <div class="htb-terminal-body" id="redirectLog">
+          <div style="color:#626e84;">[SYSTEM] Redirect target analyzer ready. Enter a URL to begin.</div>
+        </div>
+      </div>
+
+      <!-- FLAG SUBMIT -->
+      <section class="htb-card" style="border:1px solid var(--neon-green);background:rgba(159,239,0,0.015);margin-top:1rem;">
+        <h2 class="htb-card-title" style="margin-bottom:1rem;border-bottom:none;color:var(--neon-green);">
+          🚩 SUBMIT FLAG
+        </h2>
+        <div style="display:flex;gap:1rem;">
+          <input type="text" id="flagInput" class="htb-input" placeholder="ACT{flag_here}" style="flex:1;height:48px;">
+          <button onclick="submitFlag(6)" class="htb-btn" style="background:var(--neon-green);padding:0 2rem;height:48px;flex-shrink:0;">
+            Submit
+          </button>
+        </div>
+        <div style="margin-top:1rem;font-size:11px;color:#626e84;text-align:center;">
+          💡 Hint: Coba akses <code style="color:var(--neon-amber);">/api/redirect?url=...</code> langsung dengan curl atau browser — flag ada di response HTML!
+        </div>
       </section>
     </div>
   </main>
@@ -107,18 +513,172 @@
   <div class="toast-container" id="toastContainer"></div>
 
   <script>
+    let redirectTimer = null;
+    let countdown = 3;
+    let redirectCount = 0;
+
     async function submitFlag(id) {
       const flag = document.getElementById('flagInput').value;
       if (!flag) return showToast('Please enter a flag', 'error');
       try {
-        const res = await fetch('/api/challenges/submit', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ challengeId: id, flag: flag }) });
+        const res = await fetch('/api/challenges/submit', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ challengeId: id, flag: flag })
+        });
         const data = await res.json();
-        if (data.correct) { showToast('Correct!', 'success'); } else { showToast(data.message || 'Incorrect', 'error'); }
+        if (data.correct) { showToast('✅ Correct flag!', 'success'); }
+        else { showToast(data.message || '❌ Incorrect flag', 'error'); }
       } catch (err) {}
     }
-    function updatePreview() { const url = document.getElementById('targetUrl').value; document.getElementById('urlPreview').textContent = url; try { const domain = url.startsWith('http') ? new URL(url).hostname : url; document.getElementById('destDisplay').textContent = domain.toUpperCase() || 'INVALID'; } catch (e) { document.getElementById('destDisplay').textContent = 'INVALID'; } }
-    function testRedirect(e) { if (e) e.preventDefault(); const url = document.getElementById('targetUrl').value; setTimeout(() => { window.location.href = `/api/redirect?url=${encodeURIComponent(url)}`; }, 800); }
-    function showToast(msg, type) { const container = document.getElementById('toastContainer'); const toast = document.createElement('div'); toast.className = `toast toast-${type}`; toast.textContent = msg; container.appendChild(toast); setTimeout(() => toast.remove(), 3000); }
+
+    function updateFlow() {
+      const url = document.getElementById('targetUrl').value;
+      document.getElementById('livePreview').textContent = url || '(empty)';
+      
+      try {
+        const domain = url.startsWith('http') ? new URL(url).hostname : (url || 'unknown');
+        document.getElementById('targetDomain').textContent = domain;
+        
+        const icon = document.getElementById('targetIcon');
+        const label = document.getElementById('targetLabel');
+        
+        if (domain.includes('google')) { icon.innerHTML = '<span style="font-size:20px;">🔍</span>'; label.textContent = 'Google'; }
+        else if (domain.includes('facebook')) { icon.innerHTML = '<span style="font-size:20px;">📘</span>'; label.textContent = 'Facebook'; }
+        else if (domain.includes('instagram')) { icon.innerHTML = '<span style="font-size:20px;">📸</span>'; label.textContent = 'Instagram'; }
+        else if (domain.includes('github')) { icon.innerHTML = '<span style="font-size:20px;">🐙</span>'; label.textContent = 'GitHub'; }
+        else if (domain.includes('evil') || domain.includes('hack') || domain.includes('phish')) {
+          icon.innerHTML = '<span style="font-size:20px;">☠️</span>';
+          label.textContent = '⚠️ ATTACKER SITE';
+          icon.style.borderColor = 'var(--neon-red)';
+          icon.style.background = 'rgba(255,0,77,0.1)';
+        } else {
+          icon.innerHTML = '<span style="font-size:20px;">🌐</span>';
+          label.textContent = 'External Target';
+          icon.style.borderColor = 'var(--neon-amber)';
+          icon.style.background = 'rgba(255,165,0,0.1)';
+        }
+      } catch (e) {
+        document.getElementById('targetDomain').textContent = 'invalid';
+      }
+    }
+
+    function fireRedirect() {
+      const url = document.getElementById('targetUrl').value;
+      if (!url) return showToast('Please enter a URL', 'error');
+
+      const preview = document.getElementById('phishingPreview');
+      preview.classList.add('visible');
+      document.getElementById('phishingUrl').textContent = url;
+      
+      try {
+        const domain = url.startsWith('http') ? new URL(url).hostname : url;
+        document.getElementById('phishingDomainDisplay').textContent = domain;
+      } catch(e) {
+        document.getElementById('phishingDomainDisplay').textContent = url;
+      }
+
+      document.getElementById('warningBanner').className = 'warning-banner danger';
+      document.getElementById('warningBanner').innerHTML = `
+        <span class="warning-icon">🚨</span>
+        <span class="warning-text">
+          <strong style="color:#fff;">Redirect in progress!</strong> 
+          User is being redirected to <code style="color:var(--neon-amber);">${url}</code>.
+          This is how <strong style="color:var(--neon-red);">phishing attacks</strong> work — 
+          the user thinks they're going to ACT LAB but ends up on an attacker-controlled site!
+        </span>
+      `;
+
+      countdown = 3;
+      document.getElementById('countdownDisplay').textContent = countdown;
+      const progressBar = document.getElementById('progressBar');
+      progressBar.style.width = '0%';
+
+      if (redirectTimer) clearInterval(redirectTimer);
+      redirectTimer = setInterval(() => {
+        countdown--;
+        document.getElementById('countdownDisplay').textContent = countdown;
+        progressBar.style.width = ((3 - countdown) / 3 * 100) + '%';
+        
+        if (countdown <= 0) {
+          clearInterval(redirectTimer);
+          redirectTimer = null;
+          proceedRedirect();
+        }
+      }, 1000);
+
+      addLog(url, 'LAUNCHED');
+    }
+
+    function proceedRedirect() {
+      const url = document.getElementById('targetUrl').value;
+      if (redirectTimer) { clearInterval(redirectTimer); redirectTimer = null; }
+      
+      redirectCount++;
+      document.getElementById('attackCounter').textContent = redirectCount;
+      addLog(url, 'REDIRECT');
+      
+      // Actually redirect
+      window.location.href = `/api/redirect?url=${encodeURIComponent(url)}`;
+    }
+
+    function cancelRedirect() {
+      if (redirectTimer) { clearInterval(redirectTimer); redirectTimer = null; }
+      document.getElementById('phishingPreview').classList.remove('visible');
+      document.getElementById('warningBanner').className = 'warning-banner';
+      document.getElementById('warningBanner').innerHTML = `
+        <span class="warning-icon">⚠️</span>
+        <span class="warning-text">
+          <strong style="color:#fff;">Redirect cancelled.</strong> 
+          Dalam skenario nyata, user sadar akan bahaya phishing tepat waktu.
+        </span>
+      `;
+      addLog(document.getElementById('targetUrl').value, 'CANCELLED');
+    }
+
+    function resetRedirect() {
+      document.getElementById('targetUrl').value = 'https://google.com';
+      document.getElementById('phishingPreview').classList.remove('visible');
+      document.getElementById('warningBanner').className = 'warning-banner';
+      document.getElementById('warningBanner').innerHTML = `
+        <span class="warning-icon">⚠️</span>
+        <span class="warning-text">
+          <strong style="color:#fff;">Unvalidated Redirect:</strong> 
+          Server akan mengarahkan browser ke URL mana pun tanpa verifikasi. 
+          Ini bisa digunakan untuk <strong style="color:var(--neon-amber);">phishing</strong> — 
+          korban dikirim ke <code>evil.com</code> padahal mengira menuju ACT LAB.
+        </span>
+      `;
+      updateFlow();
+    }
+
+    function addLog(url, status) {
+      const log = document.getElementById('redirectLog');
+      const time = new Date().toLocaleTimeString();
+      const icons = { LAUNCHED: '🚀', REDIRECT: '➡️', CANCELLED: '✋' };
+      const colors = { LAUNCHED: 'var(--neon-amber)', REDIRECT: 'var(--neon-red)', CANCELLED: '#626e84' };
+      
+      log.innerHTML = `<div style="margin-bottom:4px;color:${colors[status] || '#626e84'};">
+        <span style="color:#626e84;">[${time}]</span>
+        ${icons[status] || '•'} 
+        <span style="font-weight:bold;">[${status}]</span>
+        <span style="color:#fff;">${url}</span>
+      </div>` + log.innerHTML;
+    }
+
+    function clearLog() {
+      document.getElementById('redirectLog').innerHTML = '<div style="color:#626e84;">[SYSTEM] Log cleared.</div>';
+    }
+
+    function showToast(msg, type) {
+      const container = document.getElementById('toastContainer');
+      container.innerHTML = '';
+      const toast = document.createElement('div');
+      toast.className = `toast toast-${type}`;
+      toast.textContent = msg;
+      container.appendChild(toast);
+      setTimeout(() => toast.remove(), 3000);
+    }
+
     async function initStatus() {
       try {
         const res = await fetch('/api/auth/status');
@@ -128,7 +688,13 @@
         let navHtml = `<span class="nav-user-badge">Status: ${u.username} (${u.score} PTS)</span>`;
         if (isAdmin) { navHtml = `<a href="/admin" class="nav-user-badge" style="border-color:var(--neon-pink); color:var(--neon-pink); text-decoration:none; animation: pulse 1s infinite;">⚠️ ADMIN_ACCESS_GRANTED</a> ` + navHtml; }
         document.getElementById('navUser').innerHTML = navHtml;
-        if (typeof updatePreview === 'function') updatePreview();
+        
+        const urlParams = new URLSearchParams(window.location.search);
+        const prefill = urlParams.get('url');
+        if (prefill) {
+          document.getElementById('targetUrl').value = prefill;
+        }
+        updateFlow();
       } catch (err) {}
     }
     initStatus();

@@ -47,6 +47,23 @@ CREATE TABLE IF NOT EXISTS guestbook_entries (
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Tabel Secret Vault (untuk Blind SQL Injection - Boolean-based)
+CREATE TABLE IF NOT EXISTS secret_vault (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    secret_key VARCHAR(100) NOT NULL,
+    secret_value TEXT NOT NULL,
+    classification VARCHAR(50) DEFAULT 'TOP_SECRET',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Seed Secret Vault (Blind SQLi target)
+INSERT INTO secret_vault (secret_key, secret_value, classification) VALUES
+('flag_blind_sqli', 'ACT{bl1nd_sQl_b00l34n}', 'TOP_SECRET'),
+('admin_backup_password', 's3cur3_b4ckup_p4ss_2024', 'CLASSIFIED'),
+('api_internal_key', 'sk-actlab-internal-v1', 'RESTRICTED'),
+('db_connection_string', 'sqlite:///actlab-prod.db', 'TOP_SECRET'),
+('encryption_salt', 'a1b2c3d4e5f6g7h8', 'CLASSIFIED');
+
 -- Tabel Activity Log
 CREATE TABLE IF NOT EXISTS activity_log (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -87,13 +104,13 @@ INSERT INTO users (username, password, email, role, avatar, bio, score) VALUES
 ('frank', 'frankpass', 'frank@mail.com', 'user', '/css/style.css', 'Sysadmin', 0),
 ('grace', 'gracepass', 'grace@mail.com', 'user', '/css/style.css', 'Forensic Analyst', 0),
 ('heidi', 'heidipass', 'heidi@mail.com', 'user', '/css/style.css', 'Malware Researcher', 0),
-('secret_agent', 'FLAG{SQL_MASTER_2024}', 'secret@actlab.id', 'user', '/css/style.css', 'Hidden Agent', 0);
+('secret_agent', 'ACT{un10n_s3l3ct_3xtr4ct}', 'secret@actlab.id', 'user', '/css/style.css', 'Hidden Agent — Extract my password via UNION!', 0);
 
 -- Challenges
 INSERT INTO challenges (title, description, category, difficulty, flag, hint, points, endpoint) VALUES
 ('SQL Injection - Authentication Bypass',
 'Seerang form login menggunakan SQL Injection untuk bypass autentikasi. Endpoint: POST /api/auth/login. Temukan cara login tanpa mengetahui password yang benar. Flag tersembunyi di database.',
-'SQL Injection', 'Easy', 'ACT{sQl_1nj3ct10n_byp4ss}', 'Coba gunakan tanda petik tunggal (') di field username untuk melihat respons error.', 100, '/api/auth/login'),
+'SQL Injection', 'Easy', 'ACT{sQl_1nj3ct10n_byp4ss}', 'Coba gunakan tanda petik tunggal ('') di field username untuk melihat respons error.', 100, '/api/auth/login'),
 
 ('SQL Injection - Data Extraction',
 'Gunakan UNION-based SQL Injection untuk mengekstrak data dari tabel users. Endpoint: GET /api/search?q=. Temukan username dan password user "secret_agent".',

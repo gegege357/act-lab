@@ -101,6 +101,15 @@
         </div>
       </div>
 
+      <!-- SUBMIT FLAG SECTION -->
+      <section class="htb-card" style="border: 1px solid var(--neon-cyan); background: rgba(0,212,255,0.02);">
+        <h2 class="htb-card-title" style="margin-bottom: 1.2rem; font-size: 0.9rem;">Submit Flag Found</h2>
+        <div style="display: flex; gap: 1rem;">
+          <input type="text" id="flagInput" class="htb-input" placeholder="ACT{flag_here}" style="flex: 1; margin-top: 0; height: 45px; font-size: 14px;">
+          <button onclick="submitFlag(1)" class="htb-btn" style="width: auto; padding: 0 1.5rem; height: 45px; font-size: 12px;">Submit Flag</button>
+        </div>
+      </section>
+
       <!-- TERMINAL -->
       <div class="htb-terminal" style="margin-bottom: 3rem;">
         <div class="htb-terminal-header">
@@ -111,15 +120,6 @@
           <div style="color: #626e84;">Waiting for incoming authentication request...</div>
         </div>
       </div>
-
-      <!-- SUBMIT FLAG SECTION (MOVED UP) -->
-      <section class="htb-card" style="border: 1px solid var(--neon-cyan); background: rgba(0,212,255,0.02);">
-        <h2 class="htb-card-title" style="margin-bottom: 1.5rem; font-size: 0.9rem;">Submit Flag Found</h2>
-        <div style="display: flex; gap: 1rem;">
-          <input type="text" id="flagInput" class="htb-input" placeholder="ACT{flag_here}" style="flex: 1; margin-top: 0; height: 45px; font-size: 14px;">
-          <button onclick="submitFlag(1)" class="htb-btn" style="width: auto; padding: 0 1.5rem; height: 45px; font-size: 12px;">Submit Flag</button>
-        </div>
-      </section>
     </div>
   </main>
 
@@ -151,8 +151,8 @@
         const resDiv = document.getElementById('loginResult');
         if (data.success) {
           addLog('SUCCESS', `Root Access Granted!`);
-          resDiv.innerHTML = `<div style="border: 1px solid var(--neon-green); background: rgba(159,239,0,0.05); padding: 1.5rem; border-radius: 4px; text-align: center;"><div style="color: var(--neon-green); font-weight: bold; margin-bottom: 0.5rem; letter-spacing: 2px; font-size: 0.8rem;">[ MACHINE COMPROMISED ]</div><div style="font-family: 'Share Tech Mono'; color: #fff; font-size: 1.2rem; font-weight: bold;">${data.flag}</div></div>`;
-          showToast('Machine Pwned!', 'success');
+          resDiv.innerHTML = `<div style="border: 1px solid var(--neon-green); background: rgba(159,239,0,0.05); padding: 1.5rem; border-radius: 4px; text-align: center;"><div style="color: var(--neon-green); font-weight: bold; margin-bottom: 0.5rem; letter-spacing: 2px; font-size: 0.8rem;">[ MACHINE COMPROMISED ]</div><div style="font-family: 'Share Tech Mono'; color: var(--neon-yellow); font-size: 1.5rem; font-weight: bold; letter-spacing: 2px; word-break: break-all;">${data.flag ? (data.flag.includes('ACT{') ? `🚩 ${data.flag}` : data.flag) : 'Flag found!'}</div></div>`;
+          showToast('Machine Pwned! Flag captured!', 'success');
         } else {
           addLog('DENIED', `Invalid authentication payload.`);
           resDiv.innerHTML = `<div style="text-align: center; color: var(--neon-pink); font-size: 12px; font-weight: bold; letter-spacing: 1px;">AUTHENTICATION FAILED :: INVALID CREDENTIALS</div>`;

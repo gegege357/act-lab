@@ -3,118 +3,346 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PrivEsc Lab - ACT LAB</title>
+  <title>Privilege Escalation - ACT LAB (HTB Edition)</title>
   <link rel="stylesheet" href="/css/style.css">
+  <style>
+    :root { --neon-purple: #b300ff; --neon-amber: #ffa500; }
+    * { box-sizing: border-box; }
+    body { background: #0b0e11; }
+    .htb-container { max-width: 1000px; margin: 4rem auto; padding: 0 1.5rem; }
+
+    .machine-header { border-left: 4px solid var(--neon-purple); padding-left: 1.5rem; margin-bottom: 3rem; position: relative; }
+    .machine-header::after { content: ''; position: absolute; bottom: -1rem; left: 1.5rem; right: 0; height: 1px; background: linear-gradient(90deg, var(--neon-purple), transparent); }
+    .machine-title { font-family: 'Orbitron', sans-serif; font-size: 2.2rem; color: #fff; letter-spacing: 2px; text-shadow: 0 0 40px rgba(179,0,255,0.15); }
+    .machine-sub { color: var(--text-secondary); font-size: 0.85rem; margin-top: 0.4rem; letter-spacing: 3px; text-transform: uppercase; }
+
+    .htb-card { background: #15191d; border: 1px solid #23282f; border-radius: 6px; padding: 2rem; margin-bottom: 2rem; transition: all 0.3s; }
+    .htb-card-title { font-size: 0.85rem; color: var(--neon-purple); font-weight: bold; margin-bottom: 1.5rem; text-transform: uppercase; letter-spacing: 2px; border-bottom: 1px solid #23282f; padding-bottom: 0.75rem; display: flex; align-items: center; justify-content: space-between; }
+    .htb-card-title.success { color: var(--neon-green); }
+
+    .htb-btn { background: var(--neon-purple); color: #000; font-weight: bold; padding: 1rem 2rem; border: none; border-radius: 6px; cursor: pointer; text-transform: uppercase; letter-spacing: 2px; font-size: 0.8rem; transition: all 0.25s; display: inline-flex; align-items: center; gap: 0.5rem; }
+    .htb-btn:hover { opacity: 0.85; transform: translateY(-2px); box-shadow: 0 6px 20px rgba(179,0,255,0.2); }
+    .htb-btn:active { transform: translateY(0); }
+    .htb-btn-danger { background: var(--neon-pink); }
+    .htb-btn-success { background: var(--neon-green); }
+
+    .htb-terminal { background: #050505; border: 1px solid #1c2126; border-radius: 6px; font-family: 'Share Tech Mono', monospace; margin-bottom: 2rem; overflow: hidden; }
+    .htb-terminal-header { background: #15191d; padding: 8px 14px; color: #626e84; font-size: 10px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1c2126; }
+    .htb-terminal-body { padding: 1.2rem; line-height: 1.7; font-size: 12px; max-height: 250px; overflow-y: auto; }
+
+    /* Role Toggle Switch */
+    .role-toggle { display: flex; align-items: center; gap: 1rem; padding: 1.5rem; background: #0b0e11; border-radius: 8px; border: 1px solid #23282f; }
+    .role-badge { padding: 8px 20px; border-radius: 6px; font-weight: bold; font-size: 14px; letter-spacing: 2px; text-transform: uppercase; transition: all 0.3s; }
+    .role-badge.user { background: rgba(0,212,255,0.1); color: var(--neon-cyan); border: 2px solid var(--neon-cyan); }
+    .role-badge.admin { background: rgba(179,0,255,0.1); color: var(--neon-purple); border: 2px solid var(--neon-purple); box-shadow: 0 0 20px rgba(179,0,255,0.2); animation: pulse 2s infinite; }
+
+    .toggle-switch { position: relative; width: 60px; height: 30px; cursor: pointer; }
+    .toggle-track { width: 100%; height: 100%; background: #23282f; border-radius: 15px; transition: all 0.3s; border: 2px solid #333; }
+    .toggle-track.active { background: rgba(179,0,255,0.2); border-color: var(--neon-purple); }
+    .toggle-thumb { position: absolute; top: 3px; left: 3px; width: 24px; height: 24px; background: #fff; border-radius: 50%; transition: all 0.3s; }
+    .toggle-track.active .toggle-thumb { left: 33px; background: var(--neon-purple); }
+
+    .role-arrow { font-size: 24px; color: #626e84; animation: arrowPulse 1.5s ease-in-out infinite; }
+    @keyframes arrowPulse { 0%,100% { opacity: 0.3; } 50% { opacity: 1; } }
+
+    /* Cookie Inspector */
+    .cookie-table { width: 100%; border-collapse: collapse; font-family: 'Share Tech Mono', monospace; font-size: 12px; }
+    .cookie-table th { text-align: left; padding: 10px 12px; color: #626e84; font-size: 10px; text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid #23282f; }
+    .cookie-table td { padding: 10px 12px; border-bottom: 1px solid #1c2126; color: #fff; }
+    .cookie-table tr.role-row td { background: rgba(179,0,255,0.05); border-left: 3px solid var(--neon-purple); }
+    .cookie-table .cookie-name { color: #626e84; }
+    .cookie-table .cookie-val { color: var(--neon-yellow); }
+
+    /* Admin Panel */
+    .admin-panel { min-height: 300px; display: flex; align-items: center; justify-content: center; }
+    .admin-panel .locked { text-align: center; }
+    .admin-panel .locked .icon { font-size: 48px; margin-bottom: 1rem; }
+    .admin-panel .locked .label { color: var(--neon-pink); font-size: 14px; font-weight: bold; letter-spacing: 2px; margin-bottom: 0.5rem; }
+    .admin-panel .locked .hint { color: #626e84; font-size: 11px; }
+
+    .admin-panel .unlocked { width: 100%; text-align: center; }
+    .admin-panel .unlocked .flag-box {
+      border: 2px solid var(--neon-purple); background: rgba(179,0,255,0.08);
+      padding: 2rem; border-radius: 8px; animation: glowPulse 2s infinite;
+    }
+    @keyframes glowPulse { 0%,100% { box-shadow: 0 0 20px rgba(179,0,255,0.1); } 50% { box-shadow: 0 0 40px rgba(179,0,255,0.2); } }
+    .admin-panel .unlocked .flag-text {
+      font-family: 'Share Tech Mono', monospace; color: var(--neon-yellow);
+      font-size: 1.6rem; font-weight: bold; letter-spacing: 2px; margin-top: 0.5rem;
+    }
+
+    .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1.5rem; }
+    .stat-card { background: #0b0e11; border: 1px solid #1c2126; border-radius: 4px; padding: 1rem; text-align: center; }
+    .stat-card .stat-num { font-size: 2rem; font-weight: bold; color: #fff; font-family: 'Share Tech Mono', monospace; }
+    .stat-card .stat-label { font-size: 10px; color: #626e84; text-transform: uppercase; letter-spacing: 1px; margin-top: 4px; }
+
+    .request-row { display: flex; justify-content: space-between; padding: 8px 12px; border-bottom: 1px solid #1c2126; font-size: 11px; }
+    .request-row:last-child { border-bottom: none; }
+    .request-label { color: #626e84; }
+    .request-value { color: #fff; word-break: break-all; max-width: 65%; text-align: right; }
+  </style>
 </head>
 <body>
-  <div class="cyber-bg"></div>
-
   <nav class="navbar">
     <a href="/" class="nav-logo">
-      <div class="nav-logo-icon">ACT</div>
+      <img src="/img/act.png" alt="Logo" style="height:32px;border-radius:4px;margin-right:10px;" onerror="this.style.display='none'">
       <span class="nav-logo-text">ACT LAB</span>
     </a>
-    <ul class="nav-links" id="navLinks">
+    <ul class="nav-links">
       <li><a href="/dashboard">Dashboard</a></li>
       <li><a href="/challenges">Missions</a></li>
       <li><a href="/profile">Profile</a></li>
     </ul>
-    <div class="nav-user" id="navUser">
-      <span class="nav-user-badge">Connecting...</span>
-    </div>
+    <div class="nav-user" id="navUser"><span class="nav-user-badge">Connecting...</span></div>
   </nav>
 
   <main class="main-content">
-    <div class="container" style="max-width: 900px;">
-      <div class="page-header" style="text-align:center; margin-bottom: 2rem;">
-        <h1 style="color: var(--neon-purple);">PRIVILEGE ESCALATION</h1>
-        <p class="text-mono">Elevate session privileges to access admin data</p>
+    <div class="htb-container">
+      <header class="machine-header">
+        <h1 class="machine-title">◈ PRIVILEGE ESCALATION :: COOKIE POISONING</h1>
+        <p class="machine-sub">PHASE: SESSION MANIPULATION &bull; ATTACK VECTOR: UNSIGNED COOKIE TAMPERING</p>
+      </header>
+
+      <!-- TARGET ANALYSIS -->
+      <div class="htb-terminal" style="border-color:var(--neon-purple);">
+        <div class="htb-terminal-header" style="background:rgba(179,0,255,0.08);">
+          <span style="color:var(--neon-purple);font-weight:bold;">◈ TARGET_RECON</span>
+          <span style="color:#626e84;">CWE-287: Improper Authentication</span>
+        </div>
+        <div class="htb-terminal-body" style="max-height:none;">
+          <div class="request-row"><span class="request-label">ENDPOINT</span><span class="request-value"><code style="color:var(--neon-cyan);">GET /api/admin/stats</code></span></div>
+          <div class="request-row"><span class="request-label">WEAKNESS</span><span class="request-value" style="color:var(--neon-pink);font-size:10px;">Server membaca <code>role</code> cookie tanpa verifikasi server-side!<br>Tidak ada session, JWT signature, atau database lookup.</span></div>
+          <div class="request-row" style="border-bottom:none;"><span class="request-label">IMPACT</span><span class="request-value" style="color:var(--neon-amber);font-size:10px;">Akses penuh ke admin panel &bull; Data user &bull; Stats server &bull; Re-seed database</span></div>
+        </div>
       </div>
 
-      <div class="dashboard-grid" style="grid-template-columns: 1fr 1fr; gap: 1.5rem;">
-        <!-- CONTENT -->
-        <div id="adminContent" class="card" style="min-height: 250px; padding: 1.5rem; border-color: rgba(255,255,255,0.05); display: flex; align-items: center; justify-content: center; text-align: center;">
-          <div class="spinner"></div>
-        </div>
+      <!-- Role Toggle -->
+      <section class="htb-card">
+        <h2 class="htb-card-title">
+          <span>🎭 Role Switcher</span>
+          <button onclick="loadPanel()" class="htb-btn" style="width:auto;padding:4px 12px;font-size:9px;background:transparent;border:1px solid var(--neon-purple);color:var(--neon-purple);">REFRESH</button>
+        </h2>
 
-        <!-- ANALYSIS -->
-        <div class="flex flex-column gap-3">
-          <div class="card" style="padding: 1rem; background: #05050d;">
-            <div class="flex justify-between items-center mb-2">
-              <span class="text-xs text-dim uppercase">Cookies</span>
-              <button onclick="loadAdmin()" class="text-xs text-cyan" style="background:none; border:none; cursor:pointer; text-decoration:underline;">REFRESH</button>
+        <div class="role-toggle">
+          <div class="role-badge user" id="roleBadge">👤 User</div>
+          <div class="role-arrow">➡</div>
+          <div class="toggle-switch" id="toggleSwitch" onclick="toggleRole()">
+            <div class="toggle-track" id="toggleTrack">
+              <div class="toggle-thumb"></div>
             </div>
-            <div id="cookieList" class="flex flex-column gap-2"></div>
           </div>
+          <div class="role-arrow">➡</div>
+          <div class="role-badge" id="targetRoleBadge">🔐 Admin</div>
+        </div>
 
-          <div class="card" style="padding: 1rem;">
-             <p class="text-secondary text-xs">The server checks the <code>role</code> cookie. If it's not <code>admin</code>, access is denied. Try to poison the cookie.</p>
+        <div style="margin-top:1rem;text-align:center;font-size:11px;color:#626e84;">
+          Klik toggle untuk mengubah role cookie — <span id="toggleInstruction" style="color:var(--neon-yellow);">set ke admin untuk akses panel!</span>
+        </div>
+      </section>
+
+      <!-- Cookie Inspector -->
+      <section class="htb-card">
+        <h2 class="htb-card-title">
+          <span>🍪 Session Cookie Inspector</span>
+          <button onclick="loadPanel()" class="htb-btn" style="width:auto;padding:4px 12px;font-size:9px;background:transparent;border:1px solid var(--neon-purple);color:var(--neon-purple);">REFRESH</button>
+        </h2>
+        <table class="cookie-table" id="cookieTable">
+          <thead><tr><th>Name</th><th>Value</th></tr></thead>
+          <tbody id="cookieBody"><tr><td colspan="2" style="color:#626e84;text-align:center;">Loading...</td></tr></tbody>
+        </table>
+      </section>
+
+      <!-- Admin Panel -->
+      <section class="htb-card" style="border-color:var(--neon-purple);background:rgba(179,0,255,0.01);">
+        <h2 class="htb-card-title" id="panelTitle">
+          <span>🏴 Admin Access Panel</span>
+          <span id="panelBadge" style="font-size:9px;color:#626e84;font-weight:normal;">🔒 Terkunci</span>
+        </h2>
+        <div class="admin-panel" id="adminPanel">
+          <div class="locked">
+            <div class="icon">🔒</div>
+            <div class="label">ACCESS DENIED</div>
+            <div class="hint">Gunakan toggle di atas untuk set <code style="color:var(--neon-yellow);">role=admin</code></div>
           </div>
         </div>
-      </div>
+      </section>
+
+      <!-- Exploit Strategy -->
+      <section class="htb-card" style="border-color:rgba(179,0,255,0.15);background:rgba(179,0,255,0.02);">
+        <h2 class="htb-card-title" style="font-size:0.85rem;">📖 Exploit Strategy</h2>
+        <div style="font-size:12px;color:#626e84;line-height:1.8;">
+          <p style="margin-bottom:0.8rem;">
+            Server membaca <code style="color:var(--neon-yellow);">role</code> langsung dari cookie 
+            tanpa validasi. Cukup ubah <code style="color:#fff;">role=user</code> → 
+            <code style="color:var(--neon-purple);">role=admin</code> untuk mendapat akses penuh!
+          </p>
+          <div style="background:rgba(0,0,0,0.3);padding:1rem;border-radius:4px;font-family:'Share Tech Mono',monospace;font-size:11px;">
+            <div style="color:var(--neon-cyan);margin-bottom:4px;">// Via browser console (F12):</div>
+            <div style="color:var(--neon-yellow);">document.cookie = "role=admin; path=/";</div>
+            <div style="color:#626e84;margin-top:4px;">// Atau klik toggle di atas! 👆</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- FLAG SUBMIT -->
+      <section class="htb-card" style="border:1px solid var(--neon-green);background:rgba(159,239,0,0.015);">
+        <h2 class="htb-card-title" style="margin-bottom:1rem;color:var(--neon-green);">🚩 SUBMIT FLAG</h2>
+        <div style="display:flex;gap:1rem;">
+          <input type="text" id="flagInput" class="htb-input" placeholder="ACT{flag_here}" style="flex:1;height:48px;">
+          <button onclick="submitFlag(9)" class="htb-btn htb-btn-success" style="padding:0 2rem;height:48px;flex-shrink:0;">Submit</button>
+        </div>
+      </section>
     </div>
   </main>
 
+  <div class="toast-container" id="toastContainer"></div>
+
   <script>
+    function getCookie(name) {
+      const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+      return match ? decodeURIComponent(match[2]) : null;
+    }
+
+    function setCookie(name, value) {
+      document.cookie = `${name}=${value}; path=/`;
+    }
+
+    function toggleRole() {
+      const current = getCookie('role') || 'user';
+      const newRole = current === 'admin' ? 'user' : 'admin';
+      setCookie('role', newRole);
+      showToast(`Role changed to: ${newRole}`, newRole === 'admin' ? 'success' : 'error');
+      loadPanel();
+    }
+
     function updateCookieInspector() {
-      const list = document.getElementById('cookieList');
-      const cookies = document.cookie.split(';');
-      if (!cookies[0]) {
-        list.innerHTML = '<div class="text-xs text-dim">No cookies</div>';
+      const body = document.getElementById('cookieBody');
+      const cookies = document.cookie.split(';').filter(c => c.trim());
+      if (cookies.length === 0) {
+        body.innerHTML = '<tr><td colspan="2" style="color:#626e84;text-align:center;">No cookies found</td></tr>';
         return;
       }
-      list.innerHTML = cookies.map(c => {
-        const [n, v] = c.split('=').map(s => s.trim());
-        const isRole = n === 'role';
-        return `<div class="flex justify-between p-2 rounded bg-black text-xs" style="border: 1px solid ${isRole ? 'var(--neon-purple)' : '#222'}">
-          <span class="${isRole ? 'text-purple' : 'text-dim'}">${n}</span>
-          <span class="text-mono">${v}</span>
-        </div>`;
+      body.innerHTML = cookies.map(c => {
+        const [n, ...v] = c.split('=');
+        const name = n.trim();
+        const value = decodeURIComponent(v.join('=').trim());
+        const isRole = name === 'role';
+        return `<tr class="${isRole ? 'role-row' : ''}">
+          <td class="cookie-name">${name}</td>
+          <td class="cookie-val">${value}</td>
+        </tr>`;
       }).join('');
     }
 
-    async function loadAdmin() {
+    function updateRoleUI(currentRole) {
+      const role = currentRole || getCookie('role') || 'user';
+      const badge = document.getElementById('roleBadge');
+      const target = document.getElementById('targetRoleBadge');
+      const track = document.getElementById('toggleTrack');
+      const instruction = document.getElementById('toggleInstruction');
+
+      if (role === 'admin') {
+        badge.className = 'role-badge admin';
+        badge.innerHTML = '🏴 Admin';
+        target.className = 'role-badge user';
+        target.innerHTML = '👤 User';
+        track.className = 'toggle-track active';
+        instruction.textContent = '✅ Admin access granted!';
+        instruction.style.color = 'var(--neon-green)';
+      } else {
+        badge.className = 'role-badge user';
+        badge.innerHTML = '👤 User';
+        target.className = 'role-badge admin';
+        target.innerHTML = '🏴 Admin';
+        track.className = 'toggle-track';
+        instruction.textContent = 'Klik untuk set role=admin';
+        instruction.style.color = 'var(--neon-yellow)';
+      }
+    }
+
+    async function loadPanel() {
       updateCookieInspector();
-      const content = document.getElementById('adminContent');
-      content.innerHTML = '<div class="spinner"></div>';
+      const role = getCookie('role') || 'user';
+      updateRoleUI(role);
+
+      const panel = document.getElementById('adminPanel');
+      const title = document.getElementById('panelTitle');
+      const badge = document.getElementById('panelBadge');
+
+      panel.innerHTML = '<div style="text-align:center;"><div class="spinner" style="margin:2rem auto;"></div></div>';
+
       try {
         const res = await fetch('/api/admin/stats');
         const data = await res.json();
+
         if (data.success) {
-          content.innerHTML = `
-            <div style="width:100%">
-              <div class="text-xs text-green font-bold mb-2">SUCCESSFULLY ESCALATED</div>
-              <div class="p-3 bg-green/10 border border-green rounded">
-                <div class="text-xs text-dim mb-1">FLAG:</div>
-                <div class="text-sm text-yellow font-bold">ACT{pr1v1l3g3_3sc4l4t10n_succ3ss}</div>
+          badge.textContent = '🏴 Admin Access';
+          title.querySelector('span').textContent = '🏴 Admin Access Panel';
+          const stats = data.stats || {};
+          panel.innerHTML = `
+            <div class="unlocked">
+              <div class="flag-box">
+                <div style="font-size:40px;margin-bottom:0.5rem;">🏴</div>
+                <div style="color:var(--neon-purple);font-weight:bold;font-size:13px;letter-spacing:3px;text-transform:uppercase;">
+                  Privilege Escalation Successful
+                </div>
+                <div class="flag-text">ACT{pr1v1l3g3_3sc4l4t10n_succ3ss}</div>
+              </div>
+              <div class="stats-grid">
+                <div class="stat-card"><div class="stat-num">${stats.totalUsers || '?'}</div><div class="stat-label">Total Users</div></div>
+                <div class="stat-card"><div class="stat-num">${stats.totalChallenges || '?'}</div><div class="stat-label">Challenges</div></div>
+                <div class="stat-card"><div class="stat-num">${stats.totalSolved || '?'}</div><div class="stat-label">Solved</div></div>
+                <div class="stat-card"><div class="stat-num">${stats.totalGuestbook || '?'}</div><div class="stat-label">Guestbook Entries</div></div>
               </div>
             </div>
           `;
+          showToast('🏴 Admin access granted!', 'success');
         } else {
-          content.innerHTML = `<div><div style="font-size:32px; margin-bottom:1rem;">🔒</div><div class="text-xs text-dim">ACCESS DENIED<br>Required: role=admin</div></div>`;
+          badge.textContent = '🔒 Terkunci';
+          title.querySelector('span').textContent = '🏴 Admin Access Panel';
+          panel.innerHTML = `
+            <div class="locked">
+              <div class="icon">🔒</div>
+              <div class="label">ACCESS DENIED</div>
+              <div class="hint">Gunakan toggle untuk set <code style="color:var(--neon-yellow);">role=admin</code></div>
+            </div>
+          `;
         }
-      } catch (err) {}
+      } catch(err) {
+        panel.innerHTML = '<div style="color:var(--neon-pink);text-align:center;">Connection Error</div>';
+      }
     }
 
-    async function initAuth() {
+    async function submitFlag(id) {
+      const flag = document.getElementById('flagInput').value;
+      if (!flag) return showToast('Please enter a flag', 'error');
       try {
-        let res = await fetch('/api/auth/status');
-        let data = await res.json();
-        if (!data.authenticated) {
-          const autoRes = await fetch('/api/auth/auto-login', { method: 'POST' });
-          data = await autoRes.json();
-        }
-        if (data.success) {
-          document.getElementById('navUser').innerHTML = `
-            <span class="nav-user-badge">${data.user.username}</span>
-            <button class="nav-logout" onclick="logout()">Logout</button>
-          `;
-          loadAdmin();
-        }
-      } catch (err) {}
+        const res = await fetch('/api/challenges/submit', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({challengeId:id, flag:flag}) });
+        const data = await res.json();
+        if (data.correct) { showToast('✅ Correct flag!', 'success'); } else { showToast(data.message||'❌ Incorrect', 'error'); }
+      } catch(err) {}
     }
-    initAuth();
-    function logout() { fetch('/api/auth/logout', { method: 'POST' }).then(() => window.location.href = '/'); }
+
+    function showToast(msg, type) {
+      const container = document.getElementById('toastContainer');
+      container.innerHTML = '';
+      const toast = document.createElement('div'); toast.className = `toast toast-${type}`; toast.textContent = msg;
+      container.appendChild(toast); setTimeout(() => toast.remove(), 3000);
+    }
+
+    async function initStatus() {
+      try {
+        const res = await fetch('/api/auth/status');
+        const data = await res.json();
+        const u = data.user || { username:'Guest', score:0, role:'user' };
+        const isAdmin = u.role==='admin' || document.cookie.includes('role=admin');
+        let navHtml = `<span class="nav-user-badge">Status: ${u.username} (${u.score} PTS)</span>`;
+        if (isAdmin) { navHtml = `<a href="/admin" class="nav-user-badge" style="border-color:var(--neon-pink);color:var(--neon-pink);text-decoration:none;animation:pulse 1s infinite;">⚠️ ADMIN_ACCESS_GRANTED</a> ` + navHtml; }
+        document.getElementById('navUser').innerHTML = navHtml;
+        loadPanel();
+      } catch(err) { loadPanel(); }
+    }
+    initStatus();
   </script>
 </body>
 </html>

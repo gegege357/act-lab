@@ -6,55 +6,74 @@
   <title>Stored XSS - ACT LAB (HTB Edition)</title>
   <link rel="stylesheet" href="/css/style.css">
   <style>
+    * { box-sizing: border-box; }
     body { background: #0b0e11; }
-    .htb-container { max-width: 1000px; margin: 4rem auto; display: grid; grid-template-columns: 1fr 1.5fr; gap: 2rem; }
-    .machine-header { border-left: 4px solid var(--neon-cyan); padding-left: 1.5rem; margin-bottom: 3rem; grid-column: span 2; }
-    .machine-title { font-family: 'Orbitron', sans-serif; font-size: 2rem; color: #fff; }
-    
-    .htb-card { background: #15191d; border: 1px solid #23282f; border-radius: 4px; padding: 2rem; }
-    .htb-card-title { font-size: 1rem; color: var(--neon-cyan); font-weight: bold; margin-bottom: 1.5rem; text-transform: uppercase; letter-spacing: 2px; border-bottom: 1px solid #23282f; padding-bottom: 0.75rem; }
-    
-    .htb-input { 
-      background: #0b0e11; 
-      border: 1px solid #23282f; 
-      color: #fff; 
-      font-size: 0.95rem; 
-      padding: 0.8rem; 
-      width: 100%; 
-      border-radius: 4px; 
-      font-family: 'Share Tech Mono', monospace; 
-      margin-top: 0.5rem;
-    }
-    .htb-input:focus { border-color: var(--neon-green); outline: none; }
-    .htb-btn { 
-      background: var(--neon-cyan); 
-      color: #000; 
-      font-weight: bold; 
-      padding: 0.8rem; 
-      border: none; 
-      border-radius: 4px; 
-      cursor: pointer; 
-      text-transform: uppercase; 
-      letter-spacing: 2px; 
-      width: 100%;
-      margin-top: 1rem;
-    }
-    
-    .htb-terminal { background: #050505; border: 1px solid #1c2126; border-radius: 4px; font-family: 'Share Tech Mono', monospace; margin-top: 1.5rem; overflow: hidden; }
-    .htb-terminal-header { background: #15191d; padding: 6px 12px; color: #626e84; font-size: 10px; display: flex; justify-content: space-between; border-bottom: 1px solid #1c2126; }
-    .htb-terminal-body { padding: 1rem; color: var(--neon-green); font-size: 12px; height: 120px; overflow-y: auto; }
+    .htb-container { max-width: 1100px; margin: 4rem auto; padding: 0 1.5rem; }
 
-    .guestbook-feed { height: 450px; overflow-y: auto; padding-right: 10px; }
-    .entry-card { background: #1a1e23; border: 1px solid #23282f; border-radius: 4px; padding: 1.5rem; margin-bottom: 1rem; }
-    .entry-author { color: var(--neon-green); font-weight: bold; font-size: 12px; text-transform: uppercase; }
-    
-    @media (max-width: 900px) { .htb-container { grid-template-columns: 1fr; } .machine-header { grid-column: span 1; } }
+    .machine-header { border-left: 4px solid var(--neon-cyan); padding-left: 1.5rem; margin-bottom: 3rem; position: relative; }
+    .machine-header::after { content: ''; position: absolute; bottom: -1rem; left: 1.5rem; right: 0; height: 1px; background: linear-gradient(90deg, var(--neon-cyan), transparent); }
+    .machine-title { font-family: 'Orbitron', sans-serif; font-size: 2.2rem; color: #fff; letter-spacing: 2px; text-shadow: 0 0 40px rgba(0,212,255,0.15); }
+    .machine-sub { color: var(--text-secondary); font-size: 0.85rem; margin-top: 0.4rem; letter-spacing: 3px; text-transform: uppercase; }
+
+    .htb-card { background: #15191d; border: 1px solid #23282f; border-radius: 6px; padding: 2rem; margin-bottom: 2rem; transition: border-color 0.3s; }
+    .htb-card-title { font-size: 0.85rem; color: var(--neon-cyan); font-weight: bold; margin-bottom: 1.5rem; text-transform: uppercase; letter-spacing: 2px; border-bottom: 1px solid #23282f; padding-bottom: 0.75rem; display: flex; align-items: center; justify-content: space-between; }
+
+    .htb-input { background: #0b0e11; border: 1px solid #23282f; color: #fff; font-size: 0.95rem; padding: 1rem 1.2rem; width: 100%; border-radius: 6px; font-family: 'Share Tech Mono', monospace; transition: all 0.2s; }
+    .htb-input:focus { border-color: var(--neon-green); outline: none; box-shadow: 0 0 20px rgba(159,239,0,0.12); }
+
+    .htb-btn { background: var(--neon-cyan); color: #000; font-weight: bold; padding: 1rem 2rem; border: none; border-radius: 6px; cursor: pointer; text-transform: uppercase; letter-spacing: 2px; font-size: 0.8rem; transition: all 0.25s; display: inline-flex; align-items: center; gap: 0.5rem; }
+    .htb-btn:hover { opacity: 0.85; transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,212,255,0.2); }
+    .htb-btn:active { transform: translateY(0); }
+    .htb-btn-danger { background: var(--neon-pink); }
+
+    .htb-terminal { background: #050505; border: 1px solid #1c2126; border-radius: 6px; font-family: 'Share Tech Mono', monospace; margin-bottom: 2rem; overflow: hidden; }
+    .htb-terminal-header { background: #15191d; padding: 8px 14px; color: #626e84; font-size: 10px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1c2126; }
+    .htb-terminal-body { padding: 1.2rem; line-height: 1.7; font-size: 12px; max-height: 200px; overflow-y: auto; }
+
+    .payload-chips { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 1rem 0; }
+    .payload-chip { background: #0b0e11; border: 1px solid #23282f; border-radius: 4px; padding: 6px 12px; font-family: 'Share Tech Mono', monospace; font-size: 10px; color: var(--neon-yellow); cursor: pointer; transition: all 0.2s; }
+    .payload-chip:hover { border-color: var(--neon-green); background: rgba(159,239,0,0.05); }
+
+    /* Guestbook Feed */
+    .guestbook-feed { max-height: 500px; overflow-y: auto; padding-right: 8px; }
+    .guestbook-feed::-webkit-scrollbar { width: 4px; }
+    .guestbook-feed::-webkit-scrollbar-track { background: #0b0e11; }
+    .guestbook-feed::-webkit-scrollbar-thumb { background: #23282f; border-radius: 2px; }
+
+    .entry-card {
+      background: linear-gradient(145deg, #0b0e11 0%, #13181d 100%);
+      border: 1px solid #23282f; border-radius: 6px; padding: 1.5rem;
+      margin-bottom: 1rem; transition: all 0.2s;
+    }
+    .entry-card:hover { border-color: #2f3640; }
+    .entry-card.xss { border-color: var(--neon-pink); box-shadow: 0 0 15px rgba(255,0,102,0.08); }
+    .entry-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid #23282f; }
+    .entry-author { color: var(--neon-green); font-weight: bold; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; }
+    .entry-time { color: #3a4050; font-size: 9px; font-family: 'Share Tech Mono', monospace; }
+
+    /* XSS Warning Badge */
+    .xss-badge { display: inline-block; padding: 2px 8px; border-radius: 3px; font-size: 8px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; margin-left: 8px; }
+    .xss-badge.danger { background: rgba(255,0,102,0.15); color: var(--neon-pink); border: 1px solid rgba(255,0,102,0.3); }
+    .xss-badge.safe { background: rgba(159,239,0,0.1); color: var(--neon-green); border: 1px solid rgba(159,239,0,0.2); }
+
+    .flag-reveal {
+      border: 2px solid var(--neon-green); background: rgba(159,239,0,0.06); border-radius: 8px;
+      padding: 1.5rem; text-align: center; display: none; animation: glowPulse 2s infinite;
+    }
+    .flag-reveal.visible { display: block; }
+    @keyframes glowPulse { 0%,100% { box-shadow: 0 0 20px rgba(159,239,0,0.1); } 50% { box-shadow: 0 0 40px rgba(159,239,0,0.2); } }
+    .flag-reveal .flag-text { font-family: 'Share Tech Mono', monospace; color: var(--neon-yellow); font-size: 1.4rem; font-weight: bold; letter-spacing: 2px; margin-top: 0.5rem; }
+
+    .request-row { display: flex; justify-content: space-between; padding: 8px 12px; border-bottom: 1px solid #1c2126; font-size: 11px; }
+    .request-row:last-child { border-bottom: none; }
+    .request-label { color: #626e84; }
+    .request-value { color: #fff; word-break: break-all; max-width: 65%; text-align: right; }
   </style>
 </head>
 <body>
   <nav class="navbar">
     <a href="/" class="nav-logo">
-      <img src="/img/act.png" alt="Logo" style="height: 32px; border-radius: 4px; margin-right: 10px;" onerror="this.style.display='none'">
+      <img src="/img/act.png" alt="Logo" style="height:32px;border-radius:4px;margin-right:10px;" onerror="this.style.display='none'">
       <span class="nav-logo-text">ACT LAB</span>
     </a>
     <ul class="nav-links">
@@ -68,56 +87,85 @@
   <main class="main-content">
     <div class="htb-container">
       <header class="machine-header">
-        <h1 class="machine-title">STORED XSS :: GUESTBOOK</h1>
-        <p style="color: var(--text-secondary); margin-top: 0.5rem; font-size: 0.9rem;">PHASE: DATA PERSISTENCE & INJECTION</p>
+        <h1 class="machine-title">◈ STORED XSS :: PERSISTENT GUESTBOOK</h1>
+        <p class="machine-sub">PHASE: DATA PERSISTENCE &bull; ATTACK VECTOR: PERSISTENT SCRIPT INJECTION</p>
       </header>
 
-      <!-- SUBMIT FLAG SECTION (MOVED UP) -->
-      <section class="htb-card" style="grid-column: span 2; border: 1px solid var(--neon-green); background: rgba(159,239,0,0.02); margin-bottom: 1rem;">
-        <h2 class="htb-card-title" style="margin-bottom: 1.2rem; font-size: 0.9rem;">Submit Flag Found</h2>
-        <div style="display: flex; gap: 1rem;">
-          <input type="text" id="flagInput" class="htb-input" placeholder="ACT{flag_here}" style="flex: 1; height: 45px; margin-top: 0;">
-          <button onclick="submitFlag(4)" class="htb-btn" style="width: auto; padding: 0 1.5rem; height: 45px; font-size: 12px; margin-top: 0;">Submit Flag</button>
+      <!-- VULNERABILITY ANALYSIS -->
+      <div class="htb-terminal" style="border-color:var(--neon-cyan);">
+        <div class="htb-terminal-header" style="background:rgba(0,212,255,0.08);">
+          <span style="color:var(--neon-cyan);font-weight:bold;">◈ TARGET_RECON</span>
+          <span style="color:#626e84;">CWE-79: Stored Cross-Site Scripting</span>
         </div>
-      </section>
+        <div class="htb-terminal-body" style="max-height:none;">
+          <div class="request-row"><span class="request-label">ENDPOINT</span><span class="request-value"><code style="color:var(--neon-cyan);">POST /api/guestbook</code></span></div>
+          <div class="request-row"><span class="request-label">BACKEND</span><span class="request-value" style="color:var(--neon-amber);font-size:10px;">Data disimpan AS-IS tanpa sanitasi (parameterized cegah SQLi, bukan XSS!)</span></div>
+          <div class="request-row" style="border-bottom:none;"><span class="request-label">FRONTEND</span><span class="request-value" style="color:var(--neon-pink);font-size:10px;">Data di-render via <code>innerHTML</code> — script tag tereksekusi otomatis!</span></div>
+        </div>
+      </div>
 
-      <!-- INPUT SECTION -->
-      <section>
-        <div class="htb-card">
-          <h2 class="htb-card-title">Commit Payload</h2>
-          <form onsubmit="postEntry(event)">
-            <div class="form-group" style="margin-bottom: 1.5rem;">
-              <label class="form-label">Author Identity</label>
-              <input type="text" id="author" class="htb-input" placeholder="Anonymous" required>
+      <!-- Main Content: 2 column layout -->
+      <div style="display:grid;grid-template-columns:1fr 1.5fr;gap:1.5rem;">
+        <!-- Left: Input + Payload -->
+        <section>
+          <div class="htb-card">
+            <h2 class="htb-card-title">
+              <span>✍️ Commit Payload</span>
+            </h2>
+            <form onsubmit="postEntry(event)">
+              <div style="margin-bottom:1.5rem;">
+                <label style="color:#626e84;font-size:10px;text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:6px;">Author</label>
+                <input type="text" id="author" class="htb-input" value="XSS Hunter" required>
+              </div>
+              <div style="margin-bottom:1rem;">
+                <label style="color:#626e84;font-size:10px;text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:6px;">Payload (HTML/Script)</label>
+                <textarea id="message" class="htb-input" rows="4" placeholder="<script>alert(1)</script>" required style="resize:vertical;min-height:80px;"></textarea>
+              </div>
+              <button type="submit" class="htb-btn htb-btn-danger" style="width:100%;">💉 Inject & Store</button>
+            </form>
+
+            <!-- Quick Payloads -->
+            <div style="margin-top:1.5rem;">
+              <label style="color:#626e84;font-size:10px;text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:6px;">⚡ Quick Payloads</label>
+              <div class="payload-chips">
+                <span class="payload-chip" onclick="setPayload(&quot;&lt;script&gt;alert('XSS')&lt;/script&gt;&quot;)">&lt;script&gt;alert(1)&lt;/script&gt;</span>
+                <span class="payload-chip" onclick="setPayload(&quot;&lt;img src=x onerror=alert(1)&gt;&quot;)">&lt;img onerror&gt;</span>
+                <span class="payload-chip" onclick="setPayload(&quot;&lt;svg/onload=alert(1)&gt;&quot;)">&lt;svg/onload&gt;</span>
+                <span class="payload-chip" onclick="setPayload(&quot;&lt;details/open/ontoggle=alert(1)&gt;&quot;)">&lt;details&gt;</span>
+                <span class="payload-chip" onclick="setPayload(&quot;&lt;input autofocus onfocus=alert(1)&gt;&quot;)">&lt;input onfocus&gt;</span>
+              </div>
             </div>
-            <div class="form-group">
-              <label class="form-label">Malicious Script</label>
-              <textarea id="message" class="htb-input" rows="5" placeholder="<script>alert(1)</script>" required></textarea>
+          </div>
+
+          <!-- Traffic Log -->
+          <div class="htb-terminal">
+            <div class="htb-terminal-header">
+              <span>📋 STORAGE MONITOR</span>
+              <button onclick="document.getElementById('trafficLog').innerHTML='<div style=\\'color:#626e84;\\'>Log cleared.</div>'" style="background:none;border:1px solid #23282f;color:#626e84;padding:2px 8px;border-radius:3px;cursor:pointer;font-size:9px;">CLEAR</button>
             </div>
-            <button type="submit" class="htb-btn">Push to DB</button>
-          </form>
-        </div>
-        <!-- TARGET ANALYSIS -->
-        <div class="htb-terminal" style="border-color: var(--neon-cyan); margin-bottom: 1.5rem;">
-          <div class="htb-terminal-header" style="background: rgba(0,212,255,0.1);">
-            <span style="color: var(--neon-cyan);">[!] VULNERABILITY_TARGET_ANALYSIS</span>
+            <div class="htb-terminal-body" id="trafficLog"><div>Engine ready...</div></div>
           </div>
-          <div class="htb-terminal-body" style="padding: 1rem; height: auto;">
-            <div style="color: #626e84; margin-bottom: 5px;">ENDPOINT: <code style="color: #fff;">POST /api/guestbook</code></div>
-            <div style="color: #626e84;">VULN: Persistent script storage in database</div>
+        </section>
+
+        <!-- Right: Live Feed -->
+        <section>
+          <div class="htb-card" style="min-height:400px;">
+            <h2 class="htb-card-title">
+              <span>🌐 Live Global Feed</span>
+              <button onclick="loadEntries()" class="htb-btn" style="width:auto;padding:4px 12px;font-size:9px;background:transparent;border:1px solid var(--neon-cyan);color:var(--neon-cyan);">REFRESH</button>
+            </h2>
+            <div id="entriesList" class="guestbook-feed"><div class="spinner" style="margin:3rem auto;"></div></div>
           </div>
-        </div>
+        </section>
+      </div>
 
-        <div class="htb-terminal">
-          <div class="htb-terminal-header"><span>STORAGE MONITOR</span></div>
-          <div class="htb-terminal-body" id="trafficLog"><div>Engine ready...</div></div>
+      <!-- FLAG SUBMIT -->
+      <section class="htb-card" style="border:1px solid var(--neon-green);background:rgba(159,239,0,0.015);">
+        <h2 class="htb-card-title" style="margin-bottom:1rem;color:var(--neon-green);">🚩 SUBMIT FLAG</h2>
+        <div style="display:flex;gap:1rem;">
+          <input type="text" id="flagInput" class="htb-input" placeholder="ACT{flag_here}" style="flex:1;height:48px;">
+          <button onclick="submitFlag(4)" class="htb-btn" style="background:var(--neon-green);padding:0 2rem;height:48px;flex-shrink:0;">Submit</button>
         </div>
-      </section>
-
-      <!-- FEED SECTION -->
-      <section class="htb-card">
-        <h2 class="htb-card-title">Live Global Feed</h2>
-        <div id="entriesList" class="guestbook-feed"><div class="spinner"></div></div>
       </section>
     </div>
   </main>
@@ -125,104 +173,143 @@
   <div class="toast-container" id="toastContainer"></div>
 
   <script>
-    async function submitFlag(id) {
-      const flag = document.getElementById('flagInput').value;
-      if (!flag) return showToast('Please enter a flag', 'error');
-      try {
-        const res = await fetch('/api/challenges/submit', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ challengeId: id, flag: flag }) });
-        const data = await res.json();
-        if (data.correct) {
-          showToast('Correct flag!', 'success');
-          // REMOVED AUTO-REDIRECT
-        } else { showToast(data.message || 'Incorrect flag', 'error'); }
-      } catch (err) {}
+    function setPayload(msg) {
+      document.getElementById('message').value = msg;
     }
+
     async function loadEntries() {
       try {
         const res = await fetch('/api/guestbook');
         const data = await res.json();
         const list = document.getElementById('entriesList');
         if (data.success) {
-          if (data.entries.length === 0) { list.innerHTML = `<div style="text-align:center; padding: 3rem; color: #626e84;">[ EMPTY ]</div>`; return; }
-          list.innerHTML = data.entries.map(e => `<div class="entry-card"><div style="display: flex; justify-content: space-between; margin-bottom: 1rem; border-bottom: 1px solid #23282f; padding-bottom: 0.5rem;"><span class="entry-author">${escapeHtml(e.author)}</span></div><div id="msg-${e.id}" style="color: #fff; font-size: 13px;"></div></div>`).reverse().join('');
-          
+          if (data.entries.length === 0) {
+            list.innerHTML = '<div style="text-align:center;padding:3rem;color:#626e84;">[ EMPTY ] Belum ada entry</div>';
+            return;
+          }
+          list.innerHTML = data.entries.map(e => {
+            const isXss = /<script|<img|<svg|<details|<iframe|onerror|onload|onclick|onmouseover|onfocus/i.test(e.message || '');
+            return `<div class="entry-card ${isXss ? 'xss' : ''}">
+              <div class="entry-header">
+                <span class="entry-author">${escapeHtml(e.author)} <span class="xss-badge ${isXss ? 'danger' : 'safe'}">${isXss ? '⚠️ XSS' : '✅ Clean'}</span></span>
+                <span class="entry-time">${new Date(e.created_at || Date.now()).toLocaleTimeString()}</span>
+              </div>
+              <div id="msg-${e.id}" style="color:#fff;font-size:13px;"></div>
+            </div>`;
+          }).reverse().join('');
+
           let hasXss = false;
           data.entries.forEach(e => {
             const container = document.getElementById(`msg-${e.id}`);
             if (container) {
-              container.innerHTML = e.message;
-              if (/<script|<img|<svg|<details|<iframe|onerror|onload|onclick/i.test(e.message)) hasXss = true;
+              container.innerHTML = e.message || '';
+              if (/<script|<img|<svg|<details|<iframe|onerror|onload|onclick/i.test(e.message || '')) hasXss = true;
               const scripts = container.getElementsByTagName('script');
-              for (let s of scripts) { const ns = document.createElement('script'); ns.text = s.innerText; document.body.appendChild(ns).parentNode.removeChild(ns); }
+              for (let s of scripts) {
+                const ns = document.createElement('script'); ns.text = s.innerText;
+                document.body.appendChild(ns).parentNode.removeChild(ns);
+              }
             }
           });
-          
+
           if (hasXss) {
-            const flagDiv = document.createElement('div');
-            flagDiv.innerHTML = `<div style="border: 1px solid var(--neon-cyan); background: rgba(0,212,255,0.05); padding: 1.5rem; border-radius: 4px; text-align: center; margin-top: 1rem;"><div style="color: var(--neon-cyan); font-weight: bold; margin-bottom: 0.5rem; font-size: 11px; letter-spacing: 2px;">[ PERSISTENT_XSS_DETECTED ]</div><div style="font-family: 'Share Tech Mono'; color: var(--neon-yellow); font-size: 1.3rem; font-weight: bold;">ACT{st0r3d_xss_m4st3r}</div></div>`;
-            list.prepend(flagDiv);
+            const list2 = document.getElementById('entriesList');
+            const existing = list2.querySelector('.flag-reveal');
+            if (!existing) {
+              const flagDiv = document.createElement('div');
+              flagDiv.className = 'flag-reveal visible';
+              flagDiv.innerHTML = `
+                <div style="font-size:11px;letter-spacing:3px;font-weight:bold;color:var(--neon-green);margin-bottom:0.5rem;">⚠️ PERSISTENT_XSS_DETECTED</div>
+                <div class="flag-text">ACT{st0r3d_xss_m4st3r}</div>`;
+              list2.prepend(flagDiv);
+            }
+            showToast('🎯 Stored XSS terdeteksi!', 'success');
           }
         }
-      } catch (err) {}
+      } catch(err) {}
     }
+
     async function postEntry(e) {
       if (e) e.preventDefault();
       const author = document.getElementById('author').value;
       const message = document.getElementById('message').value;
+      const log = document.getElementById('trafficLog');
+      log.innerHTML = `<div style="color:var(--neon-cyan);">⏳ Storing payload...</div>` + log.innerHTML;
       try {
-        const res = await fetch('/api/guestbook', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams({ author, message }).toString() });
+        const res = await fetch('/api/guestbook', {
+          method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'},
+          body: new URLSearchParams({author, message}).toString()
+        });
         const data = await res.json();
-        if (data.success) { showToast('Stored!', 'success'); document.getElementById('message').value = ''; loadEntries(); }
-      } catch (err) {}
+        if (data.success) {
+          log.innerHTML = `<div style="color:var(--neon-green);">✅ Stored! Author: ${escapeHtml(author)}</div>` + log.innerHTML;
+          showToast('✅ Payload tersimpan!', 'success');
+          document.getElementById('message').value = '';
+          loadEntries();
+        }
+      } catch(err) {}
     }
-    function escapeHtml(str) { const div = document.createElement('div'); div.textContent = str; return div.innerHTML; }
-    function showToast(msg, type) { 
-      const container = document.getElementById('toastContainer'); 
-      container.innerHTML = ''; // CLEAR PREVIOUS TOASTS
-      const toast = document.createElement('div'); toast.className = `toast toast-${type}`; toast.textContent = msg; container.appendChild(toast); setTimeout(() => toast.remove(), 3000); 
+
+    function escapeHtml(str) { const d = document.createElement('div'); d.textContent = str; return d.innerHTML; }
+
+    async function submitFlag(id) {
+      const flag = document.getElementById('flagInput').value;
+      if (!flag) return showToast('Please enter a flag', 'error');
+      try {
+        const res = await fetch('/api/challenges/submit', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({challengeId:id, flag:flag}) });
+        const data = await res.json();
+        if (data.correct) { showToast('✅ Correct flag!', 'success'); } else { showToast(data.message||'❌ Incorrect', 'error'); }
+      } catch(err) {}
     }
+
+    function showToast(msg, type) {
+      const container = document.getElementById('toastContainer');
+      container.innerHTML = '';
+      const toast = document.createElement('div'); toast.className = `toast toast-${type}`; toast.textContent = msg;
+      container.appendChild(toast); setTimeout(() => toast.remove(), 3000);
+    }
+
     window.getFlag = function() {
       showToast('XSS Success!', 'success');
       const list = document.getElementById('entriesList');
-      const flagDiv = document.createElement('div');
-      flagDiv.innerHTML = `<div style="border: 1px solid var(--neon-cyan); background: rgba(0,212,255,0.05); padding: 1.5rem; border-radius: 4px; text-align: center; margin-top: 1rem;"><div style="color: var(--neon-cyan); font-weight: bold; margin-bottom: 0.5rem; font-size: 11px; letter-spacing: 2px;">[ PERSISTENT_XSS_DETECTED ]</div><div style="font-family: 'Share Tech Mono'; color: var(--neon-yellow); font-size: 1.3rem; font-weight: bold;">ACT{st0r3d_xss_m4st3r}</div></div>`;
-      list.prepend(flagDiv);
+      if (!list.querySelector('.flag-reveal')) {
+        const flagDiv = document.createElement('div');
+        flagDiv.className = 'flag-reveal visible';
+        flagDiv.innerHTML = `
+          <div style="font-size:11px;letter-spacing:3px;font-weight:bold;color:var(--neon-green);margin-bottom:0.5rem;">⚠️ PERSISTENT_XSS_DETECTED</div>
+          <div class="flag-text">ACT{st0r3d_xss_m4st3r}</div>`;
+        list.prepend(flagDiv);
+      }
     };
 
-    // UNIVERSAL XSS DETECTION SENSOR (FUZZY SINK)
+    // XSS Detection
     const originalAlert = window.alert;
-    const originalPrompt = window.prompt;
-    const originalConfirm = window.confirm;
-    
-    window.alert = window.prompt = window.confirm = function(msg) {
-      window.getFlag();
-      return true;
-    };
+    window.alert = window.prompt = window.confirm = function(msg) { window.getFlag(); return true; };
 
-    // DEWA SENSOR: Monitoring for any GitHub-style "nyeleneh" payload execution
     const observer = new MutationObserver((mutations) => {
       mutations.forEach((mutation) => {
         if (mutation.addedNodes.length) {
           const content = document.getElementById('entriesList').innerHTML.toLowerCase();
           if (/<script|<svg|<img|<details|<iframe|onerror|onload|onclick|onmouseover|onfocus/i.test(content)) {
-             setTimeout(window.getFlag, 300);
+            setTimeout(window.getFlag, 300);
           }
         }
       });
     });
-    observer.observe(document.getElementById('entriesList'), { childList: true, subtree: true });
+    const entriesList = document.getElementById('entriesList');
+    if (entriesList) observer.observe(entriesList, { childList: true, subtree: true });
 
     async function initStatus() {
       try {
         const res = await fetch('/api/auth/status');
         const data = await res.json();
-        const u = data.user || { username: 'Guest', score: 0, role: 'user' };
-        const isAdmin = u.role === 'admin' || document.cookie.includes('role=admin');
+        const u = data.user || { username:'Guest', score:0, role:'user' };
+        const isAdmin = u.role==='admin' || document.cookie.includes('role=admin');
         let navHtml = `<span class="nav-user-badge">Status: ${u.username} (${u.score} PTS)</span>`;
-        if (isAdmin) { navHtml = `<a href="/admin" class="nav-user-badge" style="border-color:var(--neon-pink); color:var(--neon-pink); text-decoration:none; animation: pulse 1s infinite;">⚠️ ADMIN_ACCESS_GRANTED</a> ` + navHtml; }
+        if (isAdmin) { navHtml = `<a href="/admin" class="nav-user-badge" style="border-color:var(--neon-pink);color:var(--neon-pink);text-decoration:none;animation:pulse 1s infinite;">⚠️ ADMIN_ACCESS_GRANTED</a> ` + navHtml; }
         document.getElementById('navUser').innerHTML = navHtml;
         loadEntries();
-      } catch (err) {}
+      } catch(err) { loadEntries(); }
     }
     initStatus();
   </script>

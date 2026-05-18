@@ -8,40 +8,122 @@
   <style>
     body { background: #0b0e11; }
     .htb-container { max-width: 900px; margin: 4rem auto; }
+
     .machine-header { border-left: 4px solid var(--neon-cyan); padding-left: 1.5rem; margin-bottom: 3rem; }
-    .machine-title { font-family: 'Orbitron', sans-serif; font-size: 2rem; color: #fff; }
-    
-    .htb-card { background: #15191d; border: 1px solid #23282f; border-radius: 4px; padding: 2.5rem; margin-bottom: 2rem; }
-    .htb-card-title { font-size: 1rem; color: var(--neon-cyan); font-weight: bold; margin-bottom: 1.5rem; text-transform: uppercase; letter-spacing: 2px; border-bottom: 1px solid #23282f; padding-bottom: 0.75rem; }
-    
-    .htb-input { 
-      background: #0b0e11; 
-      border: 1px solid #23282f; 
-      color: #fff; 
-      font-size: 1rem; 
-      padding: 1rem; 
-      width: 100%; 
-      border-radius: 4px; 
-      font-family: 'Share Tech Mono', monospace; 
-      margin-top: 0.5rem;
-    }
-    .htb-input:focus { border-color: var(--neon-green); outline: none; }
-    .htb-btn { 
-      background: var(--neon-cyan); 
-      color: #000; 
-      font-weight: bold; 
-      padding: 1rem; 
-      border: none; 
-      border-radius: 4px; 
-      cursor: pointer; 
-      text-transform: uppercase; 
-      letter-spacing: 2px; 
+    .machine-title { font-family: 'Orbitron', sans-serif; font-size: 2rem; color: #fff; letter-spacing: 1px; }
+    .machine-sub { color: var(--text-secondary); font-size: 0.9rem; margin-top: 0.5rem; }
+
+    .htb-card { background: #15191d; border: 1px solid #23282f; border-radius: 4px; padding: 2rem; margin-bottom: 2rem; }
+    .htb-card-title { font-size: 1rem; color: var(--neon-cyan); font-weight: bold; margin-bottom: 1.5rem; text-transform: uppercase; letter-spacing: 2px; border-bottom: 1px solid #23282f; padding-bottom: 0.75rem; display: flex; align-items: center; justify-content: space-between; }
+
+    .htb-input {
+      background: #0b0e11;
+      border: 1px solid #23282f;
+      color: #fff;
+      font-size: 0.95rem;
+      padding: 0.8rem 1rem;
       width: 100%;
+      border-radius: 4px;
+      font-family: 'Share Tech Mono', monospace;
     }
+    .htb-input:focus { border-color: var(--neon-pink); outline: none; box-shadow: 0 0 12px rgba(255,0,102,0.2); }
+    .htb-textarea { min-height: 80px; resize: vertical; }
+
+    .htb-btn {
+      background: var(--neon-cyan);
+      color: #000;
+      font-weight: bold;
+      padding: 0.8rem 2rem;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      font-size: 0.8rem;
+      transition: all 0.2s;
+    }
+    .htb-btn:hover { opacity: 0.85; transform: translateY(-1px); }
+    .htb-btn-danger { background: var(--neon-pink); }
 
     .htb-terminal { background: #050505; border: 1px solid #1c2126; border-radius: 4px; font-family: 'Share Tech Mono', monospace; margin-bottom: 2rem; overflow: hidden; }
-    .htb-terminal-header { background: #15191d; padding: 6px 12px; color: #626e84; font-size: 10px; display: flex; justify-content: space-between; border-bottom: 1px solid #1c2126; }
-    .htb-terminal-body { padding: 1rem; color: var(--neon-yellow); font-size: 12px; line-height: 1.5; height: 150px; overflow-y: auto; }
+    .htb-terminal-header { background: #15191d; padding: 8px 14px; color: #626e84; font-size: 10px; display: flex; justify-content: space-between; border-bottom: 1px solid #1c2126; }
+    .htb-terminal-body { padding: 1rem; line-height: 1.6; font-size: 12px; max-height: 200px; overflow-y: auto; }
+
+    .attack-simulation {
+      border: 2px dashed #23282f;
+      border-radius: 8px;
+      padding: 2rem;
+      background: rgba(255,0,102,0.02);
+      transition: all 0.3s;
+    }
+    .attack-simulation.active {
+      border-color: var(--neon-pink);
+      background: rgba(255,0,102,0.06);
+      box-shadow: 0 0 30px rgba(255,0,102,0.1);
+    }
+
+    .bypass-badge {
+      display: inline-block;
+      padding: 0.25rem 0.75rem;
+      border-radius: 4px;
+      font-size: 10px;
+      font-weight: bold;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .bypass-badge.success { background: rgba(159,239,0,0.15); color: var(--neon-green); border: 1px solid var(--neon-green); }
+    .bypass-badge.fail { background: rgba(255,255,255,0.05); color: #626e84; border: 1px solid #23282f; }
+
+    .request-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 12px;
+      border-bottom: 1px solid #1c2126;
+      font-size: 11px;
+    }
+    .request-row:last-child { border-bottom: none; }
+    .request-label { color: #626e84; }
+    .request-value { color: #fff; word-break: break-all; max-width: 60%; text-align: right; }
+
+    .flag-reveal {
+      border: 2px solid var(--neon-pink);
+      background: rgba(255,0,102,0.08);
+      border-radius: 8px;
+      padding: 2rem;
+      text-align: center;
+      animation: pulse 2s infinite;
+      display: none;
+    }
+    .flag-reveal.visible { display: block; }
+    .flag-reveal .flag-text {
+      font-family: 'Share Tech Mono', monospace;
+      color: var(--neon-yellow);
+      font-size: 1.8rem;
+      font-weight: bold;
+      letter-spacing: 2px;
+      margin-top: 0.5rem;
+    }
+
+    .simulated-frame {
+      background: #0b0e11;
+      border: 1px solid #23282f;
+      border-radius: 4px;
+      padding: 1.5rem;
+      margin-top: 1rem;
+      position: relative;
+    }
+    .simulated-frame::before {
+      content: '🔴 ATTACKER PAGE (evil.com)';
+      position: absolute;
+      top: -10px;
+      left: 12px;
+      background: #15191d;
+      padding: 0 8px;
+      font-size: 9px;
+      color: var(--neon-pink);
+      font-weight: bold;
+      letter-spacing: 1px;
+    }
   </style>
 </head>
 <body>
@@ -62,158 +144,340 @@
     <div class="htb-container">
       <header class="machine-header">
         <h1 class="machine-title">CROSS-SITE REQUEST FORGERY</h1>
-        <p style="color: var(--text-secondary); margin-top: 0.5rem; font-size: 0.9rem;">PHASE: STATE-CHANGING ACTION MANIPULATION</p>
+        <p class="machine-sub">PHASE: CROSS-ORIGIN REQUEST MANIPULATION</p>
       </header>
 
-      <!-- TARGET ANALYSIS -->
-      <div class="htb-terminal" style="border-color: var(--neon-cyan); margin-bottom: 2rem;">
+      <!-- TARGET INFO -->
+      <div class="htb-terminal" style="border-color: var(--neon-cyan);">
         <div class="htb-terminal-header" style="background: rgba(0,212,255,0.1);">
           <span style="color: var(--neon-cyan);">[!] VULNERABILITY_TARGET_ANALYSIS</span>
         </div>
-        <div class="htb-terminal-body" style="padding: 1.5rem; height: auto;">
-          <div style="color: #626e84; margin-bottom: 5px;">TARGET ENDPOINT: <code style="color: #fff;">POST /api/profile</code></div>
-          <div style="color: #626e84;">WEAKNESS: Improper Referer validation (.includes bypass)</div>
+        <div class="htb-terminal-body" style="padding: 1rem; max-height: none;">
+          <div class="request-row"><span class="request-label">TARGET ENDPOINT</span><span class="request-value"><code style="color: #fff;">POST /api/csrf-challenge</code></span></div>
+          <div class="request-row"><span class="request-label">VULNERABILITY</span><span class="request-value" style="color: var(--neon-pink);">Weak Origin/Referer validation via <code>.includes()</code></span></div>
+          <div class="request-row" style="border-bottom: none;">
+            <span class="request-label">HOW TO BYPASS</span>
+            <span class="request-value" style="color: var(--neon-yellow); font-size: 10px;">
+              Server cek pakai <code>.includes()</code> — cari substring.<br>
+              Maka <code>domain-anda.evil.com</code> lolos!<br>
+              Contoh: <code>localhost:3000.evil.com</code> mengandung <code>localhost:3000</code> ✅
+            </span>
+          </div>
         </div>
       </div>
 
-      <div class="htb-terminal">
-        <div class="htb-terminal-header"><span>HTTP TRAFFIC MONITORING</span></div>
-        <div class="htb-terminal-body" id="trafficLog"><div>Listening for cross-origin POST requests...</div></div>
-      </div>
-
-      <!-- SUBMIT FLAG SECTION (MOVED UP) -->
-      <section class="htb-card" style="border: 1px solid var(--neon-green); background: rgba(159,239,0,0.02); margin-bottom: 3rem;">
-        <h2 class="htb-card-title" style="margin-bottom: 1.2rem; font-size: 0.9rem;">Submit Flag Found</h2>
+      <!-- SUBMIT FLAG -->
+      <section class="htb-card" style="border: 1px solid var(--neon-green); background: rgba(159,239,0,0.02);">
+        <h2 class="htb-card-title" style="margin-bottom: 1.2rem; font-size: 0.9rem; border-bottom: none;">Submit Flag Found</h2>
         <div style="display: flex; gap: 1rem;">
           <input type="text" id="flagInput" class="htb-input" placeholder="ACT{flag_here}" style="flex: 1; height: 45px; margin-top: 0;">
-          <button onclick="submitFlag(5)" class="htb-btn" style="width: auto; padding: 0 1.5rem; height: 45px; font-size: 12px; margin-top: 0;">Submit Flag</button>
+          <button onclick="submitFlag(5)" class="htb-btn" style="width: auto; padding: 0 1.5rem; height: 45px; font-size: 12px;">Submit</button>
         </div>
       </section>
 
-      <section class="htb-card">
-        <h2 class="htb-card-title">Target: Account Management</h2>
-        <div id="profileView" style="margin-bottom: 2rem; background: #0b0e11; padding: 1.5rem; border-radius: 4px; border-left: 3px solid var(--neon-green);"><div class="spinner"></div></div>
-        <form onsubmit="updateProfile(event)">
-          <div class="form-group" style="margin-bottom: 1.5rem;">
-            <label class="form-label">New Email Address</label>
-            <input type="email" id="emailInput" class="htb-input" placeholder="attacker@mail.com" required>
+      <!-- SIMULATED ATTACKER PAGE -->
+      <section class="htb-card attack-simulation" id="attackerCard">
+        <h2 class="htb-card-title">
+          <span>🌐 Simulated Attacker Page</span>
+          <span class="bypass-badge fail" id="statusBadge">AWAITING ATTACK</span>
+        </h2>
+
+        <!-- BURP SUITE BANNER — VISIBLE BY DEFAULT -->
+        <div style="background: rgba(255,0,102,0.08); border: 1px solid var(--neon-pink); border-radius: 4px; padding: 12px 16px; margin-bottom: 1.5rem; font-size: 12px; line-height: 1.6;">
+          <div style="display: flex; align-items: flex-start; gap: 10px;">
+            <span style="font-size: 20px; flex-shrink: 0;">⚠️</span>
+            <div>
+              <strong style="color: #fff;">Browser TIDAK mengizinkan JavaScript mengubah header <code>Referer</code>/<code>Origin</code>.</strong>
+              <div style="color: #ccc; margin-top: 4px;">
+                Tombol mengirim request <strong style="color: #fff;">real</strong>, tapi browser akan <strong style="color: var(--neon-yellow);">mengabaikan</strong> nilai Referer/Origin yang kamu isi dan pakai milik halaman ini. <strong style="color: var(--neon-yellow);">Gunakan Burp Suite</strong> untuk exploit asli:
+                <span style="color: var(--neon-green); display: block; margin-top: 4px;">
+                  🛠️ <strong>Proxy</strong> → Intercept ON → edit header → Forward &nbsp;|&nbsp; 
+                  🔁 <strong>Repeater</strong> → kirim <code>POST /api/csrf-challenge</code> + custom Referer
+                </span>
+                <span style="color: #626e84; display: block; margin-top: 2px; font-size: 11px;">
+                  Atau: <code style="color: var(--neon-yellow);">curl -X POST ... -H "Referer: http://domain.evil.com" ...</code>
+                </span>
+              </div>
+            </div>
           </div>
-          <div class="form-group" style="margin-bottom: 1.5rem;">
-            <label class="form-label">New Biography</label>
-            <textarea id="bioInput" class="htb-input" rows="3" placeholder="Injected content..."></textarea>
+        </div>
+
+        <p style="color: #626e84; font-size: 12px; margin-bottom: 1.5rem;">
+          Simulasi: halaman <strong style="color: var(--neon-pink);">evil.com</strong> yang dikunjungi korban.
+          Korban sudah login di ACT LAB (punya cookie session) — cookie akan ikut terkirim! 🍪
+        </p>
+
+        <!-- Attacker customizes the request -->
+        <div class="simulated-frame">
+          <div style="margin-bottom: 1rem;">
+            <label style="color: #626e84; font-size: 10px; text-transform: uppercase; letter-spacing: 1px; display: block; margin-bottom: 6px;">Target Endpoint</label>
+            <input type="text" id="targetEndpoint" class="htb-input" value="/api/csrf-challenge" readonly style="opacity: 0.6; cursor: not-allowed;">
           </div>
-          <button type="submit" class="htb-btn">Update Profile</button>
-        </form>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+            <div>
+              <label style="color: #626e84; font-size: 10px; text-transform: uppercase; letter-spacing: 1px; display: block; margin-bottom: 6px;">Referer Header</label>
+              <input type="text" id="refererInput" class="htb-input" value="https://actlab.up.railway.app.evil.com/csrf-exploit" placeholder="https://domain.evil.com">
+            </div>
+            <div>
+              <label style="color: #626e84; font-size: 10px; text-transform: uppercase; letter-spacing: 1px; display: block; margin-bottom: 6px;">Origin Header</label>
+              <input type="text" id="originInput" class="htb-input" value="https://actlab.up.railway.app.evil.com" placeholder="https://domain.evil.com">
+            </div>
+          </div>
+          <div style="margin-bottom: 1.5rem;">
+            <label style="color: #626e84; font-size: 10px; text-transform: uppercase; letter-spacing: 1px; display: block; margin-bottom: 6px;">Payload (email to inject)</label>
+            <input type="text" id="payloadInput" class="htb-input" value="dicuri@hacker.com" placeholder="attacker@evil.com">
+          </div>
+          <div style="display: flex; gap: 1rem;">
+            <button onclick="fireCsrfAttack()" class="htb-btn htb-btn-danger" style="flex: 1;">
+              🚀 Fire CSRF Attack
+            </button>
+            <button onclick="resetAttack()" class="htb-btn" style="flex: 0.4; background: transparent; border: 1px solid #23282f; color: #626e84;">
+              ↺ Reset
+            </button>
+          </div>
+        </div>
+
+        <!-- Request Preview -->
+        <div class="htb-terminal" style="margin-top: 1.5rem;">
+          <div class="htb-terminal-header">
+            <span>REQUEST PREVIEW</span>
+            <span id="reqStatus">&nbsp;</span>
+          </div>
+          <div class="htb-terminal-body" id="requestPreview" style="max-height: 120px; overflow: auto; white-space: pre-wrap; font-size: 11px; color: #626e84;">
+POST /api/csrf-challenge HTTP/1.1
+Host: [your-server]
+Referer: https://actlab.up.railway.app.evil.com/csrf-exploit
+Origin: https://actlab.up.railway.app.evil.com
+Cookie: userId=...; username=...; role=...
+
+{"email": "dicuri@hacker.com"}
+          </div>
+        </div>
+
+        <!-- Response -->
+        <div class="htb-terminal" style="border-color: var(--neon-pink); display: none;" id="responsePanel">
+          <div class="htb-terminal-header" style="background: rgba(255,0,102,0.1);">
+            <span style="color: var(--neon-pink);">[!] SERVER RESPONSE</span>
+          </div>
+          <div class="htb-terminal-body" id="responseBody" style="max-height: 250px; color: var(--neon-pink);"></div>
+        </div>
+
+        <!-- Flag Reveal -->
+        <div class="flag-reveal" id="flagReveal">
+          <div style="font-size: 14px; letter-spacing: 3px; font-weight: bold; color: var(--neon-pink); margin-bottom: 0.5rem;">
+            ⚠️ CSRF BYPASS SUCCESSFUL
+          </div>
+          <div style="color: #fff; font-size: 13px; margin-bottom: 1rem;">
+            The server's <code>.includes()</code> check has been bypassed!
+          </div>
+          <div class="flag-text" id="flagRevealText"></div>
+        </div>
+
+        <!-- Hint toggle -->
+        <div style="margin-top: 1.5rem; text-align: center;">
+          <button onclick="toggleHint()" style="background: none; border: none; color: #626e84; font-size: 11px; cursor: pointer; text-decoration: underline; text-underline-offset: 3px;">
+            💡 Butuh bantuan?
+          </button>
+          <div id="hintBox" style="display: none; margin-top: 0.8rem; background: rgba(0,212,255,0.05); padding: 1rem; border-radius: 4px; font-size: 12px; color: #626e84; text-align: left; line-height: 1.8;">
+            <p><strong style="color: var(--neon-cyan);">Cara bypass:</strong></p>
+            <p>1. Server punya domain: <code style="color: #fff;">localhost:3000</code> (atau domain Railway-mu)</p>
+            <p>2. Server cek: <code style="color: var(--neon-yellow);">referer.includes('localhost:3000')</code></p>
+            <p>3. Buat Referer: <code style="color: var(--neon-green);">http://localhost:3000.evil.com</code></p>
+            <p>4. String <code style="color: #fff;">localhost:3000</code> <strong>TETAP</strong> ditemukan di dalam <code style="color: #fff;">localhost:3000.evil.com</code>!</p>
+            <p style="margin-top: 8px;">✅ <strong>CSRF Bypassed!</strong> Ganti input Referer/Origin di atas dengan pola tersebut.</p>
+            <hr style="border-color: #23282f; margin: 12px 0;">
+            <p><strong style="color: var(--neon-pink);">⚠️ PENTING — PAKAI BURP SUITE!</strong></p>
+            <p style="font-size: 11px;">Browser modern <strong style="color: #fff;">TIDAK MENGIZINKAN</strong> JavaScript <code>fetch()</code> mengubah header <code>Referer</code>/<code>Origin</code> (forbidden header).</p>
+            <p style="font-size: 11px;">Tombol "Fire CSRF Attack" di atas hanya simulasi — request asli tetap pakai Referer dari URL halaman ini.</p>
+            <p style="font-size: 11px; margin-top: 6px;"><strong style="color: var(--neon-green);">WAJIB pakai Burp Suite:</strong></p>
+            <ol style="font-size: 11px; padding-left: 18px;">
+              <li>Buka Burp Suite → <strong>Proxy</strong> → <strong>Intercept</strong> ON</li>
+              <li>Kirim request dari browser → edit header <code>Referer</code> di Intercept</li>
+              <li>Atau: <strong>Repeater</strong> → kirim <code>POST /api/csrf-challenge</code> + custom Header</li>
+              <li>Set <code>Referer: http://domain-anda.evil.com</code></li>
+            </ol>
+            <p style="font-size: 11px; margin-top: 4px;">Alternatif: <code style="color: var(--neon-yellow);">curl -X POST ... -H "Referer: http://domain.evil.com" ...</code></p>
+          </div>
+        </div>
       </section>
+
+      <!-- REQUEST LOG -->
+      <div class="htb-terminal" style="margin-top: 1rem;">
+        <div class="htb-terminal-header">
+          <span>📋 CSRF ATTACK LOG</span>
+          <button onclick="clearLog()" style="background: none; border: 1px solid #23282f; color: #626e84; padding: 2px 10px; border-radius: 3px; cursor: pointer; font-size: 9px;">CLEAR</button>
+        </div>
+        <div class="htb-terminal-body" id="trafficLog">
+          <div style="color: #626e84;">[SYSTEM] CSRF Challenge ready. 0 data will be modified — read-only!</div>
+        </div>
+      </div>
     </div>
   </main>
 
   <div class="toast-container" id="toastContainer"></div>
 
   <script>
+    let initialEmail = null;
+
+    // Auto-detect host untuk default Referer/Origin values
+    const currentHost = location.host;
+    document.getElementById('refererInput').value = `http://${currentHost}.evil.com/csrf-exploit`;
+    document.getElementById('originInput').value = `http://${currentHost}.evil.com`;
+
     async function submitFlag(id) {
       const flag = document.getElementById('flagInput').value;
       if (!flag) return showToast('Please enter a flag', 'error');
       try {
-        const res = await fetch('/api/challenges/submit', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ challengeId: id, flag: flag }) });
+        const res = await fetch('/api/challenges/submit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ challengeId: id, flag: flag })
+        });
         const data = await res.json();
-        if (data.correct) {
-          showToast('Correct flag!', 'success');
-          // REMOVED AUTO-REDIRECT
-        } else { showToast(data.message || 'Incorrect flag', 'error'); }
+        if (data.correct) { showToast('Correct flag!', 'success'); }
+        else { showToast(data.message || 'Incorrect flag', 'error'); }
       } catch (err) {}
     }
-    async function updateProfile(e) {
-      if (e) e.preventDefault();
-      const email = document.getElementById('emailInput').value;
-      const bio = document.getElementById('bioInput').value;
+
+    async function fireCsrfAttack() {
+      const referer = document.getElementById('refererInput').value || document.location.origin + '/evil-page';
+      const origin = document.getElementById('originInput').value || document.location.origin;
+      const payload = document.getElementById('payloadInput').value || 'pwned@hacker.com';
+
+      updateRequestPreview(referer, origin, payload);
+
+      const attackBtn = document.querySelector('.htb-btn-danger');
+      attackBtn.textContent = '⏳ Sending...';
+      attackBtn.disabled = true;
+
       try {
-        const res = await fetch('/api/profile', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, bio }) });
+        const res = await fetch('/api/csrf-challenge', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Referer': referer,
+            'Origin': origin
+          },
+          body: JSON.stringify({ email: payload })
+        });
         const data = await res.json();
-        if (data.success) {
-          showToast('Updated!', 'success');
-          loadProfile();
+
+        showResponse(data);
+        addLog(data);
+
+        if (data.csrf_detected) {
+          document.getElementById('attackerCard').classList.add('active');
+          document.getElementById('statusBadge').className = 'bypass-badge success';
+          document.getElementById('statusBadge').textContent = '✅ BYPASSED';
+          document.getElementById('flagReveal').classList.add('visible');
+          document.getElementById('flagRevealText').textContent = data.flag || 'ACT{cr5f_byp4ss_r3f3r3r}';
+          showToast('🎯 CSRF Bypassed! Flag captured!', 'success');
+        } else {
+          document.getElementById('attackerCard').classList.remove('active');
+          document.getElementById('statusBadge').className = 'bypass-badge fail';
+          document.getElementById('statusBadge').textContent = '❌ BLOCKED';
+          document.getElementById('flagReveal').classList.remove('visible');
+          showToast('Blocked! Coba ubah Referer/Origin header.', 'error');
         }
-      } catch (err) {}
+      } catch (err) {
+        showResponse({ error: err.message });
+        addLog({ error: err.message });
+        showToast('Network error', 'error');
+      }
+
+      attackBtn.textContent = '🚀 Fire CSRF Attack';
+      attackBtn.disabled = false;
     }
 
-    function showToast(msg, type) { 
-      const container = document.getElementById('toastContainer'); 
-      container.innerHTML = ''; 
-      const toast = document.createElement('div'); toast.className = `toast toast-${type}`; toast.textContent = msg; container.appendChild(toast); setTimeout(() => toast.remove(), 3000); 
+    function updateRequestPreview(referer, origin, payload) {
+      const preview = document.getElementById('requestPreview');
+      preview.innerHTML = `<span style="color: var(--neon-pink); font-weight: bold;">POST</span> <span style="color: #fff;">/api/csrf-challenge</span> <span style="color: #626e84;">HTTP/1.1</span>\n` +
+        `<span style="color: #626e84;">Host:</span> <span style="color: #fff;">${location.host}</span>\n` +
+        `<span style="color: #626e84;">Referer:</span> <span style="color: var(--neon-yellow);">${referer}</span>\n` +
+        `<span style="color: #626e84;">Origin:</span> <span style="color: var(--neon-yellow);">${origin}</span>\n` +
+        `<span style="color: #626e84;">Cookie:</span> <span style="color: #888;">🍪 (auto-sent by browser)</span>\n\n` +
+        `<span style="color: #626e84;">{ "email": "</span><span style="color: var(--neon-yellow);">${payload}</span><span style="color: #626e84;">" }</span>`;
     }
 
-    async function loadProfile() {
-      try {
-        const res = await fetch('/api/profile/me');
-        const data = await res.json();
-        if (data.success) {
-          const u = data.user;
-          if (!initialEmail) {
-            initialEmail = u.email;
-            document.getElementById('emailInput').value = u.email || '';
-            document.getElementById('bioInput').value = u.bio || '';
-          }
-          
-          document.getElementById('profileView').innerHTML = `
-            <div style="display: flex; align-items: center; gap: 1rem;">
-              <div class="profile-avatar" style="width:50px; height:50px; margin:0; font-size:1.2rem; background: var(--neon-cyan); color: #000;">${u.username[0].toUpperCase()}</div>
-              <div>
-                <div style="font-weight: bold; color: #fff; font-size:1.1rem;">${u.username}</div>
-                <div style="font-size: 11px; color: var(--neon-cyan); font-family: 'Share Tech Mono';">${u.email || 'NO_EMAIL'}</div>
-              </div>
-            </div>`;
+    function showResponse(data) {
+      const panel = document.getElementById('responsePanel');
+      panel.style.display = 'block';
+      const body = document.getElementById('responseBody');
 
-          // If email changed, trigger Flag
-          if (u.email !== initialEmail) {
-            showCsrfFlag();
-          }
-        }
-      } catch (err) {}
-    }
-
-    async function pollTraffic() {
-      try {
-        const res = await fetch('/api/admin/activities'); 
-        const data = await res.json();
-        if (data.success) {
-          const logs = data.activities.filter(l => l.action === 'UPDATE_PROFILE').slice(0, 5);
-          const logBody = document.getElementById('trafficLog');
-          logBody.innerHTML = logs.map(l => {
-            const isExternal = !l.details.includes('Internal') && !l.details.includes('localhost');
-            return `<div style="margin-bottom: 5px; color: ${isExternal ? 'var(--neon-pink)' : 'var(--neon-yellow)'};">
-              [${new Date(l.created_at).toLocaleTimeString()}] UPDATE_REQ &rarr; ${l.details}
-              ${isExternal ? ' <span style="font-weight:bold;">[ATTACK_DETECTED]</span>' : ''}
-            </div>`;
-          }).join('');
-          
-          if (logs.some(l => !l.details.includes('Internal') && !l.details.includes('localhost'))) {
-            loadProfile(); // Refresh profile to trigger flag if needed
-          }
-        }
-      } catch (err) {}
-    }
-
-    function showCsrfFlag() {
-      if (document.getElementById('csrfFlag')) return;
-      const container = document.querySelector('.main-content .htb-container');
-      const div = document.createElement('div');
-      div.id = 'csrfFlag';
-      div.innerHTML = `
-        <div style="border: 2px solid var(--neon-pink); background: rgba(255,0,102,0.1); padding: 2.5rem; border-radius: 4px; text-align: center; margin-bottom: 2rem; animation: pulse 2s infinite; border-style: dashed;">
-          <div style="color: var(--neon-pink); font-weight: bold; margin-bottom: 1rem; font-size: 14px; letter-spacing: 4px;">[ ⚠️ SECURITY_BREACH: ACCOUNT_HIJACKED ]</div>
-          <div style="font-family: 'Share Tech Mono'; color: #fff; font-size: 1.4rem; font-weight: bold; margin-bottom: 1.5rem;">Unauthorized Cross-Origin Request Executed!</div>
-          <div style="display:inline-block; background: #000; padding: 1rem 2rem; border: 1px solid var(--neon-yellow);">
-            <div style="font-family: 'Share Tech Mono'; color: var(--neon-yellow); font-size: 2rem; font-weight: bold;">ACT{cr5f_byp4ss_r3f3r3r}</div>
+      if (data.csrf_detected) {
+        body.innerHTML = `
+          <div style="margin-bottom: 10px;">
+            <span style="color: var(--neon-green); font-weight: bold;">✅ CSRF_DETECTED: true</span>
           </div>
-        </div>
-      `;
-      container.prepend(div);
-      showToast('CSRF ATTACK DETECTED!', 'error');
+          <div style="color: #fff; margin-bottom: 8px;">${data.message}</div>
+          <div class="request-row"><span class="request-label">Referer Received</span><span class="request-value" style="color: var(--neon-yellow);">${data.referer}</span></div>
+          <div class="request-row" style="border-bottom: none;"><span class="request-label">Origin Received</span><span class="request-value" style="color: var(--neon-yellow);">${data.origin}</span></div>
+        `;
+      } else {
+        body.innerHTML = `
+          <div style="margin-bottom: 10px;">
+            <span style="color: var(--neon-pink); font-weight: bold;">❌ CSRF_DETECTED: false</span>
+          </div>
+          <div style="color: #626e84; margin-bottom: 8px;">${data.message}</div>
+          <div class="request-row"><span class="request-label">Referer</span><span class="request-value">${data.referer}</span></div>
+          <div class="request-row" style="border-bottom: none;"><span class="request-label">Origin</span><span class="request-value">${data.origin}</span></div>
+        `;
+      }
     }
 
-    setInterval(pollTraffic, 2000);
-    setInterval(loadProfile, 5000);
+    function addLog(data) {
+      const log = document.getElementById('trafficLog');
+      const time = new Date().toLocaleTimeString();
+      if (data.csrf_detected) {
+        log.innerHTML = `<div style="margin-bottom: 4px; color: var(--neon-pink);">
+          <span style="color: #626e84;">[${time}]</span>
+          <span style="font-weight: bold;">[CSRF_BYPASS]</span>
+          Referer: ${data.referer} | Origin: ${data.origin}
+          <span style="color: var(--neon-green); font-weight: bold;">🚩 FLAG!</span>
+        </div>` + log.innerHTML;
+      } else if (data.error) {
+        log.innerHTML = `<div style="margin-bottom: 4px; color: var(--neon-pink);">
+          <span style="color: #626e84;">[${time}]</span>
+          <span style="font-weight: bold;">[ERROR]</span> ${data.error}
+        </div>` + log.innerHTML;
+      } else {
+        log.innerHTML = `<div style="margin-bottom: 4px; color: #626e84;">
+          <span style="color: #626e84;">[${time}]</span>
+          <span style="font-weight: bold;">[BLOCKED]</span>
+          Referer: ${data.referer} | ${data.message}
+        </div>` + log.innerHTML;
+      }
+    }
+
+    function resetAttack() {
+      document.getElementById('refererInput').value = 'https://actlab.up.railway.app.evil.com/csrf-exploit';
+      document.getElementById('originInput').value = 'https://actlab.up.railway.app.evil.com';
+      document.getElementById('payloadInput').value = 'dicuri@hacker.com';
+      document.getElementById('attackerCard').classList.remove('active');
+      document.getElementById('statusBadge').className = 'bypass-badge fail';
+      document.getElementById('statusBadge').textContent = 'AWAITING ATTACK';
+      document.getElementById('responsePanel').style.display = 'none';
+      document.getElementById('flagReveal').classList.remove('visible');
+    }
+
+    function clearLog() {
+      document.getElementById('trafficLog').innerHTML = '<div style="color: #626e84;">[SYSTEM] Log cleared.</div>';
+    }
+
+    function toggleHint() {
+      const hint = document.getElementById('hintBox');
+      hint.style.display = hint.style.display === 'none' ? 'block' : 'none';
+    }
+
+    function showToast(msg, type) {
+      const container = document.getElementById('toastContainer');
+      container.innerHTML = '';
+      const toast = document.createElement('div');
+      toast.className = `toast toast-${type}`;
+      toast.textContent = msg;
+      container.appendChild(toast);
+      setTimeout(() => toast.remove(), 3000);
+    }
 
     async function initStatus() {
       try {
@@ -224,8 +488,6 @@
         let navHtml = `<span class="nav-user-badge">Status: ${u.username} (${u.score} PTS)</span>`;
         if (isAdmin) { navHtml = `<a href="/admin" class="nav-user-badge" style="border-color:var(--neon-pink); color:var(--neon-pink); text-decoration:none; animation: pulse 1s infinite;">⚠️ ADMIN_ACCESS_GRANTED</a> ` + navHtml; }
         document.getElementById('navUser').innerHTML = navHtml;
-        if (typeof loadProfile === 'function') loadProfile();
-        if (typeof pollTraffic === 'function') pollTraffic();
       } catch (err) {}
     }
     initStatus();

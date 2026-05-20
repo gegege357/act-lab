@@ -32,3 +32,4 @@ The platform is deployed and active at:
 
 ---
 **LEGAL NOTICE**: This platform contains intentional vulnerabilities for educational purposes only. Unauthorized use outside of authorized training environments is strictly prohibited.
+# lab-act

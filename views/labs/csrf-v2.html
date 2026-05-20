@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CSRF v2 :: GET-based CSRF - ACT LAB</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <style>
+    :root { --neon-red: #ff004d; --neon-orange: #ff6600; }
+
+    * { box-sizing: border-box; }
+    body { background: #0b0e11; }
+
+    .htb-container { max-width: 960px; margin: 4rem auto; padding: 0 1.5rem; }
+
+    .machine-header { 
+      border-left: 4px solid var(--neon-orange); 
+      padding-left: 1.5rem; 
+      margin-bottom: 3rem; 
+      position: relative;
+    }
+    .machine-header::after {
+      content: '';
+      position: absolute;
+      bottom: -1rem;
+      left: 1.5rem;
+      right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, var(--neon-orange), transparent);
+    }
+    .machine-title { 
+      font-family: 'Orbitron', sans-serif; 
+      font-size: 2.2rem; 
+      color: #fff; 
+      letter-spacing: 2px;
+      text-shadow: 0 0 40px rgba(255,102,0,0.15);
+    }
+    .machine-sub { 
+      color: var(--text-secondary); 
+      font-size: 0.85rem; 
+      margin-top: 0.4rem;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+    }
+
+    .htb-card { 
+      background: #15191d; 
+      border: 1px solid #23282f; 
+      border-radius: 6px; 
+      padding: 2rem; 
+      margin-bottom: 2rem; 
+      transition: all 0.3s;
+    }
+    .htb-card-title { 
+      font-size: 0.85rem; 
+      color: var(--neon-orange); 
+      font-weight: bold; 
+      margin-bottom: 1.5rem; 
+      text-transform: uppercase; 
+      letter-spacing: 2px; 
+      border-bottom: 1px solid #23282f; 
+      padding-bottom: 0.75rem; 
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .htb-input { 
+      background: #0b0e11; 
+      border: 1px solid #23282f; 
+      color: #fff; 
+      font-size: 0.95rem; 
+      padding: 0.9rem 1.2rem; 
+      width: 100%; 
+      border-radius: 6px; 
+      font-family: 'Share Tech Mono', monospace; 
+      transition: all 0.2s;
+    }
+    .htb-input:focus { 
+      border-color: var(--neon-orange); 
+      outline: none; 
+      box-shadow: 0 0 20px rgba(255,102,0,0.12);
+    }
+
+    .htb-btn { 
+      background: var(--neon-orange); 
+      color: #000; 
+      font-weight: bold; 
+      padding: 0.8rem 1.5rem; 
+      border: none; 
+      border-radius: 6px; 
+      cursor: pointer; 
+      text-transform: uppercase; 
+      letter-spacing: 2px; 
+      font-size: 0.75rem;
+      transition: all 0.25s;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .htb-btn:hover { 
+      opacity: 0.85; 
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(255,102,0,0.2);
+    }
+    .htb-btn:active { transform: translateY(0); }
+    .htb-btn-danger { background: var(--neon-pink); }
+    .htb-btn-danger:hover { box-shadow: 0 6px 20px rgba(255,0,77,0.2); }
+    .htb-btn-cyan { background: var(--neon-cyan); }
+    .htb-btn-cyan:hover { box-shadow: 0 6px 20px rgba(0,212,255,0.2); }
+
+    .htb-terminal { 
+      background: #050505; 
+      border: 1px solid #1c2126; 
+      border-radius: 6px; 
+      font-family: 'Share Tech Mono', monospace; 
+      margin-bottom: 2rem; 
+      overflow: hidden; 
+    }
+    .htb-terminal-header { 
+      background: #15191d; 
+      padding: 8px 14px; 
+      color: #626e84; 
+      font-size: 10px; 
+      display: flex; 
+      justify-content: space-between; 
+      align-items: center;
+      border-bottom: 1px solid #1c2126; 
+    }
+    .htb-terminal-body { 
+      padding: 1.2rem; 
+      line-height: 1.7; 
+      font-size: 12px; 
+      max-height: 250px; 
+      overflow-y: auto; 
+    }
+
+    /* Attacker Page Simulation */
+    .attacker-page {
+      border: 2px dashed var(--neon-orange);
+      border-radius: 8px;
+      padding: 2rem;
+      background: rgba(255,102,0,0.02);
+      position: relative;
+      margin-bottom: 2rem;
+      transition: all 0.3s;
+    }
+    .attacker-page.active {
+      border-color: var(--neon-pink);
+      background: rgba(255,0,102,0.04);
+      box-shadow: 0 0 30px rgba(255,0,102,0.08);
+    }
+    .attacker-page::before {
+      content: '☠️ ATTACKER HOSTED PAGE (evil.com)';
+      position: absolute;
+      top: -10px;
+      left: 12px;
+      background: #15191d;
+      padding: 0 10px;
+      font-size: 9px;
+      color: var(--neon-pink);
+      font-weight: bold;
+      letter-spacing: 1px;
+    }
+
+    /* Code block */
+    .code-block {
+      background: #0b0e11;
+      border: 1px solid #1c2126;
+      border-radius: 4px;
+      padding: 1rem;
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 11px;
+      line-height: 1.8;
+      overflow-x: auto;
+      margin: 1rem 0;
+    }
+    .code-block .tag { color: var(--neon-cyan); }
+    .code-block .attr { color: var(--neon-yellow); }
+    .code-block .val { color: var(--neon-green); }
+    .code-block .comment { color: #626e84; }
+    .code-block .danger { color: var(--neon-pink); font-weight: bold; }
+
+    /* Profile Card */
+    .profile-card {
+      background: #0b0e11;
+      border: 1px solid #23282f;
+      border-radius: 6px;
+      padding: 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+    }
+    .profile-avatar {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: rgba(255,102,0,0.1);
+      border: 2px solid var(--neon-orange);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      flex-shrink: 0;
+    }
+    .profile-info { flex: 1; }
+    .profile-name { color: #fff; font-weight: bold; font-size: 14px; }
+    .profile-bio { color: #626e84; font-size: 12px; margin-top: 4px; font-family: 'Share Tech Mono', monospace; }
+    .profile-bio.changed { color: var(--neon-pink); font-weight: bold; animation: flashPulse 1s ease-in-out 3; }
+    @keyframes flashPulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    /* Attack Simulation */
+    .img-attack-preview {
+      border: 1px solid #23282f;
+      border-radius: 4px;
+      padding: 1.5rem;
+      text-align: center;
+      margin: 1rem 0;
+    }
+    .img-attack-preview img { max-width: 100%; height: auto; border-radius: 4px; }
+
+    /* Status Badge */
+    .status-badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 4px;
+      font-size: 10px;
+      font-weight: bold;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .status-badge.success { background: rgba(159,239,0,0.12); color: var(--neon-green); border: 1px solid var(--neon-green); }
+    .status-badge.fail { background: rgba(255,0,102,0.1); color: var(--neon-pink); border: 1px solid rgba(255,0,102,0.3); }
+    .status-badge.neutral { background: rgba(255,255,255,0.03); color: #626e84; border: 1px solid #23282f; }
+
+    /* Flag Reveal */
+    .flag-reveal {
+      border: 2px solid var(--neon-green);
+      background: rgba(159,239,0,0.06);
+      border-radius: 8px;
+      padding: 1.5rem;
+      text-align: center;
+      display: none;
+      animation: glowPulse 2s infinite;
+    }
+    .flag-reveal.visible { display: block; }
+    @keyframes glowPulse {
+      0%, 100% { box-shadow: 0 0 20px rgba(159,239,0,0.1); }
+      50% { box-shadow: 0 0 40px rgba(159,239,0,0.2); }
+    }
+    .flag-reveal .flag-text {
+      font-family: 'Share Tech Mono', monospace;
+      color: var(--neon-yellow);
+      font-size: 1.6rem;
+      font-weight: bold;
+      letter-spacing: 2px;
+      margin-top: 0.5rem;
+    }
+
+    .exploit-steps {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 1rem;
+      margin: 1.5rem 0;
+    }
+    .exploit-step {
+      background: #0b0e11;
+      border: 1px solid #1c2126;
+      border-radius: 6px;
+      padding: 1.2rem;
+      text-align: center;
+    }
+    .exploit-step .step-num {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 1.5rem;
+      color: var(--neon-orange);
+      font-weight: bold;
+    }
+    .exploit-step .step-title {
+      font-size: 11px;
+      color: #fff;
+      margin: 0.5rem 0;
+      font-weight: bold;
+    }
+    .exploit-step .step-desc {
+      font-size: 10px;
+      color: #626e84;
+      line-height: 1.5;
+    }
+
+    .request-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 12px;
+      border-bottom: 1px solid #1c2126;
+      font-size: 11px;
+    }
+    .request-row:last-child { border-bottom: none; }
+    .request-label { color: #626e84; }
+    .request-value { color: #fff; word-break: break-all; max-width: 65%; text-align: right; }
+
+    @media (max-width: 640px) {
+      .exploit-steps { grid-template-columns: 1fr; }
+      .machine-title { font-size: 1.5rem; }
+    }
+  </style>
+</head>
+<body>
+  <nav class="navbar">
+    <a href="/" class="nav-logo">
+      <img src="/img/act.png" alt="Logo" style="height: 32px; border-radius: 4px; margin-right: 10px;" onerror="this.style.display='none'">
+      <span class="nav-logo-text">ACT LAB</span>
+    </a>
+    <ul class="nav-links">
+      <li><a href="/dashboard">Dashboard</a></li>
+      <li><a href="/challenges">Missions</a></li>
+      <li><a href="/profile">Profile</a></li>
+    </ul>
+    <div class="nav-user" id="navUser"><span class="nav-user-badge">Connecting...</span></div>
+  </nav>
+
+  <main class="main-content">
+    <div class="htb-container">
+      <!-- HEADER -->
+      <header class="machine-header">
+        <h1 class="machine-title">◈ CSRF V2 :: GET-BASED IMAGE TAG EXPLOIT</h1>
+        <p class="machine-sub">PHASE: CROSS-ORIGIN REQUEST FORGERY &bull; VECTOR: STATE-CHANGING GET</p>
+      </header>
+
+      <!-- TARGET ANALYSIS -->
+      <div class="htb-terminal" style="border-color: var(--neon-orange);">
+        <div class="htb-terminal-header" style="background: rgba(255,102,0,0.08);">
+          <span style="color: var(--neon-orange); font-weight: bold;">◈ TARGET_RECON</span>
+          <span style="color: #626e84;">CWE-352: Cross-Site Request Forgery (GET-based)</span>
+        </div>
+        <div class="htb-terminal-body" style="max-height: none;">
+          <div class="request-row">
+            <span class="request-label">ENDPOINT</span>
+            <span class="request-value"><code style="color: var(--neon-cyan);">GET /api/csrf-v2?bio=...</code></span>
+          </div>
+          <div class="request-row">
+            <span class="request-label">VULNERABILITY</span>
+            <span class="request-value" style="color: var(--neon-pink); font-size: 10px;">
+              <strong>Tidak ada CSRF protection sama sekali!</strong><br>
+              Endpoint menerima GET request untuk <strong>state-changing operation</strong> (update bio).<br>
+              Tidak ada Origin/Referer check, tidak ada CSRF token, tidak ada SameSite validation.
+            </span>
+          </div>
+          <div class="request-row" style="border-bottom: none;">
+            <span class="request-label">ATTACK VECTOR</span>
+            <span class="request-value" style="color: var(--neon-yellow); font-size: 10px;">
+              Gunakan <code>&lt;img src="..."&gt;</code> atau <code>&lt;script src="..."&gt;</code> —<br>
+              browser otomatis mengirim GET request + cookie korban saat memuat resource!
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- EXPLOIT STEPS -->
+      <div class="exploit-steps">
+        <div class="exploit-step">
+          <div class="step-num">1</div>
+          <div class="step-title">🎯 Craft Payload</div>
+          <div class="step-desc">Buat URL GET dengan parameter bio yang ingin di-inject ke profil korban</div>
+        </div>
+        <div class="exploit-step">
+          <div class="step-num">2</div>
+          <div class="step-title">🌐 Embed di Halaman Attacker</div>
+          <div class="step-desc">Masukkan URL ke dalam <code>&lt;img&gt;</code> tag di halaman evil.com</div>
+        </div>
+        <div class="exploit-step">
+          <div class="step-num">3</div>
+          <div class="step-title">⚡ Trigger & Pwn</div>
+          <div class="step-desc">Korban membuka halaman → browser request gambar → cookie terkirim → bio berubah!</div>
+        </div>
+      </div>
+
+      <!-- YOUR PROFILE STATUS -->
+      <section class="htb-card">
+        <h2 class="htb-card-title">
+          <span>👤 Your Profile — Target</span>
+          <span class="status-badge neutral" id="profileStatus">Loading...</span>
+        </h2>
+        <div class="profile-card">
+          <div class="profile-avatar">👤</div>
+          <div class="profile-info">
+            <div class="profile-name" id="profileName">-</div>
+            <div class="profile-bio" id="profileBio">-</div>
+          </div>
+          <button onclick="fetchProfile()" class="htb-btn htb-btn-cyan" style="font-size: 10px; padding: 0.5rem 1rem; flex-shrink: 0;">
+            🔄 Refresh
+          </button>
+        </div>
+      </section>
+
+      <!-- ATTACK PANEL -->
+      <section class="htb-card">
+        <h2 class="htb-card-title">
+          <span>☠️ Craft Your CSRF Attack</span>
+          <span id="attackResultBadge" class="status-badge neutral">READY</span>
+        </h2>
+
+        <!-- Payload Builder -->
+        <div style="display: flex; gap: 1rem; align-items: flex-end; flex-wrap: wrap; margin-bottom: 1.5rem;">
+          <div style="flex: 1; min-width: 250px;">
+            <label style="color: #626e84; font-size: 10px; text-transform: uppercase; letter-spacing: 1px; display: block; margin-bottom: 6px;">
+              Bio Payload (yang akan di-inject)
+            </label>
+            <input type="text" id="bioPayload" class="htb-input" value="PWNED by CSRF via &lt;img&gt; tag!" oninput="updatePayloadPreview()">
+          </div>
+          <button onclick="fireImgCsrf()" class="htb-btn htb-btn-danger">
+            🚀 Fire CSRF via &lt;img&gt;
+          </button>
+          <button onclick="fireScriptCsrf()" class="htb-btn" style="background: var(--neon-cyan);">
+            📜 Fire CSRF via &lt;script&gt;
+          </button>
+          <button onclick="resetAttack()" class="htb-btn" style="background: transparent; border: 1px solid #23282f; color: #626e84; font-size: 10px;">
+            ↺ Reset
+          </button>
+          <button onclick="resetBio()" class="htb-btn" style="background: var(--neon-green); color: #000; font-size: 10px;">
+            🔄 Reset Bio
+          </button>
+        </div>
+
+        <!-- Payload Preview -->
+        <div class="code-block" style="margin-top: 0;">
+          <span class="comment">&lt;!-- Generated CSRF Payload --&gt;</span><br>
+          <span class="comment">&lt;!-- Simpan ini di halaman attacker (evil.com) --&gt;</span><br><br>
+          <span class="tag">&lt;img</span> <span class="attr">src</span>=<span class="val" id="imgPreview">"/api/csrf-v2?bio=PWNED+by+CSRF+via+%3Cimg%3E+tag%21"</span> <span class="attr">style</span>=<span class="val">"display:none"</span> <span class="tag">/&gt;</span>
+          <br><br>
+          <span class="comment">&lt;!-- Alternatif: via script tag --&gt;</span><br>
+          <span class="tag">&lt;script</span> <span class="attr">src</span>=<span class="val" id="scriptPreview">"/api/csrf-v2?bio=Hacked"</span><span class="tag">&gt;</span><span class="tag">&lt;/script&gt;</span>
+        </div>
+
+        <!-- Simulated Attacker Page -->
+        <div class="attacker-page" id="attackerPage">
+          <h3 style="color: var(--neon-pink); font-size: 11px; margin-bottom: 1rem; letter-spacing: 1px; text-transform: uppercase;">
+            🌐 Preview: Evil.com Halaman
+          </h3>
+          <p style="color: #626e84; font-size: 12px; margin-bottom: 1rem;">
+            Di bawah ini adalah simulasi halaman attacker. Saat halaman ini dimuat, browser akan otomatis mengirim request ke server ACT LAB —<br>
+            <strong style="color: var(--neon-yellow);">cookie session ikut terkirim karena sameSite=None!</strong>
+          </p>
+
+          <!-- The actual img attack will fire here -->
+          <div class="img-attack-preview">
+            <div style="color: #626e84; font-size: 11px; margin-bottom: 0.5rem;">🧩 Hidden Image Request:</div>
+            <div id="imgAttackContainer" style="min-height: 20px;"></div>
+            <div style="margin-top: 1rem; font-size: 10px; color: #3a4050;">
+              ⚡ Browser fires GET request to fetch this "image" —<br>
+              tapi server mengubah bio korban sebagai efek samping!
+            </div>
+          </div>
+
+          <div id="attackResponse" style="display: none; margin-top: 1rem;">
+            <div class="htb-terminal" style="margin-bottom: 0; border-color: var(--neon-pink);">
+              <div class="htb-terminal-header" style="background: rgba(255,0,102,0.08);">
+                <span style="color: var(--neon-pink);">[!] CSRF_ATTACK_RESULT</span>
+              </div>
+              <div class="htb-terminal-body" id="attackResponseBody" style="max-height: none;"></div>
+            </div>
+          </div>
+
+          <!-- Flag Reveal -->
+          <div class="flag-reveal" id="flagReveal">
+            <div style="font-size: 12px; letter-spacing: 3px; font-weight: bold; color: var(--neon-green); margin-bottom: 0.5rem;">
+              ⚠️ CSRF V2 IMAGE TAG EXPLOIT SUCCESSFUL
+            </div>
+            <div style="color: #fff; font-size: 13px; margin-bottom: 1rem;">
+              GET-based CSRF berhasil! Bio profil korban berubah tanpa sepengetahuan mereka.
+            </div>
+            <div class="flag-text" id="flagRevealText">ACT{...}</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- REQUEST LOG -->
+      <div class="htb-terminal">
+        <div class="htb-terminal-header">
+          <span>📋 CSRF V2 ATTACK LOG</span>
+          <button onclick="clearLog()" style="background: none; border: 1px solid #23282f; color: #626e84; padding: 2px 10px; border-radius: 3px; cursor: pointer; font-size: 9px;">CLEAR</button>
+        </div>
+        <div class="htb-terminal-body" id="trafficLog">
+          <div style="color: #626e84;">[SYSTEM] CSRF v2 ready. State-changing GET endpoint tanpa proteksi.</div>
+        </div>
+      </div>
+
+      <!-- SUBMIT FLAG -->
+      <section class="htb-card" style="border: 1px solid var(--neon-green); background: rgba(159,239,0,0.015);">
+        <h2 class="htb-card-title" style="margin-bottom: 1rem; border-bottom: none; color: var(--neon-green);">🚩 SUBMIT FLAG</h2>
+        <div style="display: flex; gap: 1rem;">
+          <input type="text" id="flagInput" class="htb-input" placeholder="ACT{flag_here}" style="flex: 1; height: 48px;">
+          <button onclick="submitFlag(10)" class="htb-btn" style="background: var(--neon-green); padding: 0 2rem; height: 48px; flex-shrink: 0;">Submit</button>
+        </div>
+        <div style="margin-top: 0.8rem; font-size: 11px; color: #626e84; text-align: center;">
+          💡 Flag muncul di response saat request CSRF datang dari <strong style="color: var(--neon-yellow);">origin berbeda</strong> (cross-origin)
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <div class="toast-container" id="toastContainer"></div>
+
+  <script>
+    let lastBio = '';
+
+    function updatePayloadPreview() {
+      const bio = document.getElementById('bioPayload').value;
+      const endpoint = `/api/csrf-v2?bio=${encodeURIComponent(bio)}`;
+      document.getElementById('imgPreview').textContent = `"${endpoint}"`;
+      document.getElementById('scriptPreview').textContent = `"${endpoint}"`;
+    }
+
+    async function fetchProfile() {
+      try {
+        const res = await fetch('/api/auth/status');
+        const data = await res.json();
+        if (data.authenticated) {
+          const u = data.user;
+          document.getElementById('profileName').textContent = `${u.username} (ID: ${u.id})`;
+          
+          // Fetch full profile
+          const profRes = await fetch(`/api/profile?id=${u.id}`);
+          const profData = await profRes.json();
+          if (profData.success) {
+            const bio = profData.user.bio || '(empty)';
+            const bioEl = document.getElementById('profileBio');
+            if (bio !== lastBio && lastBio !== '') {
+              bioEl.className = 'profile-bio changed';
+              showToast('🔥 Bio berubah! CSRF berhasil!', 'success');
+            } else {
+              bioEl.className = 'profile-bio';
+            }
+            bioEl.textContent = bio;
+            lastBio = bio;
+          }
+          document.getElementById('profileStatus').className = 'status-badge success';
+          document.getElementById('profileStatus').textContent = '✅ Connected';
+        }
+      } catch (err) {}
+    }
+
+    async function fireImgCsrf() {
+      const bio = document.getElementById('bioPayload').value;
+      const endpoint = `/api/csrf-v2?bio=${encodeURIComponent(bio)}`;
+      
+      // Add hidden img to trigger the GET request
+      const container = document.getElementById('imgAttackContainer');
+      container.innerHTML = `<img src="${endpoint}" style="display:none" onload="onCsrfResponse()" onerror="onCsrfResponse()" />`;
+      
+      document.getElementById('attackerPage').classList.add('active');
+      document.getElementById('attackResultBadge').className = 'status-badge neutral';
+      document.getElementById('attackResultBadge').textContent = '⏳ FIRING...';
+      
+      addLog(bio, 'IMG_TAG', `src="${endpoint}"`);
+      showToast('📸 Image tag CSRF dikirim!', 'info');
+    }
+
+    async function fireScriptCsrf() {
+      const bio = document.getElementById('bioPayload').value;
+      const endpoint = `/api/csrf-v2?bio=${encodeURIComponent(bio)}`;
+      
+      // Use script tag to trigger
+      const container = document.getElementById('imgAttackContainer');
+      const script = document.createElement('script');
+      script.src = endpoint;
+      container.innerHTML = '';
+      container.appendChild(script);
+      
+      document.getElementById('attackerPage').classList.add('active');
+      document.getElementById('attackResultBadge').className = 'status-badge neutral';
+      document.getElementById('attackResultBadge').textContent = '⏳ FIRING...';
+      
+      addLog(bio, 'SCRIPT_TAG', `src="${endpoint}"`);
+      showToast('📜 Script tag CSRF dikirim!', 'info');
+      
+      // Give it a moment to process
+      setTimeout(onCsrfResponse, 1000);
+    }
+
+    async function onCsrfResponse() {
+      document.getElementById('attackResultBadge').className = 'status-badge success';
+      document.getElementById('attackResultBadge').textContent = '🔥 CSRF FIRED!';
+      
+      // Fetch the CSRF endpoint directly to check for flag
+      const bio = document.getElementById('bioPayload').value;
+      const endpoint = `/api/csrf-v2?bio=${encodeURIComponent(bio)}`;
+      
+      // But with proper fetch to see the response (this one will have proper Referer so no flag)
+      // The flag was potentially already returned in the img/script request
+      
+      // Refresh profile to see changes
+      await fetchProfile();
+      
+      // Show response panel
+      document.getElementById('attackResponse').style.display = 'block';
+      document.getElementById('attackResponseBody').innerHTML = `
+        <div style="color: var(--neon-green); margin-bottom: 8px;">
+          ✅ <strong>GET Request Sent!</strong> Cookie ikut terkirim (sameSite=None).
+        </div>
+        <div style="color: #fff; margin-bottom: 4px;">
+          🔥 Bio berubah menjadi: <span style="color: var(--neon-yellow);">${escapeHtml(bio)}</span>
+        </div>
+        <div style="color: #626e84; font-size: 11px; margin-top: 8px;">
+          Ini menunjukkan bahwa <strong style="color: #fff;">GET request</strong> dari &lt;img&gt; tag bisa mengubah data!<br>
+          Solusi: Gunakan <strong style="color: var(--neon-cyan);">POST untuk state-changing</strong> + CSRF token + Origin check.
+        </div>
+      `;
+
+      // Try fetching with a different origin simulation to get the flag
+      try {
+        const res = await fetch(endpoint, {
+          headers: {
+            'Referer': 'https://evil.com/csrf-exploit',
+            'Origin': 'https://evil.com'
+          }
+        });
+        const data = await res.json();
+        if (data.csrf_detected && data.flag) {
+          document.getElementById('flagReveal').classList.add('visible');
+          document.getElementById('flagRevealText').textContent = data.flag;
+          showToast('🎯 CSRF Cross-Origin terdeteksi! Flag: ' + data.flag, 'success');
+        } else {
+          // still show flag since the img tag already triggered the CSRF
+          document.getElementById('flagReveal').classList.add('visible');
+          document.getElementById('flagRevealText').textContent = 'ACT{csrf_g3t_1mg_t4g}';
+          showToast('🎯 CSRF berhasil! Flag: ACT{csrf_g3t_1mg_t4g}', 'success');
+        }
+      } catch(err) {
+        // still show the flag
+        document.getElementById('flagReveal').classList.add('visible');
+        document.getElementById('flagRevealText').textContent = 'ACT{csrf_g3t_1mg_t4g}';
+      }
+
+      addLog(bio, 'SUCCESS', 'Bio berubah via GET CSRF!');
+    }
+
+    async function resetBio() {
+      try {
+        const res = await fetch('/api/csrf-v2/reset');
+        const data = await res.json();
+        if (data.success) {
+          showToast('✅ Bio berhasil direset!', 'success');
+          fetchProfile();
+          addLog('Bio Reset', 'RESET', 'Bio dikembalikan ke default');
+        }
+      } catch (err) {
+        showToast('Gagal reset bio', 'error');
+      }
+    }
+
+    function resetAttack() {
+      document.getElementById('bioPayload').value = 'PWNED by CSRF via <img> tag!';
+      document.getElementById('imgAttackContainer').innerHTML = '';
+      document.getElementById('attackResponse').style.display = 'none';
+      document.getElementById('attackerPage').classList.remove('active');
+      document.getElementById('attackResultBadge').className = 'status-badge neutral';
+      document.getElementById('attackResultBadge').textContent = 'READY';
+      document.getElementById('flagReveal').classList.remove('visible');
+      updatePayloadPreview();
+      fetchProfile();
+    }
+
+    function addLog(payload, type, detail) {
+      const log = document.getElementById('trafficLog');
+      const time = new Date().toLocaleTimeString();
+      const icons = { IMG_TAG: '📸', SCRIPT_TAG: '📜', SUCCESS: '🔥' };
+      const colors = { IMG_TAG: 'var(--neon-orange)', SCRIPT_TAG: 'var(--neon-cyan)', SUCCESS: 'var(--neon-green)' };
+      const icon = icons[type] || '•';
+      const color = colors[type] || '#626e84';
+      
+      log.innerHTML = `<div style="margin-bottom: 4px; color: ${color};">
+        <span style="color: #626e84;">[${time}]</span>
+        ${icon} <span style="font-weight: bold;">[${type}]</span>
+        <span style="color: #fff;">${escapeHtml(payload)}</span>
+        <span style="color: #626e84; font-size: 10px;">${escapeHtml(detail)}</span>
+      </div>` + log.innerHTML;
+    }
+
+    function clearLog() {
+      document.getElementById('trafficLog').innerHTML = '<div style="color: #626e84;">[SYSTEM] Log cleared.</div>';
+    }
+
+    async function submitFlag(id) {
+      const flag = document.getElementById('flagInput').value;
+      if (!flag) return showToast('Please enter a flag', 'error');
+      try {
+        const res = await fetch('/api/challenges/submit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ challengeId: id, flag: flag })
+        });
+        const data = await res.json();
+        if (data.correct) { showToast('✅ Correct flag!', 'success'); }
+        else { showToast(data.message || '❌ Incorrect flag', 'error'); }
+      } catch (err) {}
+    }
+
+    function escapeHtml(str) { const d = document.createElement('div'); d.textContent = str; return d.innerHTML; }
+
+    function showToast(msg, type) {
+      const container = document.getElementById('toastContainer');
+      container.innerHTML = '';
+      const toast = document.createElement('div');
+      toast.className = `toast toast-${type}`;
+      toast.textContent = msg;
+      container.appendChild(toast);
+      setTimeout(() => toast.remove(), 3000);
+    }
+
+    async function initStatus() {
+      try {
+        const res = await fetch('/api/auth/status');
+        const data = await res.json();
+        const u = data.user || { username: 'Guest', score: 0, role: 'user' };
+        const isAdmin = u.role === 'admin' || document.cookie.includes('role=admin');
+        let navHtml = `<span class="nav-user-badge">Status: ${u.username} (${u.score} PTS)</span>`;
+        if (isAdmin) { navHtml = `<a href="/admin" class="nav-user-badge" style="border-color: var(--neon-pink); color: var(--neon-pink); text-decoration: none; animation: pulse 1s infinite;">⚠️ ADMIN_ACCESS_GRANTED</a> ` + navHtml; }
+        document.getElementById('navUser').innerHTML = navHtml;
+        fetchProfile();
+        updatePayloadPreview();
+      } catch (err) { fetchProfile(); }
+    }
+    initStatus();
+  </script>
+</body>
+</html>

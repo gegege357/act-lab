@@ -91,6 +91,7 @@ app.use('/api/admin/reset', rateLimiters.admin);
 app.use('/api/admin/reseed', rateLimiters.admin);
 app.use('/api/flag/submit', rateLimiters.flag);
 app.use('/api/csrf-challenge', rateLimiters.read);
+app.use('/api/csrf-v2', rateLimiters.read);
 
 if (IS_PRODUCTION) {
   // Di production, batasi juga halaman lab
@@ -108,6 +109,7 @@ app.use('/api/redirect', require('./api/redirect'));
 app.use('/api/admin', require('./api/admin'));
 app.use('/api/flag', require('./api/flag'));
 app.use('/api/csrf-challenge', require('./api/csrf-challenge'));
+app.use('/api/csrf-v2', require('./api/csrf-v2'));
 
 // ============================================
 // HEALTH CHECK — Untuk Railway monitoring

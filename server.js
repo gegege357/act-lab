@@ -9,16 +9,10 @@ const PORT = process.env.PORT || 3000;
 const { rateLimiters } = require('./middleware/ratelimit');
 
 // ============================================
-// RAILWAY OPTIMASI: Deteksi environment
+// Runtime detection
 // ============================================
-const IS_RAILWAY = !!process.env.RAILWAY_SERVICE_ID;
 const IS_VERCEL = process.env.VERCEL === '1';
-const IS_PRODUCTION = IS_RAILWAY || IS_VERCEL || process.env.NODE_ENV === 'production';
-
-if (IS_RAILWAY) {
-  console.log('🚆 Running on Railway — Production mode');
-  console.log('📊 Port:', PORT);
-}
+const IS_PRODUCTION = IS_VERCEL || process.env.NODE_ENV === 'production';
 
 process.on('uncaughtException', (err) => {
   console.error('UNCAUGHT EXCEPTION:', err);
@@ -112,14 +106,14 @@ app.use('/api/csrf-challenge', require('./api/csrf-challenge'));
 app.use('/api/csrf-v2', require('./api/csrf-v2'));
 
 // ============================================
-// HEALTH CHECK — Untuk Railway monitoring
+// HEALTH CHECK
 // ============================================
 app.get('/api/health', (req, res) => {
   res.json({
     success: true,
     status: 'ok',
     timestamp: new Date().toISOString(),
-    environment: IS_RAILWAY ? 'railway' : IS_VERCEL ? 'vercel' : 'local',
+    environment: IS_VERCEL ? 'vercel' : 'local',
     uptime: process.uptime()
   });
 });
@@ -227,8 +221,7 @@ const seedDB = async () => {
   }
 };
 
-// First seed, then listen (prevents race condition)
-(async () => {
+async function bootstrap() {
   await seedDB();
   
   // ============================================
@@ -243,9 +236,9 @@ const seedDB = async () => {
   }
   
   // ============================================
-  // CLEANUP BERKALA — Setiap 6 jam (untuk Railway)
+  // CLEANUP BERKALA — Setiap 6 jam untuk server lokal production
   // ============================================
-  if (IS_PRODUCTION) {
+  if (!IS_VERCEL && IS_PRODUCTION) {
     setInterval(async () => {
       try {
         const db = require('./config/database');
@@ -259,8 +252,11 @@ const seedDB = async () => {
 
   app.listen(PORT, () => {
     console.log(`Server running on: http://localhost:${PORT}`);
-    if (IS_RAILWAY) {
-      console.log('🌐 Public URL: https://' + (process.env.RAILWAY_PUBLIC_DOMAIN || 'assigned-by-railway') + '/');
-    }
   });
-})();
+}
+
+if (!IS_VERCEL) {
+  bootstrap();
+}
+
+module.exports = app;

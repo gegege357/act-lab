@@ -1,21 +1,28 @@
 // ============================================
 // RATE LIMITER — In-Memory (No Redis)
 // Untuk melindungi endpoint sensitif dari abuse
-// saat 200+ peserta menggunakan Railway bersamaan
+// saat banyak peserta menggunakan lab bersamaan
 // ============================================
 
 // Map of { key: { count, resetTime } }
 const requestCounts = new Map();
 
-// Bersihkan cache setiap 5 menit agar tidak bocor memory
-setInterval(() => {
+function cleanupExpiredEntries() {
   const now = Date.now();
   for (const [key, entry] of requestCounts.entries()) {
     if (now > entry.resetTime) {
       requestCounts.delete(key);
     }
   }
-}, 5 * 60 * 1000);
+}
+
+// Bersihkan cache setiap 5 menit agar tidak bocor memory pada server lokal.
+// Di Vercel, instance serverless bisa dibekukan kapan saja, jadi cleanup cukup
+// dilakukan opportunistic saat request masuk.
+if (process.env.VERCEL !== '1') {
+  const cleanupTimer = setInterval(cleanupExpiredEntries, 5 * 60 * 1000);
+  if (cleanupTimer.unref) cleanupTimer.unref();
+}
 
 /**
  * Create a rate limiter middleware
@@ -34,6 +41,10 @@ function rateLimit(options = {}) {
   return (req, res, next) => {
     const key = keyGenerator(req);
     const now = Date.now();
+
+    if (process.env.VERCEL === '1' && requestCounts.size > 1000) {
+      cleanupExpiredEntries();
+    }
 
     let entry = requestCounts.get(key);
     

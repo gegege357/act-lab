@@ -110,7 +110,7 @@ router.post('/', requireAuth, async (req, res) => {
   // *** LOOSE SECURITY CHECK (BYPASSABLE) ***
   // Intent: Only allow requests from our domain
   // Flaw: It just checks if the domain string is PRESENT anywhere in the header
-  // Using req.headers.host so it works on ANY deployment (Railway, Vercel, custom domain, etc.)
+  // Using req.headers.host so it works on Vercel, localhost, and custom domains.
   const currentHost = req.headers.host || '';
   const isAuthorized = 
     referer.includes(currentHost) || 

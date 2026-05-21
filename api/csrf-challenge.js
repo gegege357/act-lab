@@ -14,8 +14,8 @@ const router = express.Router();
 // ============================================
 
 router.post('/', async (req, res) => {
-  const referer = req.headers.referer || '';
-  const origin = req.headers.origin || '';
+  const referer = req.headers['x-actlab-referer'] || req.body.referer || req.headers.referer || '';
+  const origin = req.headers['x-actlab-origin'] || req.body.origin || req.headers.origin || '';
   const currentHost = req.headers.host || '';
 
   // *** SAME VULNERABILITY as profile.js ***
@@ -51,8 +51,11 @@ router.post('/', async (req, res) => {
   const refererHost = getHostFromUrl(referer);
   const originHost = getHostFromUrl(origin);
   const isLegitimateOrigin = refererHost === currentHost || originHost === currentHost;
+  const isBypassOrigin =
+    (refererHost && refererHost !== currentHost && referer.includes(currentHost)) ||
+    (originHost && originHost !== currentHost && origin.includes(currentHost));
 
-  if (isLegitimateOrigin) {
+  if (isLegitimateOrigin && !isBypassOrigin) {
     // Request dari origin yang sama — legitimate
     return res.json({
       success: true,

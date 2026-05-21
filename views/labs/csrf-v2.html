@@ -1,4 +1,4 @@
-git commit -m "first commit"<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -589,8 +589,8 @@ git commit -m "first commit"<!DOCTYPE html>
       const bio = document.getElementById('bioPayload').value;
       const endpoint = `/api/csrf-v2?bio=${encodeURIComponent(bio)}`;
       
-      // But with proper fetch to see the response (this one will have proper Referer so no flag)
-      // The flag was potentially already returned in the img/script request
+      // Use lab simulation headers so the UI can reveal the same cross-origin
+      // result in browsers that block custom Referer/Origin headers.
       
       // Refresh profile to see changes
       await fetchProfile();
@@ -614,8 +614,8 @@ git commit -m "first commit"<!DOCTYPE html>
       try {
         const res = await fetch(endpoint, {
           headers: {
-            'Referer': 'https://evil.com/csrf-exploit',
-            'Origin': 'https://evil.com'
+            'X-ACTLAB-Referer': 'https://evil.com/csrf-exploit',
+            'X-ACTLAB-Origin': 'https://evil.com'
           }
         });
         const data = await res.json();

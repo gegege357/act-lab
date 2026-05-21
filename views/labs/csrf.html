@@ -187,9 +187,9 @@
           <div style="display: flex; align-items: flex-start; gap: 10px;">
             <span style="font-size: 20px; flex-shrink: 0;">⚠️</span>
             <div>
-              <strong style="color: #fff;">Browser TIDAK mengizinkan JavaScript mengubah header <code>Referer</code>/<code>Origin</code>.</strong>
+              <strong style="color: #fff;">Browser TIDAK mengizinkan JavaScript mengubah header <code>Referer</code>/<code>Origin</code> asli.</strong>
               <div style="color: #ccc; margin-top: 4px;">
-                Tombol mengirim request <strong style="color: #fff;">real</strong>, tapi browser akan <strong style="color: var(--neon-yellow);">mengabaikan</strong> nilai Referer/Origin yang kamu isi dan pakai milik halaman ini. <strong style="color: var(--neon-yellow);">Gunakan Burp Suite</strong> untuk exploit asli:
+                Tombol lab mengirim request <strong style="color: #fff;">real</strong> memakai header simulasi <code>X-ACTLAB-Referer</code>/<code>X-ACTLAB-Origin</code> supaya demo tetap jalan di browser dan Vercel. Gunakan Burp Suite untuk exploit header asli:
                 <span style="color: var(--neon-green); display: block; margin-top: 4px;">
                   🛠️ <strong>Proxy</strong> → Intercept ON → edit header → Forward &nbsp;|&nbsp; 
                   🔁 <strong>Repeater</strong> → kirim <code>POST /api/csrf-challenge</code> + custom Referer
@@ -288,7 +288,7 @@ Cookie: userId=...; username=...; role=...
             <hr style="border-color: #23282f; margin: 12px 0;">
             <p><strong style="color: var(--neon-pink);">⚠️ PENTING — PAKAI BURP SUITE!</strong></p>
             <p style="font-size: 11px;">Browser modern <strong style="color: #fff;">TIDAK MENGIZINKAN</strong> JavaScript <code>fetch()</code> mengubah header <code>Referer</code>/<code>Origin</code> (forbidden header).</p>
-            <p style="font-size: 11px;">Tombol "Fire CSRF Attack" di atas hanya simulasi — request asli tetap pakai Referer dari URL halaman ini.</p>
+            <p style="font-size: 11px;">Tombol "Fire CSRF Attack" memakai header simulasi lab supaya bisa berjalan langsung di browser. Untuk header asli, gunakan Burp Suite/curl.</p>
             <p style="font-size: 11px; margin-top: 6px;"><strong style="color: var(--neon-green);">WAJIB pakai Burp Suite:</strong></p>
             <ol style="font-size: 11px; padding-left: 18px;">
               <li>Buka Burp Suite → <strong>Proxy</strong> → <strong>Intercept</strong> ON</li>
@@ -321,8 +321,8 @@ Cookie: userId=...; username=...; role=...
 
     // Auto-detect host untuk default Referer/Origin values
     const currentHost = location.host;
-    document.getElementById('refererInput').value = `http://${currentHost}.evil.com/csrf-exploit`;
-    document.getElementById('originInput').value = `http://${currentHost}.evil.com`;
+    document.getElementById('refererInput').value = `${location.protocol}//${currentHost}.evil.com/csrf-exploit`;
+    document.getElementById('originInput').value = `${location.protocol}//${currentHost}.evil.com`;
 
     async function submitFlag(id) {
       const flag = document.getElementById('flagInput').value;
@@ -355,10 +355,10 @@ Cookie: userId=...; username=...; role=...
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Referer': referer,
-            'Origin': origin
+            'X-ACTLAB-Referer': referer,
+            'X-ACTLAB-Origin': origin
           },
-          body: JSON.stringify({ email: payload })
+          body: JSON.stringify({ email: payload, referer, origin })
         });
         const data = await res.json();
 

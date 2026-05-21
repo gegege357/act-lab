@@ -59,7 +59,7 @@ router.post('/login', async (req, res) => {
       }
 
       // If legitimate login (or we want to actually log in)
-      const options = { path: '/', maxAge: 86400000, sameSite: 'none', secure: true };
+      const options = getAuthCookieOptions(req);
       res.cookie('userId', String(user.id), options);
       res.cookie('username', user.username, options);
       res.cookie('role', user.role, options);
@@ -98,7 +98,7 @@ router.post('/register', async (req, res) => {
     const newUserResult = await db.query('SELECT * FROM users WHERE username = $1', [username]);
     const user = newUserResult.rows[0];
     
-    setAuthCookies(res, user);
+    setAuthCookies(req, res, user);
 
     return res.json({
       success: true,
@@ -135,7 +135,7 @@ router.post('/auto-login', async (req, res) => {
       const userResult = await db.query('SELECT * FROM users WHERE username = $1', [username]);
       if (userResult.rows.length > 0) {
         const user = userResult.rows[0];
-        setAuthCookies(res, user);
+        setAuthCookies(req, res, user);
         return res.json({
           success: true,
           message: 'New unique session created',
@@ -152,7 +152,7 @@ router.post('/auto-login', async (req, res) => {
       username: username,
       role: 'user'
     };
-    setAuthCookies(res, ghostUser);
+    setAuthCookies(req, res, ghostUser);
 
     return res.json({
       success: true,
@@ -182,18 +182,25 @@ router.get('/status', (req, res) => {
   return res.json({ success: true, authenticated: false });
 });
 
-function setAuthCookies(res, user) {
-  // Untuk edukasi CSRF: set sameSite 'none' agar cookie terkirim saat cross-site POST
-  // Note: secure: true wajib jika sameSite: 'none'
+function getAuthCookieOptions(req) {
+  const isHttps = req.secure || req.headers['x-forwarded-proto'] === 'https';
+  return {
+    path: '/',
+    maxAge: 86400000,
+    sameSite: isHttps ? 'none' : 'lax',
+    secure: isHttps
+  };
+}
+
+function setAuthCookies(req, res, user) {
+  // SameSite=None is needed for the deployed CSRF labs. Local HTTP cannot persist
+  // Secure cookies, so localhost falls back to Lax for a smoother dev/demo loop.
   const options = { 
-    path: '/', 
-    maxAge: 86400000, 
-    sameSite: 'none', 
-    secure: true 
+    ...getAuthCookieOptions(req)
   };
   res.cookie('userId', String(user.id), options);
   res.cookie('username', user.username, options);
   res.cookie('role', user.role, options);
 }
 
-module.exports = router;
+module.exports = router;

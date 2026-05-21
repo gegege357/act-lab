@@ -52,6 +52,16 @@
   </main>
 
   <script>
+    function escapeHtml(value) {
+      return String(value ?? '').replace(/[&<>"']/g, ch => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;'
+      }[ch]));
+    }
+
     async function loadMissions() {
       try {
         const res = await fetch('/api/challenges/progress/me');
@@ -60,16 +70,22 @@
         if (data.success) {
           grid.innerHTML = data.challenges.map(c => {
             const isSolved = c.solved_at !== null;
+            const title = escapeHtml(c.title);
+            const description = escapeHtml(c.description || 'Intercept and exploit vulnerabilities in this environment.');
+            const difficulty = escapeHtml(c.difficulty);
+            const difficultyClass = escapeHtml(String(c.difficulty || '').toLowerCase());
+            const endpoint = escapeHtml(c.endpoint);
+            const points = escapeHtml(c.points);
             return `
               <div class="mission-card ${isSolved ? 'solved' : ''}">
-                <div class="mission-title">${c.title}</div>
-                <div class="mission-desc">${c.description || 'Intercept and exploit vulnerabilities in this environment.'}</div>
+                <div class="mission-title">${title}</div>
+                <div class="mission-desc">${description}</div>
                 <div class="mission-meta">
-                  <span class="mission-difficulty diff-${c.difficulty.toLowerCase()}">${c.difficulty}</span>
-                  <span style="color: var(--neon-cyan); font-family: 'Share Tech Mono'; font-weight: bold;">${c.points} PTS</span>
+                  <span class="mission-difficulty diff-${difficultyClass}">${difficulty}</span>
+                  <span style="color: var(--neon-cyan); font-family: 'Share Tech Mono'; font-weight: bold;">${points} PTS</span>
                   <div style="display: flex; align-items: center; gap: 10px;">
                     ${isSolved ? '<span style="color:var(--neon-cyan); font-size:10px; font-weight:bold; border: 1px solid var(--neon-cyan); padding: 2px 5px; border-radius: 3px;">SOLVED</span>' : ''}
-                    <a href="${c.endpoint}" class="btn-launch">Launch</a>
+                    <a href="${endpoint}" class="btn-launch">Launch</a>
                   </div>
                 </div>
               </div>

@@ -29,6 +29,21 @@ router.get('/', requireAuth, async (req, res) => {
     });
   }
 
+  const referer = req.headers['x-actlab-referer'] || req.headers.referer || '';
+  const origin = req.headers['x-actlab-origin'] || req.headers.origin || '';
+  const currentHost = req.headers.host || '';
+  const getHostFromUrl = (url) => {
+    try { return new URL(url).host; } catch (err) { return null; }
+  };
+  const refererHost = getHostFromUrl(referer);
+  const originHost = getHostFromUrl(origin);
+  const hasAnyOrigin = Boolean(refererHost || originHost);
+  const hasCrossOrigin =
+    (refererHost && refererHost !== currentHost) ||
+    (originHost && originHost !== currentHost);
+  const isCrossOrigin = hasAnyOrigin && hasCrossOrigin;
+  const flag = isCrossOrigin ? 'ACT{csrf_g3t_1mg_t4g}' : null;
+
   try {
     // *** VULNERABLE - Tidak ada CSRF protection ***
     // GET request bisa mengubah data user — sangat berbahaya!
@@ -55,19 +70,6 @@ router.get('/', requireAuth, async (req, res) => {
     );
     const user = userResult.rows[0] || {};
 
-    // Deteksi apakah ini cross-origin (dari attacker page)
-    const referer = req.headers.referer || '';
-    const origin = req.headers.origin || '';
-    const currentHost = req.headers.host || '';
-    const isLegitimateOrigin = referer.includes(currentHost) || origin.includes(currentHost);
-    const isCrossOrigin = !isLegitimateOrigin && (referer || origin);
-
-    // Beri flag jika request dari origin berbeda (CSRF berhasil!)
-    let flag = null;
-    if (isCrossOrigin) {
-      flag = 'ACT{csrf_g3t_1mg_t4g}';
-    }
-
     return res.json({
       success: true,
       message: isCrossOrigin
@@ -89,9 +91,24 @@ router.get('/', requireAuth, async (req, res) => {
         'Ini adalah CSRF klasik pada state-changing GET endpoint.'
     });
   } catch (err) {
-    return res.status(500).json({
-      success: false,
-      error: 'Database error: ' + err.message
+    return res.json({
+      success: true,
+      message: isCrossOrigin
+        ? 'CSRF BERHASIL! Bio berubah! (offline storage mode)'
+        : 'Bio update simulated (offline storage mode).',
+      storage_warning: 'Database unavailable: ' + err.message,
+      cross_origin: isCrossOrigin,
+      referer: referer || '(none)',
+      origin: origin || '(none)',
+      user: {
+        id: req.user.id,
+        username: req.user.username,
+        bio,
+        email: null
+      },
+      flag,
+      csrf_detected: isCrossOrigin,
+      explanation: 'Fallback mode: endpoint tetap menunjukkan vulnerability GET-based CSRF walau storage lokal tidak tersedia.'
     });
   }
 });
@@ -109,9 +126,10 @@ router.get('/reset', requireAuth, async (req, res) => {
       message: 'Bio berhasil direset!'
     });
   } catch (err) {
-    return res.status(500).json({
-      success: false,
-      error: err.message
+    return res.json({
+      success: true,
+      message: 'Bio reset simulated (offline storage mode).',
+      storage_warning: err.message
     });
   }
 });

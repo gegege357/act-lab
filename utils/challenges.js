@@ -9,6 +9,7 @@ const CHALLENGES = [
   { id: 7, title: 'IDOR',                              description: 'Akses dan lihat data pribadi user lain melalui ID di URL.',                                     category: 'IDOR',           difficulty: 'Easy',   hint: 'Ganti parameter id= di URL profil.',                                points: 100, endpoint: '/lab/idor' },
   { id: 8, title: 'Blind SQL Injection',               description: 'Ekstrak data sensitif dari tabel "secret_vault" menggunakan teknik boolean-based.',             category: 'SQL Injection',  difficulty: 'Hard',   hint: 'Gunakan kondisi boolean and fungsi SUBSTR().',                       points: 300, endpoint: '/lab/sqli-blind' },
   { id: 9, title: 'Privilege Escalation',              description: 'Akses panel administrasi dengan memanipulasi cookie hak akses.',                               category: 'Auth Bypass',    difficulty: 'Medium', hint: 'Coba ubah cookie role dari user menjadi admin.',                     points: 200, endpoint: '/lab/privesc' },
+  { id: 10, title: 'CSRF v2 - GET-based Image Tag Exploit', description: 'Eksploitasi CSRF via GET request yang bisa di-trigger pakai <img> atau <script> tag.', category: 'CSRF', difficulty: 'Hard', hint: 'Gunakan <img src="/api/csrf-v2?bio=pwned"> dari origin berbeda.', points: 300, endpoint: '/lab/csrf-v2' },
 ];
 
 const MASTER_FLAGS = {
@@ -20,7 +21,8 @@ const MASTER_FLAGS = {
   6: 'ACT{0p3n_r3d1r3ct_vuln}',
   7: 'ACT{1d0r_us3r_3num}',
   8: 'ACT{bl1nd_sQl_b00l34n}',
-  9: 'ACT{pr1v1l3g3_3sc4l4t10n_succ3ss}'
+  9: 'ACT{pr1v1l3g3_3sc4l4t10n_succ3ss}',
+  10: 'ACT{csrf_g3t_1mg_t4g}'
 };
 
 module.exports = { CHALLENGES, MASTER_FLAGS };

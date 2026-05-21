@@ -41,36 +41,50 @@ router.get('/', (req, res) => {
 });
 
 // ============================================
-// GET /api/challenges/:id
+// GET /api/challenges/progress/me
 // ============================================
-router.get('/:id', async (req, res) => {
+router.get('/progress/me', requireAuth, async (req, res) => {
+  const db = require('../config/database');
   try {
-    const id = parseInt(req.params.id);
-    const challenge = CHALLENGES.find(c => c.id === id);
-    if (!challenge) {
-      return res.status(404).json({ success: false, error: 'Challenge not found' });
-    }
-
-    let solved = false;
-    const userId = req.cookies.userId;
-
-    if (userId) {
-      try {
-        const db = require('../config/database');
-        const solvedResult = await db.query(
-          'SELECT * FROM solved_challenges WHERE user_id=$1 AND challenge_id=$2',
-          [userId, id]
-        );
-        solved = (solvedResult.rows && solvedResult.rows.length > 0);
-      } catch (dbErr) {
-        console.warn('DB check failed, solved=false:', dbErr.message);
-      }
-    }
-
-    return res.json({ success: true, challenge, solved });
+    const solvedResult = await db.query(
+      'SELECT challenge_id, solved_at FROM solved_challenges WHERE user_id=$1',
+      [req.user.id]
+    );
+    const solvedIds = new Set(solvedResult.rows.map(r => r.challenge_id));
+    const challenges = CHALLENGES.map(c => ({
+      ...c,
+      solved_at: solvedIds.has(c.id) ? solvedResult.rows.find(r => r.challenge_id === c.id).solved_at : null
+    }));
+    const solved = challenges.filter(c => c.solved_at !== null);
+    const earnedPoints = solved.reduce((sum, c) => sum + c.points, 0);
+    const totalPoints = CHALLENGES.reduce((sum, c) => sum + c.points, 0);
+    return res.json({ success: true, total: CHALLENGES.length, solved: solved.length, totalPoints, earnedPoints, challenges });
   } catch (err) {
-    console.error('GET /:id error:', err);
-    return res.status(500).json({ success: false, error: 'Internal error' });
+    // Even if DB fails, return structure with no progress
+    const challenges = CHALLENGES.map(c => ({ ...c, solved_at: null }));
+    const totalPoints = CHALLENGES.reduce((sum, c) => sum + c.points, 0);
+    return res.json({ success: true, total: CHALLENGES.length, solved: 0, totalPoints, earnedPoints: 0, challenges });
+  }
+});
+
+// ============================================
+// GET /api/challenges/leaderboard/all
+// ============================================
+router.get('/leaderboard/all', async (req, res) => {
+  try {
+    const db = require('../config/database');
+    try {
+      const result = await db.query(
+        `SELECT id, username, score FROM users ORDER BY score DESC LIMIT 20`
+      );
+      return res.json({ success: true, leaderboard: result.rows || [] });
+    } catch (dbErr) {
+      console.warn('Leaderboard DB error:', dbErr.message);
+      return res.json({ success: true, leaderboard: [] });
+    }
+  } catch (err) {
+    console.error('GET /leaderboard/all error:', err);
+    return res.json({ success: true, leaderboard: [] });
   }
 });
 
@@ -151,49 +165,37 @@ router.post('/submit', requireAuth, async (req, res) => {
 });
 
 // ============================================
-// GET /api/challenges/progress/me
+// GET /api/challenges/:id
+// Keep this after named routes so /progress/me is not treated as id=progress.
 // ============================================
-router.get('/progress/me', requireAuth, async (req, res) => {
-  const db = require('../config/database');
+router.get('/:id', async (req, res) => {
   try {
-    const solvedResult = await db.query(
-      'SELECT challenge_id, solved_at FROM solved_challenges WHERE user_id=$1',
-      [req.user.id]
-    );
-    const solvedIds = new Set(solvedResult.rows.map(r => r.challenge_id));
-    const challenges = CHALLENGES.map(c => ({
-      ...c,
-      solved_at: solvedIds.has(c.id) ? solvedResult.rows.find(r => r.challenge_id === c.id).solved_at : null
-    }));
-    const solved = challenges.filter(c => c.solved_at !== null);
-    const earnedPoints = solved.reduce((sum, c) => sum + c.points, 0);
-    const totalPoints = CHALLENGES.reduce((sum, c) => sum + c.points, 0);
-    return res.json({ success: true, total: CHALLENGES.length, solved: solved.length, totalPoints, earnedPoints, challenges });
-  } catch (err) {
-    // Even if DB fails, return structure with no progress
-    const challenges = CHALLENGES.map(c => ({ ...c, solved_at: null }));
-    return res.json({ success: true, total: CHALLENGES.length, solved: 0, totalPoints: 1600, earnedPoints: 0, challenges });
-  }
-});
-
-// ============================================
-// GET /api/challenges/leaderboard/all
-// ============================================
-router.get('/leaderboard/all', async (req, res) => {
-  try {
-    const db = require('../config/database');
-    try {
-      const result = await db.query(
-        `SELECT id, username, score FROM users ORDER BY score DESC LIMIT 20`
-      );
-      return res.json({ success: true, leaderboard: result.rows || [] });
-    } catch (dbErr) {
-      console.warn('Leaderboard DB error:', dbErr.message);
-      return res.json({ success: true, leaderboard: [] });
+    const id = parseInt(req.params.id);
+    const challenge = CHALLENGES.find(c => c.id === id);
+    if (!challenge) {
+      return res.status(404).json({ success: false, error: 'Challenge not found' });
     }
+
+    let solved = false;
+    const userId = req.cookies.userId;
+
+    if (userId) {
+      try {
+        const db = require('../config/database');
+        const solvedResult = await db.query(
+          'SELECT * FROM solved_challenges WHERE user_id=$1 AND challenge_id=$2',
+          [userId, id]
+        );
+        solved = (solvedResult.rows && solvedResult.rows.length > 0);
+      } catch (dbErr) {
+        console.warn('DB check failed, solved=false:', dbErr.message);
+      }
+    }
+
+    return res.json({ success: true, challenge, solved });
   } catch (err) {
-    console.error('GET /leaderboard/all error:', err);
-    return res.json({ success: true, leaderboard: [] });
+    console.error('GET /:id error:', err);
+    return res.status(500).json({ success: false, error: 'Internal error' });
   }
 });
 

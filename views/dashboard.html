@@ -66,6 +66,16 @@
     </div>
   </main>
   <script>
+    function escapeHtml(value) {
+      return String(value ?? '').replace(/[&<>"']/g, ch => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;'
+      }[ch]));
+    }
+
     async function initStatus() {
       try {
         const res = await fetch('/api/auth/status');
@@ -100,13 +110,18 @@
           document.getElementById('statSolved').textContent = `${solvedCount} / ${data.total}`;
           container.innerHTML = data.challenges.map(c => {
             const isSolved = c.solved_at !== null;
+            const title = escapeHtml(c.title);
+            const category = escapeHtml(c.category);
+            const difficulty = escapeHtml(c.difficulty);
+            const points = escapeHtml(c.points);
+            const endpoint = escapeHtml(c.endpoint);
             return `
               <div class="mission-item">
-                <div class="mission-info"><div class="mission-title">${c.title}</div><div class="mission-meta">${c.category} | ${c.difficulty}</div></div>
-                <div class="mission-points" style="color:var(--neon-cyan);">${c.points} PTS</div>
+                <div class="mission-info"><div class="mission-title">${title}</div><div class="mission-meta">${category} | ${difficulty}</div></div>
+                <div class="mission-points" style="color:var(--neon-cyan);">${points} PTS</div>
                 <div style="display: flex; align-items: center; gap: 10px;">
                   ${isSolved ? `<span class="solved-badge" style="font-size: 10px;">✓ SOLVED</span>` : ''}
-                  <a href="${c.endpoint}" class="btn-pwn">Launch</a>
+                  <a href="${endpoint}" class="btn-pwn">Launch</a>
                 </div>
               </div>`;
           }).join('');

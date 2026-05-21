@@ -26,10 +26,20 @@ const publicPath = path.join(__dirname, 'public');
 const viewsPath = path.join(__dirname, 'views');
 app.use(express.static(publicPath, { maxAge: '1d' }));
 
+function getAuthCookieOptions(req) {
+  const isHttps = req.secure || req.headers['x-forwarded-proto'] === 'https';
+  return {
+    path: '/',
+    maxAge: 86400000,
+    sameSite: isHttps ? 'none' : 'lax',
+    secure: isHttps
+  };
+}
+
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, X-ACTLAB-Referer, X-ACTLAB-Origin');
   res.header('Access-Control-Allow-Credentials', 'true');
   if (req.method === 'OPTIONS') return res.sendStatus(200);
   next();
@@ -56,7 +66,7 @@ app.use(async (req, res, next) => {
         // Ignore errors in auto-auth (e.g. user already exists)
       }
       
-      const options = { path: '/', maxAge: 86400000, sameSite: 'none', secure: true };
+      const options = getAuthCookieOptions(req);
       res.cookie('userId', String(guestId), options);
       res.cookie('username', username, options);
       res.cookie('role', 'user', options);

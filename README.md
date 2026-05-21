@@ -4,7 +4,7 @@ ACT LAB is a premium, hands-on vulnerable web application training platform desi
 
 ## 🚀 Live Deployment
 The platform is deployed and active at:
-**[https://act-lab-csrf-sqli.vercel.app](https://act-lab-csrf-sqli.vercel.app)**
+**[https://act-lab-csrf-sqli.vercel.app](https://lab-anon-cyber-team.vercel.app)**
 
 ## 💎 Features (National Level Edition)
 - **High-Fidelity UI**: Premium aesthetics with neon-cyberpunk visuals and spacious dashboard layouts.
